@@ -1,0 +1,101 @@
+//   
+//   Project Name:        Kratos       
+//   Last modified by:    $Author: hbui $
+//   Date:                $Date: Apr 19, 2012 $
+//   Revision:            $Revision: 1.0 $
+//
+//
+
+
+// System includes 
+
+// External includes 
+#include <boost/python.hpp>
+
+// Project includes
+#include "includes/define.h"
+#include "spaces/ublas_space.h"
+#include "linear_solvers/preconditioner.h"
+
+#ifdef _OPENMP
+#include "spaces/parallel_ublas_space.h"
+#endif
+#include "linear_solvers/linear_solver.h"
+#include "linear_solvers/direct_solver.h"
+#include "linear_solvers/iterative_solver.h"
+#include "custom_linear_solvers/iml_solver.h"
+#include "custom_linear_solvers/umfpack_solver.h"
+#include "custom_linear_solvers/superlu_mt_solver.h"
+#include "custom_linear_solvers/pardiso_solver.h"
+
+
+namespace Kratos
+{
+    
+namespace Python
+{
+    void MultithreadedSolversApplication_AddLinearSolversToPython()
+    {
+        typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
+        typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
+        
+        typedef LinearSolver<SparseSpaceType,  LocalSpaceType> LinearSolverType;
+        typedef DirectSolver<SparseSpaceType,  LocalSpaceType> DirectSolverType;
+        typedef IterativeSolver<SparseSpaceType, LocalSpaceType> IterativeSolverType;
+        typedef Preconditioner<SparseSpaceType,  LocalSpaceType> PreconditionerType;
+        typedef IMLSolver<SparseSpaceType, LocalSpaceType> IMLSolverType;
+	    typedef UmfPackSolver<SparseSpaceType, LocalSpaceType> UmfPackSolverType;
+        typedef SuperLUMTSolver<SparseSpaceType, LocalSpaceType> SuperLUMTSolverType;
+        typedef PardisoSolver<SparseSpaceType, LocalSpaceType> PardisoSolverType;
+	    
+#ifdef _OPENMP
+        typedef ParallelUblasSpace<double, CompressedMatrix, Vector> ParallelSpaceType;
+        typedef UblasSpace<double, Matrix, Vector> ParallelLocalSpaceType;
+        typedef LinearSolver<ParallelSpaceType,  ParallelLocalSpaceType> ParallelLinearSolverType;
+        typedef Reorderer<ParallelSpaceType,  ParallelLocalSpaceType > ParallelReordererType;
+        typedef DirectSolver<ParallelSpaceType,  ParallelLocalSpaceType, ParallelReordererType > ParallelDirectSolverType;
+        typedef IterativeSolver<ParallelSpaceType, ParallelLocalSpaceType> ParallelIterativeSolverType;
+        typedef IMLSolver<ParallelSpaceType, ParallelLocalSpaceType> ParallelIMLSolverType;
+#endif
+
+
+        using namespace boost::python;
+
+        //***************************************************************************
+        //linear solvers
+        //***************************************************************************
+        
+        class_<IMLSolverType, IMLSolverType::Pointer, bases<IterativeSolverType> >
+        ( "IMLSolver", init<std::string>() )
+        .def(self_ns::str(self))
+        ;
+
+	    class_<UmfPackSolverType, UmfPackSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
+	    ( "UmfPackSolver", init<>() )
+        .def(init<unsigned int>() )
+        .def(self_ns::str(self))
+        ;
+
+        class_<SuperLUMTSolverType, SuperLUMTSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
+        ( "SuperLUMTSolver", init<>() )
+        ;
+                
+	    class_<PardisoSolverType, PardisoSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
+	    ( "PardisoSolver", init<>() )
+        .def(init<unsigned int>() )
+//        .def(self_ns::str(self))
+        ;
+                
+#ifdef _OPENMP
+        class_<ParallelIMLSolverType, ParallelIMLSolverType::Pointer, bases<ParallelIterativeSolverType> >
+        ( "ParallelIMLSolver", init<std::string>() )
+        .def(self_ns::str(self))
+        ;
+#endif
+
+    }
+	
+}  // namespace Python.
+
+} // Namespace Kratos
+

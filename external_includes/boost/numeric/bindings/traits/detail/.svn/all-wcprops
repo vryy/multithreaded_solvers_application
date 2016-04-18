@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail
+END
+array.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 128
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail/array.hpp
+END
+array_impl.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 133
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail/array_impl.hpp
+END
+ublas_ordering.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 137
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail/ublas_ordering.hpp
+END
+generate_const.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 137
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail/generate_const.hpp
+END
+utils.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 128
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail/utils.hpp
+END
+ublas_uplo.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 133
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail/ublas_uplo.hpp
+END
+symm_herm_traits.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 139
+/svn/kratos_rub/!svn/ver/6/applications/iml_solvers_application/external_includes/boost/numeric/bindings/traits/detail/symm_herm_traits.hpp
+END
