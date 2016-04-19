@@ -22,12 +22,17 @@
 namespace Kratos
 {
 
+    KRATOS_CREATE_VARIABLE(int, SYSTEM_SIZE )
+    KRATOS_CREATE_VARIABLE(boost::numeric::ublas::vector<int>, SYSTEM_PERMUTATION_VECTOR )
+
  	void KratosMultithreadedSolversApplication::Register()
  	{
  		// calling base class register to register Kratos components
  		KratosApplication::Register();
  		std::cout << "Initializing KratosMultithreadedSolversApplication... " << std::endl;
 
+        KRATOS_REGISTER_VARIABLE(SYSTEM_SIZE)
+        KRATOS_REGISTER_VARIABLE(SYSTEM_PERMUTATION_VECTOR)
  	}
 
 }  // namespace Kratos.

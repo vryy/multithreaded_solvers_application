@@ -63,6 +63,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "includes/ublas_interface.h"
 #include "processes/process.h"
 #include "utilities/openmp_utils.h"
+#include "multithreaded_solvers_application.h"
 
 namespace Kratos
 {

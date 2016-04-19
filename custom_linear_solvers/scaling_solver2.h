@@ -66,8 +66,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "custom_utilities/arpack_solver.h"
 #include "hsl.h"
 #include "external_includes/condition.hpp"
+#ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
 #include "custom_utilities/pardiso_condition.h"
-
+#endif
 // #define CHECK_EIGENVALUES
 // #define EXPORT_MATRIX_BEFORE_SOLVE
 
@@ -254,9 +255,8 @@ public:
         {
             start = OpenMPUtils::GetCurrentTime();
             std::cout << "ComputeConditionNumber before scaling" << std::endl;
-    //        double Cond = ComputeConditionNumberDGECON(Acopy);
-    //        double Cond = ComputeConditionNumberMC75(Acopy);
-    //        double Cond = ComputeConditionNumberHager(Acopy);
+
+            #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
             PardisoCondition<SparseMatrixType, VectorType> CondSolver;
             double norm1_invA = CondSolver.hager_norm1_inv_A(Acopy);
             KRATOS_WATCH(norm1_invA)
@@ -275,6 +275,11 @@ public:
             }
             KRATOS_WATCH(norm1_A)
             double Cond = norm1_A * norm1_invA;
+            #else
+//            double Cond = ComputeConditionNumberDGECON(Acopy);
+            double Cond = ComputeConditionNumberMC75(Acopy);
+//            double Cond = ComputeConditionNumberHager(Acopy);
+            #endif
             KRATOS_WATCH(Cond)
             std::cout << "ComputeConditionNumber completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
         }
@@ -315,9 +320,7 @@ public:
         {
             start = OpenMPUtils::GetCurrentTime();
             std::cout << "ComputeConditionNumber after scaling" << std::endl;
-    //        Cond = ComputeConditionNumberDGECON(Acopy);
-    //        Cond = ComputeConditionNumberMC75(Acopy);
-    //        Cond = ComputeConditionNumberHager(Acopy);
+            #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
             PardisoCondition<SparseMatrixType, VectorType> CondSolver;
             double norm1_invA = CondSolver.hager_norm1_inv_A(Acopy);
             KRATOS_WATCH(norm1_invA)
@@ -336,6 +339,11 @@ public:
             }
             KRATOS_WATCH(norm1_A)
             double Cond = norm1_A * norm1_invA;
+            #else
+//            double Cond = ComputeConditionNumberDGECON(Acopy);
+            double Cond = ComputeConditionNumberMC75(Acopy);
+//            double Cond = ComputeConditionNumberHager(Acopy);
+            #endif
             KRATOS_WATCH(Cond)
             std::cout << "ComputeConditionNumber completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
         }

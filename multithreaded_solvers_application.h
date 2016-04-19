@@ -32,7 +32,9 @@ namespace Kratos
 	///@name Kratos Globals
 	///@{ 
 
-	// Variables definition 
+	// Variables definition
+    KRATOS_DEFINE_VARIABLE(int, SYSTEM_SIZE )
+    KRATOS_DEFINE_VARIABLE(boost::numeric::ublas::vector<int>, SYSTEM_PERMUTATION_VECTOR )
 
 	///@} 
 	///@name Type Definitions
