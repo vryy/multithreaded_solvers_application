@@ -61,8 +61,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Project includes
 #include "includes/define.h"
 #include "linear_solvers/iterative_solver.h"
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
 #include "custom_utilities/feast_solver.h"
+#endif
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
 #include "custom_utilities/arpack_solver.h"
+#endif
 
 namespace Kratos
 {
@@ -178,7 +184,7 @@ public:
             BaseType::GetPreconditioner()->ApplyLeft(rB); // b_tilde = K1^(-1) * b;
 
             ierr = IterativeSolveLeftRight(rA, rX, rB);
-            
+
             if(ierr != 0)
                 std::cout << "Warning: the iterative solver is not successful, error code = " << ierr << std::endl;
 
@@ -393,7 +399,7 @@ private:
 	        TSparseSpaceType::UnaliasedAdd(rX, alpha, phat);
 	        TSparseSpaceType::UnaliasedAdd(rX, omega, shat);
 	        TSparseSpaceType::ScaleAndAdd(1.0, s, -omega, t, r);
-	        
+
 	        rho_2 = rho_1;
 	        normr = TSparseSpaceType::TwoNorm(r);
 	        if((resid = normr / normb) < tol) {
@@ -412,7 +418,7 @@ private:
 		        this->SetResidualNorm(resid);
 	            return 3;
 	        }
-	        
+
 	        ++show_progress;
 	    }
 
@@ -513,7 +519,7 @@ private:
 		        this->SetResidualNorm(resid);
 	            return 3;
 	        }
-	        
+
 	        ++show_progress;
 	    }
 
@@ -584,6 +590,4 @@ inline std::ostream& operator << (std::ostream& OStream,
 
 }  // namespace Kratos.
 
-#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined 
-
-
+#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined

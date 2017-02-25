@@ -1,4 +1,4 @@
-/*          
+/*
  * =======================================================================*
  * kkkk   kkkk  kkkkkkkkkk   kkkkk    kkkkkkkkkk kkkkkkkkkk kkkkkkkkkK    *
  * kkkk  kkkk   kkkk   kkkk  kkkkkk   kkkkkkkkkk kkkkkkkkkk kkkkkkkkkK    *
@@ -57,8 +57,9 @@
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_sparse.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include "feast.h"
-#include "feast_sparse.h"
+#include <boost/foreach.hpp>
+#include <boost/python.hpp>
+#include <boost/python/stl_iterator.hpp>
 
 // Project includes
 #include "includes/define.h"
@@ -69,6 +70,10 @@ namespace ublas = boost::numeric::ublas;
 
 namespace Kratos {
 
+
+/**
+FEAST is an eigenvalue solver that's good to find the eigenvalues in the specified interval. However, how to know that interval is unknown, maybe from practice/experience
+*/
 template<class TSparseSpaceType, class TDenseSpaceType>
 class FeastSolver
 {
@@ -94,199 +99,26 @@ public:
     virtual ~FeastSolver() {}
 
     /**
-     * Find the nlambda largest eigenvalues of A
+     * Find the nlambda eigenvalues of A in the interval
      * @param rA        System matrix
      * @param nlambda   initial guess of number of eigenvalues in [a, b]
      * @param rLambda   vector contains eigenvalues
      * @param emin      lower bound to find eigenvalues
      * @param emax      upper bound to find eigenvalues
      */
-    bool Solve(SparseMatrixType& rA, int& nlambda, VectorType& rLambda, double emin, double emax)
-    {
-//        double start_solver = OpenMPUtils::GetCurrentTime();
-//        
-//        int n = TSparseSpaceType::Size1(rA);
-//        
-//        /* nonzeros in rA */
-//        double* a = rA.value_data().begin();
+    bool Solve(SparseMatrixType& rA, int nlambda, VectorType& rLambda, double emin, double emax);
 
-//        /* manual index vector generation */
-//        int* ia = new int[rA.index1_data().size()];
-//        int* ja = new int[rA.index2_data().size()];
-//        std::cout << "Feast: size of the problem: " << n << std::endl;
-//        std::cout << "Feast: size of ia: " << rA.index1_data().size() << std::endl;
-//        std::cout << "Feast: size of ja: " << rA.index2_data().size() << std::endl;
-//        // ia is rowptr
-//        for (unsigned int i = 0; i < rA.index1_data().size(); ++i)
-//            ia[i] = (int) (rA.index1_data()[i]) + 1;
-//        // ja is colind
-//        for (unsigned int i = 0; i < rA.index2_data().size(); ++i)
-//            ja[i] = (int) (rA.index2_data()[i]) + 1;
-//        
-//        /*!!!!!!!!!!!!!!!!! Feast variable */
-//        int  feastparam[64];
-//        double epsout;
-//        int loop;
-//        char UPLO = 'F';
-//        int  i, k, err;
-//        int  M0, M, info;
-//        double Emin, Emax, trace;
-//        double *E;   // eigenvalues  
-//        double *res; // residual
-//        double *X;   // eigenvectors
-//        
-//        Emin = emin;
-//        Emax = emax;
-//        M0   = nlambda;
-
-//        /*!!!!!!!!!!!!! ALLOCATE VARIABLE */
-//        E   = new double[M0];
-//        res = new double[M0];
-//        X   = new double[n*M0];
-//        
-//        /*!!!!!!!!!!!!  FEAST */
-//        feastinit(feastparam);
-//        feastparam[0] = 1;  /* Print runtime comments on screen (0: No, 1: Yes) */
-//        dfeast_scsrev(&UPLO, &n, a, ia, ja, feastparam, &epsout, &loop, &Emin, &Emax, &M0, E, X, &M, res, &info);
-//        
-//        /*!!!!!!!!!! REPORT !!!!!!!!!*/
-//        printf("FEAST OUTPUT INFO %d\n", info);
-//        if (info == 0)
-//        {
-//            printf("*************************************************\n");
-//            printf("************** REPORT ***************************\n");
-//            printf("*************************************************\n");
-//            printf("# Search interval [%f, %f]\n", Emin, Emax);
-//            printf("# mode found/subspace %d %d \n", M, M0);
-//            printf("# iterations %d \n", loop);
-//            trace = 0.0;
-//            for (i = 0; i <= M - 1; ++i)
-//                trace = trace + *(E+i);
-//            printf("TRACE %f\n", trace);
-//            printf("Relative error on the Trace %f\n",epsout );
-//            printf("Eigenvalues/Residuals\n");
-//            for (i = 0; i <= M-1; ++i)
-//                printf("   %d %f %f\n", i, *(E+i), *(res+i));
-//        }
-//        else
-//            KRATOS_THROW_ERROR(std::logic_error, "Error at FEAST, error code =", info);
-//        
-//        delete [] E;
-//        delete [] X;
-//        delete [] res;
-//        delete [] ia;
-//        delete [] ja;
-
-//        // post-process the results
-//        nlambda = M; //number of eigenvalues found
-//        TSparseSpaceType::Resize(rLambda, nlambda);
-//        for(int i = 0; i < nlambda; ++i)
-//            rLambda(i) = E[i];
-
-//        std::cout << "#### EIGENSOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
-//        return true;
-
-
-
-        /*!!!!!!!!!!!!!!!!! FeastSolver declaration variable */
-          int  feastparam[64]; 
-          double epsout;
-          int loop;
-          char UPLO='F'; 
-
-          /*!!!!!!!!!!!!!!!!! Matrix declaration variable */
-          FILE *fp;
-          char name[]="system2";
-          int  N,nnz;
-          double *sa;
-          int *isa,*jsa;
-          /*!!!!!!!!!!!!!!!!! Others */
-          struct timeval t1, t2;
-          int  i,k,err;
-          int  M0,M,info;
-          double Emin,Emax,trace,dummy;
-          double *X; //! eigenvectors
-          double *E,*res; //! eigenvalue+residual
-
-
-          /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!! read input file in csr format!!!!!!!
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-
-          // !!!!!!!!!! form CSR arrays isa,jsa,sa 
-          fp = fopen (name, "r");
-          err=fscanf (fp, "%d%d\n",&N,&nnz);
-          sa=(double*)calloc(nnz,sizeof(double));
-          isa=(int*)calloc(N+1,sizeof(int));
-          jsa=(int*)calloc(nnz,sizeof(int));
-
-          for (i=0;i<=N;i++){
-            *(isa+i)=0;
-          };
-          *(isa)=1;
-          for (k=0;k<=nnz-1;k++){
-            err=fscanf(fp,"%d%d%lf%lf\n",&i,jsa+k,sa+k,&dummy);
-            *(isa+i)=*(isa+i)+1;
-          };
-          fclose(fp);
-          for (i=1;i<=N;i++){
-            *(isa+i)=*(isa+i)+*(isa+i-1);
-          };
-          
-          /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!!!!!!!!! INFORMATION ABOUT MATRIX !!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-          printf("sparse matrix -system1- size %.d\n",N);
-          printf("nnz %d \n",nnz);
-
-          /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!!!!!! FEAST in sparse format !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-
-          /*!!! search interval [Emin,Emax] including M eigenpairs*/
-          Emin=(double) -0.1;
-          Emax=(double) 0.1;
-          M0=100; // !! M0>=M
-
-          /*!!!!!!!!!!!!! ALLOCATE VARIABLE */
-          E=(double*)calloc(M0,sizeof(double));  // eigenvalues
-          res=(double*)calloc(M0,sizeof(double));// eigenvectors 
-          X=(double*)calloc(N*M0,sizeof(double));// residual
-
-
-          /*!!!!!!!!!!!!  FEAST */
-          feastinit(feastparam);
-          feastparam[0]=1;  /*change from default value */
-          dfeast_scsrev(&UPLO,&N,sa,isa,jsa,feastparam,&epsout,&loop,&Emin,&Emax,&M0,E,X,&M,res,&info);
-
-          /*!!!!!!!!!! REPORT !!!!!!!!!*/
-          printf("FEAST OUTPUT INFO %d\n",info);
-          if (info==0) {
-            printf("*************************************************\n");
-            printf("************** REPORT ***************************\n");
-            printf("*************************************************\n");
-            printf("SIMULATION TIME %f\n",(t2.tv_sec-t1.tv_sec)*1.0+(t2.tv_usec-t1.tv_usec)*0.000001);
-            printf("# Search interval [Emin,Emax] %.15e %.15e\n",Emin,Emax);
-            printf("# mode found/subspace %d %d \n",M,M0);
-            printf("# iterations %d \n",loop);
-            trace=(double) 0.0;
-            for (i=0;i<=M-1;i=i+1){
-              trace=trace+*(E+i);
-            }	  
-            printf("TRACE %.15e\n", trace);
-            printf("Relative error on the Trace %.15e\n",epsout );
-            printf("Eigenvalues/Residuals\n");
-            for (i=0;i<=M-1;i=i+1){
-              printf("   %d %.15e %.15e\n",i,*(E+i),*(res+i));
-            }
-          }
-
-
-
-
-
-
-    }
+    /**
+     * Find the nlambda eigenvalues of generalized eigenvalues problem AX = lambda*BX in the interval
+     * @param rA        System matrix
+     * @param nlambda   initial guess of number of eigenvalues in [a, b]
+     * @param rLambda   vector contains eigenvalues
+     * @param emin      lower bound to find eigenvalues
+     * @param emax      upper bound to find eigenvalues
+     */
+    bool SolveGeneralized(SparseMatrixType& rA, SparseMatrixType& rB,
+            int nlambda, VectorType& rLambda, boost::python::list EigenVectors,
+            double emin, double emax);
 
     /// Return information about this object.
     virtual std::string Info() const
@@ -295,7 +127,7 @@ public:
         buffer << "FEAST solver";
         return buffer.str();
     }
-    
+
     /**
      * Print information about this object.
      */

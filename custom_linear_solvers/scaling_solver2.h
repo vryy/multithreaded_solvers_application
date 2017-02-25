@@ -62,8 +62,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "includes/define.h"
 #include "includes/matrix_market_interface.h"
 #include "linear_solvers/iterative_solver.h"
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
 #include "custom_utilities/feast_solver.h"
+#endif
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
 #include "custom_utilities/arpack_solver.h"
+#endif
+
 #include "hsl.h"
 #include "external_includes/condition.hpp"
 #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
@@ -115,13 +122,18 @@ public:
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
-    
+
     typedef std::size_t  SizeType;
-    
+
     typedef std::size_t  IndexType;
-    
-//    typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
-//    typedef ArpackSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+
+    #if defined(MULTITHREADED_SOLVERS_APP_USE_FEAST) && defined(CHECK_EIGENVALUES_USING_FEAST)
+    typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
+
+    #if defined(MULTITHREADED_SOLVERS_APP_USE_ARPACK) && defined(CHECK_EIGENVALUES_USING_ARPACK)
+    typedef ArpackSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
 
     ///@}
     ///@name Life Cycle
@@ -195,7 +207,7 @@ public:
         int n = rA.size1();
         std::size_t* ia = rA.index1_data().begin();
         std::size_t* ja = rA.index2_data().begin();
-            
+
         if(mall_indices_column_pos.size() != 0)
             for(unsigned int i = 0; i < mall_indices_column_pos.size(); ++i)
                 mall_indices_column_pos[i].clear();
@@ -207,7 +219,7 @@ public:
             for(int j = 0; j < nz; ++j)
                 mall_indices_column_pos[ja[ia[i] + j]].push_back(ia[i] + j);
         }
-        
+
         if(mScalingType == 2 || mScalingType == 3)
         {
             // for MC29 & MC77
@@ -225,13 +237,13 @@ public:
             mcrow.resize(NZ);
             mccol.resize(NZ);
         }
-        
+
         if(mpSolver->AdditionalPhysicalDataIsNeeded())
             mpSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
-        
+
         KRATOS_WATCH(mall_indices_column_pos.size())
     }
-    
+
     /** Normal solve method.
     Solves the linear system Ax=b and puts the result on SystemVector& rX.
     rX is also th initial guess for iterative methods.
@@ -247,10 +259,10 @@ public:
 
         SparseMatrixType Acopy = rA;
         VectorType       Bcopy = rB;
-        
+
         //GetTimeTable()->Start(Info());
         double start;
-        
+
         if(mCheckConditionNunber)
         {
             start = OpenMPUtils::GetCurrentTime();
@@ -283,7 +295,7 @@ public:
             KRATOS_WATCH(Cond)
             std::cout << "ComputeConditionNumber completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
         }
-        
+
         std::cout << "CompuleScalingVector begin" << std::endl;
         start = OpenMPUtils::GetCurrentTime();
         VectorType DL, DR;
@@ -305,7 +317,7 @@ public:
                 break;
         }
         std::cout << "CompuleScalingVector completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
-        
+
         std::cout << "Scaling begin" << std::endl;
         start = OpenMPUtils::GetCurrentTime();
         RowScale(Acopy, DL);
@@ -315,7 +327,7 @@ public:
         std::cout << "Column scale completed..." << OpenMPUtils::GetCurrentTime() - start1 << " s" << std::endl;
         VectorScale(Bcopy, DL);
         std::cout << "Scaling completed... " << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
-        
+
         if(mCheckConditionNunber)
         {
             start = OpenMPUtils::GetCurrentTime();
@@ -347,8 +359,8 @@ public:
             KRATOS_WATCH(Cond)
             std::cout << "ComputeConditionNumber completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
         }
-        
-        #ifdef CHECK_EIGENVALUES
+
+        #ifdef CHECK_EIGENVALUES_USING_ARPACK
 //        EigenSolverType eigen_solver;
         EigenSolverType eigen_solver(this->GetPreconditioner()); //using preconditioner for inverse iteration
         VectorType lambdas(10);
@@ -356,7 +368,7 @@ public:
         eigen_solver.SolveLargest(Acopy, 5, lambdas);
         std::cout << "Checking smallest eigenvalues..." << std::endl;
         eigen_solver.SolveSmallest(Acopy, 5, lambdas);
-        
+
 //        std::cout << "Checking eigenvalues between -1.0 and 1.0 ..." << std::endl;
 //        int nlambda0 = 50;
 //        VectorType rLamdas;
@@ -368,7 +380,7 @@ public:
         lhs_filename << "A_scaled.mm";
         WriteMatrixMarketMatrix(lhs_filename.str().c_str(), Acopy, false);
         #endif
-            
+
         bool is_solved = mpSolver->Solve(Acopy, rX, Bcopy);
 
         VectorScale(rX, DR);
@@ -452,9 +464,9 @@ protected:
     ///@}
     ///@name Protected member Variables
     ///@{
-    
+
     std::vector<std::vector<int> > mall_indices_column_pos; //2d vector to store indices of entry in value vector for each colunn
-    
+
     // for MC29 & MC77
     std::vector<int> mcrow; //row coordinates
     std::vector<int> mccol; //column coordinates
@@ -497,7 +509,7 @@ private:
     int mScalingType;
     bool mCheckConditionNunber;
     typename BaseType::Pointer mpSolver;
-    
+
     ///@}
     ///@name Private Operators
     ///@{
@@ -513,7 +525,7 @@ private:
         std::size_t*   ia = rA.index1_data().begin();
         std::size_t*   ja = rA.index2_data().begin();
         double*         a = rA.value_data().begin();
-        
+
         #pragma omp parallel for
         for(int i = 0; i < n; ++i)
         {
@@ -522,7 +534,7 @@ private:
                 a[ia[i] + j] *= rDL(i);
         }
     }
-    
+
     void ColumnScale(SparseMatrixType& rA, VectorType& rDR)
     {
         int n = rA.size1();
@@ -538,7 +550,7 @@ private:
                 a[mall_indices_column_pos[i][j]] *= rDR(i);
         }
     }
-    
+
     void VectorScale(VectorType& rX, VectorType& rD)
     {
         int n = rX.size();
@@ -553,22 +565,22 @@ private:
     {
         // Create a clone of matrix A
         SparseMatrixType rAc = rA;
-        
+
         int n = rAc.size1();
         std::size_t*   ia = rAc.index1_data().begin();
         std::size_t*   ja = rAc.index2_data().begin();
         double*         a = rAc.value_data().begin();
-        
+
         rDL.resize(n);
         rDR.resize(n);
-        
+
         // firstly initialize all scaling matrix to identity
         for(unsigned int i = 0; i < n; ++i)
         {
             rDL(i) = 1.0;
             rDR(i) = 1.0;
         }
-        
+
         // iterations
         VectorType DL(n);
         VectorType DR(n);
@@ -594,7 +606,7 @@ private:
                 DL(i) = 1.0 / norm;
                 v = fabs(1 - pow(norm, 2));
                 if(v > conv_r) conv_r = v;
-    
+
                 // find the inf-norm of column i
                 nz = mall_indices_column_pos[i].size();
                 norm = 0.0;
@@ -607,15 +619,15 @@ private:
                 v = fabs(1 - pow(norm, 2));
                 if(v > conv_c) conv_c = v;
             }
-            
+
             // Scale the matrix
             RowScale(rAc, DL);
             ColumnScale(rAc, DR);
-            
+
             // Articulate to the scaling vector
             VectorScale(rDL, DL);
             VectorScale(rDR, DR);
-            
+
             // Check the convergence criteria
             converged = (conv_r < tol) && (conv_c < tol);
             std::cout << "iteration " << ++cnt << ", conv_r = " << conv_r << ", conv_c = " << conv_c << std::endl;
@@ -631,13 +643,13 @@ private:
 //        std::size_t*   ia = rA.index1_data().begin();
 //        std::size_t*   ja = rA.index2_data().begin();
         double*         a = rA.value_data().begin();
-        
+
         double* r = new double[n];
         double* c = new double[n];
         double* w = new double[5 * n];
         int lp = 0, ifail;
         mc29ad(&n, &n, &ne, a, &mcrow[0], &mccol[0], r, c, w, &lp, &ifail);
-        
+
         rDL.resize(n);
         rDR.resize(n);
         for(unsigned int i = 0; i < n; ++i)
@@ -645,14 +657,14 @@ private:
             rDL(i) = exp(r[i]);
             rDR(i) = exp(c[i]);
         }
-        
+
         delete [] r;
         delete [] c;
         delete [] w;
-        
+
         return ifail;
     }
-    
+
     /*
      * A routine to compute condition number of a matrix using svd decomposition (MKL required). It is very expensive so usage with big matrix is warning.
      */
@@ -666,7 +678,7 @@ private:
         double* u = new double[ldu * n];
         double* vt = new double[ldvt * n];
         double* a = new double[lda * n];
-        
+
         /* Populate a */
         std::size_t*   ia = rA.index1_data().begin();
         std::size_t*   ja = rA.index2_data().begin();
@@ -679,26 +691,26 @@ private:
             for(int j = 0; j < nz; ++j)
                 a[i * n + ja[ia[i] + j]] = va[ia[i] + j];
         }
-        
+
         /* Compute SVD */
         info = LAPACKE_dgesvd( LAPACK_ROW_MAJOR, 'A', 'A', n, n, a, lda, s, u, ldu, vt, ldvt, superb );
-        
+
         if( info != 0 )
         {
             std::cout << "The algorithm computing SVD failed to converge." << std::endl;
             return 0.0;
         }
-        
+
         double cond = s[0] / s[n-1];
-        
+
         delete [] s;
         delete [] u;
         delete [] vt;
         delete [] a;
-        
+
         return cond;
     }
-    
+
     /*
      * A routine to compute condition number of a matrix using svd decomposition (MKL required). It is very expensive so usage with big matrix is warning.
      */
@@ -709,7 +721,7 @@ private:
         MKL_INT* ipiv = new MKL_INT[n];
         /* Local arrays */
         double* a = new double[lda * n];
-        
+
         /* Populate a */
         std::size_t*   ia = rA.index1_data().begin();
         std::size_t*   ja = rA.index2_data().begin();
@@ -722,7 +734,7 @@ private:
             for(int j = 0; j < nz; ++j)
                 a[i * n + ja[ia[i] + j]] = va[ia[i] + j];
         }
-        
+
         /* Compute 1-norm of A */
         double anorm = 0.0;
         for(int i = 0; i < n; ++i)
@@ -733,7 +745,7 @@ private:
             if(col_norm > anorm)
                 anorm = col_norm;
         }
-        
+
         /* Compute LU decomposition of A */
         info = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, n, n, a, lda, ipiv);
         if( info != 0 )
@@ -741,7 +753,7 @@ private:
             std::cout << "LU decomposition for A failed." << std::endl;
             return 0.0;
         }
-        
+
         /* Compute estimated condition number */
         double rcond;
         info = LAPACKE_dgecon( LAPACK_ROW_MAJOR, 'I', n, a, lda, anorm, &rcond );
@@ -750,13 +762,13 @@ private:
             std::cout << "The algorithm computing condition number failed to converge." << std::endl;
             return 0.0;
         }
-        
+
         delete [] ipiv;
         delete [] a;
-        
+
         return 1.0 / rcond;
     }
-    
+
     /*
      * A routine to compute condition number of a sparse matrix using mc75
      */
@@ -767,7 +779,7 @@ private:
 //        std::size_t*   ia = rA.index1_data().begin();
 //        std::size_t*   ja = rA.index2_data().begin();
         double*         a = rA.value_data().begin();
-        
+
         int la = (unsigned int)(ne * log2(ne));
         double* a_ = new double[la];
         int* ir = new int[la];
@@ -779,20 +791,20 @@ private:
         double* w = new double[lw];
         int* icntl = new int[5];
         int* info = new int[5];
-        
+
         std::copy(&mcrow[0], &mcrow[0] + ne, ir);
         std::copy(&mccol[0], &mccol[0] + ne, ic);
         std::copy(a, a + ne, a_);
-        
+
         icntl[0] = 6;
         icntl[1] = 0;
         icntl[2] = 0;
         icntl[3] = 0;
         icntl[4] = 0;
         mc75ad(&n, &ne, &la, a_, ir, ic, cond, &liw, iw, &lw, w, icntl, info);
-        
+
         double my_cond = cond[1];
-        
+
         delete [] a;
         delete [] ir;
         delete [] ic;
@@ -801,10 +813,10 @@ private:
         delete [] w;
         delete [] icntl;
         delete [] info;
-        
+
         return my_cond;
     }
-    
+
     /*
      * A routine to compute condition number of a matrix using Hager algorithm. Ref: W. W. Hager, Condition Estimates, SIAM
      */
@@ -813,7 +825,7 @@ private:
         int n = rA.size1();
         /* Local arrays */
         double* a = new double[n * n];
-        
+
         /* Populate a */
         std::size_t*   ia = rA.index1_data().begin();
         std::size_t*   ja = rA.index2_data().begin();
@@ -827,14 +839,14 @@ private:
             for(int j = 0; j < nz; ++j)
                 a[ja[ia[i] + j] * n + i] = va[ia[i] + j];
         }
-        
+
         double cond = condition_hager(n, a);
 
         delete [] a;
-        
+
         return cond;
     }
-        
+
     ///@}
     ///@name Private  Access
     ///@{
@@ -890,5 +902,4 @@ inline std::ostream& operator << (std::ostream& OStream, const  ScalingSolver2<T
 #undef CHECK_EIGENVALUES
 #undef EXPORT_MATRIX_BEFORE_SOLVE
 
-#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SCALING_SOLVER_2_H_INCLUDED  defined 
-
+#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SCALING_SOLVER_2_H_INCLUDED  defined

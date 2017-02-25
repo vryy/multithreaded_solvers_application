@@ -61,8 +61,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "includes/define.h"
 #include "spaces/ublas_space.h"
 #include "custom_utilities/mesh_rcm.h"
-//#include "custom_utilities/arpack_solver.h"
-//#include "custom_utilities/feast_solver.h"
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
+#include "custom_utilities/arpack_solver.h"
+#endif
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
+#include "custom_utilities/feast_solver.h"
+#endif
+
 #include "multithreaded_solvers_application.h"
 
 
@@ -80,27 +87,33 @@ void  MultithreadedSolversApplication_AddUtilitiesToPython()
 
     typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
     typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
-//    typedef ArpackSolver<SparseSpaceType, LocalSpaceType> ArpackSolverType;
-//    typedef FeastSolver<SparseSpaceType, LocalSpaceType> FeastSolverType;
 
     class_< MeshRCM, MeshRCM::Pointer, boost::noncopyable >
     ( "MeshRCM", init<>() )
     .def("Renumber", &MeshRCM::Renumber)
 //    .def(self_ns::str(self))
     ;
-    
-//    class_< ArpackSolverType, ArpackSolverType::Pointer, boost::noncopyable >
-//    ( "ArpackSolver", init<>() )
-//    .def("SolveLargest", &ArpackSolverType::SolveLargest)
-//    ;
-        
-//    class_< FeastSolverType, FeastSolverType::Pointer, boost::noncopyable >
-//    ( "FeastSolver", init<>() )
-//    .def("Solve", &FeastSolverType::Solve)
-//    ;
-        
+
+    #ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
+    typedef ArpackSolver<SparseSpaceType, LocalSpaceType> ArpackSolverType;
+    class_<ArpackSolverType, ArpackSolverType::Pointer, boost::noncopyable>
+    ("ArpackSolver", init<>())
+    .def("SolveLargest", &ArpackSolverType::SolveLargest)
+    .def("SolveSmallest", &ArpackSolverType::SolveSmallest)
+    .def("Solve", &ArpackSolverType::Solve)
+    ;
+    #endif
+
+    #ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
+    typedef FeastSolver<SparseSpaceType, LocalSpaceType> FeastSolverType;
+    class_<FeastSolverType, FeastSolverType::Pointer, boost::noncopyable>
+    ("FeastSolver", init<>())
+    .def("Solve", &FeastSolverType::Solve)
+    .def("SolveGeneralized", &FeastSolverType::SolveGeneralized)
+    ;
+    #endif
+
 }
 
 }  // namespace Python.
 }  // namespace Kratos.
-

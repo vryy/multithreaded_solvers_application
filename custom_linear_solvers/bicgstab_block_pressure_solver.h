@@ -60,9 +60,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Project includes
 #include "includes/define.h"
 #include "linear_solvers/iterative_solver.h"
-#include "custom_utilities/feast_solver.h"
-#include "custom_utilities/arpack_solver.h"
 
+#ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
+#include "custom_utilities/feast_solver.h"
+#endif
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
+#include "custom_utilities/arpack_solver.h"
+#endif
 
 //#define CHECK_EIGENVALUES
 
@@ -115,9 +120,14 @@ public:
     typedef std::size_t  SizeType;
     
     typedef std::size_t  IndexType;
-    
+
+    #if defined(MULTITHREADED_SOLVERS_APP_USE_FEAST) && defined(CHECK_EIGENVALUES_USING_FEAST)
     typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
-//    typedef ArpackSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
+
+    #if defined(MULTITHREADED_SOLVERS_APP_USE_ARPACK) && defined(CHECK_EIGENVALUES_USING_ARPACK)
+    typedef ArpackSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
 
     ///@}
     ///@name Life Cycle

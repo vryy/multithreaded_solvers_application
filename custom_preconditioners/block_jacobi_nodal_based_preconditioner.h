@@ -162,7 +162,7 @@ public:
     /// Assignment operator.
     BlockJacobiNodalBasedPreconditioner& operator=(const BlockJacobiNodalBasedPreconditioner& rOther)
     {
-        SuperType->operator=(rOther);
+        SuperType::operator=(rOther);
         return *this;
     }
 

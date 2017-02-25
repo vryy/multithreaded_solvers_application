@@ -62,8 +62,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "includes/define.h"
 #include "includes/matrix_market_interface.h"
 #include "linear_solvers/iterative_solver.h"
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
 #include "custom_utilities/feast_solver.h"
+#endif
+
+#ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
 #include "custom_utilities/arpack_solver.h"
+#endif
+
 #include "hsl.h"
 #include "external_includes/condition.hpp"
 #include "custom_utilities/pardiso_condition.h"
@@ -119,9 +126,14 @@ public:
     typedef std::size_t  SizeType;
     
     typedef std::size_t  IndexType;
-    
-//    typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+
+    #if defined(MULTITHREADED_SOLVERS_APP_USE_FEAST) && defined(CHECK_EIGENVALUES_USING_FEAST)
+    typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
+
+    #if defined(MULTITHREADED_SOLVERS_APP_USE_ARPACK) && defined(CHECK_EIGENVALUES_USING_ARPACK)
     typedef ArpackSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
 
     ///@}
     ///@name Life Cycle

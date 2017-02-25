@@ -8,17 +8,28 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/external_includes )
 #include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/SparseLib++/1.7/include )
 #include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/SparseLib++/1.7/mv/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/SuperLU_MT_2.2 )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/arpack++/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/FEAST/2.1/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/HSL )
 
 #add_definitions( -DCOMPLEX=std::complex<double> )
 #add_subdirectory(custom_external_libraries/SparseLib++/1.7)
 
 add_subdirectory(custom_external_libraries/SuperLU_MT_2.2)
-add_subdirectory(custom_external_libraries/ARPACK)
-add_subdirectory(custom_external_libraries/FEAST/2.1)
 add_subdirectory(custom_external_libraries/HSL)
+
+set(MULTITHREADED_SOLVERS_APP_USE_ARPACK TRUE)
+if(${MULTITHREADED_SOLVERS_APP_USE_ARPACK} MATCHES TRUE)
+    add_definitions(-DMULTITHREADED_SOLVERS_APP_USE_ARPACK)
+    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/arpack++/include )
+    add_subdirectory(custom_external_libraries/ARPACK)
+    #REMARKS: if compiler complains about DefineParameters, just put this-> before it
+endif()
+
+set(MULTITHREADED_SOLVERS_APP_USE_FEAST TRUE)
+if(${MULTITHREADED_SOLVERS_APP_USE_FEAST} MATCHES TRUE)
+    add_definitions(-DMULTITHREADED_SOLVERS_APP_USE_FEAST)
+    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/FEAST/2.1/include )
+    add_subdirectory(custom_external_libraries/FEAST/2.1)
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/custom_cmake_modules")
 if(UMFPACK_DIR)
@@ -40,10 +51,28 @@ endif()
 
 ## generate variables with the sources
 set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/external_includes/condition.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/mesh_rcm.cpp
+)
+
+if(${MULTITHREADED_SOLVERS_APP_USE_FEAST} MATCHES TRUE)
+set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+    ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/feast_solver.cpp
+)
+endif()
+
+if(${MULTITHREADED_SOLVERS_APP_USE_ARPACK} MATCHES TRUE)
+set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+    ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/arpack_solver.cpp
+)
+endif()
+
+set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+    ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_linear_solvers_to_python.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_utilities_to_python.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_processes_to_python.cpp
@@ -108,13 +137,31 @@ target_link_libraries(KratosMultithreadedSolversApplication ${UMFPACK_LIBRARIES}
 target_link_libraries(KratosMultithreadedSolversApplication rt)
 target_link_libraries(KratosMultithreadedSolversApplication ${METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP})
 target_link_libraries(KratosMultithreadedSolversApplication ${PARDISO_LIBRARY})
-target_link_libraries(KratosMultithreadedSolversApplication arpack)
-target_link_libraries(KratosMultithreadedSolversApplication feast_sparse)
-target_link_libraries(KratosMultithreadedSolversApplication feast)
+
+if(${MULTITHREADED_SOLVERS_APP_USE_ARPACK} MATCHES TRUE)
+    target_link_libraries(KratosMultithreadedSolversApplication arpack)
+endif(())
+
+if(${MULTITHREADED_SOLVERS_APP_USE_FEAST} MATCHES TRUE)
+    # REMARKS: Feast uses various subroutines of MKL, so we have to link manually here
+    target_link_libraries(KratosMultithreadedSolversApplication feast_sparse)
+    target_link_libraries(KratosMultithreadedSolversApplication feast)
+    target_link_libraries(KratosMultithreadedSolversApplication mkl_intel_lp64)
+    target_link_libraries(KratosMultithreadedSolversApplication mkl_intel_thread)
+    target_link_libraries(KratosMultithreadedSolversApplication mkl_core)
+    target_link_libraries(KratosMultithreadedSolversApplication imf)
+    target_link_libraries(KratosMultithreadedSolversApplication svml)
+    target_link_libraries(KratosMultithreadedSolversApplication irc)
+    target_link_libraries(KratosMultithreadedSolversApplication iomp5)
+    target_link_libraries(KratosMultithreadedSolversApplication pthread)
+    target_link_libraries(KratosMultithreadedSolversApplication m)
+endif()
+
 target_link_libraries(KratosMultithreadedSolversApplication ${BLAS_LIBRARIES})
 target_link_libraries(KratosMultithreadedSolversApplication ${LAPACK_LIBRARIES})
 target_link_libraries(KratosMultithreadedSolversApplication ${MKLSOLVER_LIBRARIES})
 target_link_libraries(KratosMultithreadedSolversApplication hsl)
+target_link_libraries(KratosMultithreadedSolversApplication gfortran)
 set_target_properties(KratosMultithreadedSolversApplication PROPERTIES PREFIX "")
 install(TARGETS KratosMultithreadedSolversApplication DESTINATION libs )
 install(FILES ${PARDISO_LIBRARY} DESTINATION libs )
@@ -122,7 +169,7 @@ install(FILES ${PARDISO_LIBRARY} DESTINATION libs )
 # get_property(inc_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
 # message("TestApplication subdir inc_dirs = ${inc_dirs}")
 
-# changing the .dll suffix to .pyd 
+# changing the .dll suffix to .pyd
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set_target_properties(KratosMultithreadedSolversApplication PROPERTIES SUFFIX .pyd)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -137,4 +184,3 @@ endif(${INSTALL_PYTHON_FILES} MATCHES ON)
 
 # Add to the KratosMultiphisics Python module
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/MultithreadedSolversApplication.py" DESTINATION KratosMultiphysics )
-

@@ -133,7 +133,7 @@ class ArpackError {
 
  public:
 
-  static void Set(ErrorCode error, const std::string& where="AREigenProblem");
+  static inline void Set(ErrorCode error, const std::string& where="AREigenProblem");
   // Set error code and write error messages.
 
   static int Status() { return (int) code; }

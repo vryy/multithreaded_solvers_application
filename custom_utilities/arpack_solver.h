@@ -1,4 +1,4 @@
-/*          
+/*
  * =======================================================================*
  * kkkk   kkkk  kkkkkkkkkk   kkkkk    kkkkkkkkkk kkkkkkkkkk kkkkkkkkkK    *
  * kkkk  kkkk   kkkk   kkkk  kkkkkk   kkkkkkkkkk kkkkkkkkkk kkkkkkkkkK    *
@@ -45,7 +45,7 @@
 #if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ARPACK_SOLVER_H_INCLUDED )
 #define  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ARPACK_SOLVER_H_INCLUDED
 
-// External includes 
+// External includes
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -56,11 +56,11 @@
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_sparse.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include "arsnsym.h"
 
 // Project includes
 #include "includes/define.h"
 #include "includes/ublas_interface.h"
+#include "linear_solvers/preconditioner.h"
 #include "utilities/openmp_utils.h"
 
 namespace ublas = boost::numeric::ublas;
@@ -101,7 +101,7 @@ public:
     private:
         MatrixType* mpA;
     }; // class MatrixWithProduct
-    
+
     template<class TThisSparseSpaceType, class TThisDenseSpaceType>
     class InverseMatrixWithProduct
     {
@@ -133,7 +133,7 @@ public:
     ArpackSolver()
     {
     }
-    
+
     /**
      * Constructor with solver to find smallest eigenvalue
      */
@@ -153,83 +153,23 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool SolveLargest(SparseMatrixType& rA, int nlambda, VectorType& rLambda)
-    {
-        double start_solver = OpenMPUtils::GetCurrentTime();
-        
-        if(TSparseSpaceType::Size(rLambda) != nlambda)
-            TSparseSpaceType::Resize(rLambda, nlambda);
-        
-        int m = TSparseSpaceType::Size1(rA);
-        int n = TSparseSpaceType::Size2(rA);
-        
-        typedef MatrixWithProduct<TSparseSpaceType> MatrixWithProductType;
-        MatrixWithProductType Awrap(&rA);
-        ARNonSymStdEig<double, MatrixWithProductType> dprob(n, nlambda, &Awrap, &MatrixWithProductType::MultMv);
-        dprob.FindEigenvectors();
-        Solution(dprob);
+    bool SolveLargest(SparseMatrixType& rA, int nlambda, VectorType& rLambda);
 
-        std::cout << "#### EIGENSOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
-        return true;
-    }
-    
     /**
      * Find the nlambda smallest eigenvalues of A
      * @param rA. System matrix
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool SolveSmallest(SparseMatrixType& rA, int nlambda, VectorType& rLambda)
-    {
-        double start_solver = OpenMPUtils::GetCurrentTime();
-        
-        if(TSparseSpaceType::Size(rLambda) != nlambda)
-            TSparseSpaceType::Resize(rLambda, nlambda);
-        
-        int m = TSparseSpaceType::Size1(rA);
-        int n = TSparseSpaceType::Size2(rA);
-        
-//        typedef MatrixWithProduct<TSparseSpaceType> MatrixWithProductType;
-//        MatrixWithProductType Awrap(&rA);
-//        ARNonSymStdEig<double, MatrixWithProductType> dprob(n, nlambda, &Awrap, &MatrixWithProduct<TSparseSpaceType>::MultMv, "SM");
+    bool SolveSmallest(SparseMatrixType& rA, int nlambda, VectorType& rLambda);
 
-        // this code uses inverse of the matrix to find smallest eigenvalues. It will use a preconditioner (typically a solver wrapped by preconditioner) provided from outside for solving
-        typedef InverseMatrixWithProduct<TSparseSpaceType, TDenseSpaceType> InverseMatrixWithProductType;
-        InverseMatrixWithProductType Awrap(&rA, mPrecond);
-        ARNonSymStdEig<double, InverseMatrixWithProductType> dprob(n, nlambda, &Awrap, &InverseMatrixWithProductType::MultMv);
-
-        dprob.FindEigenvectors();
-        Solution(dprob);
-
-        std::cout << "#### EIGENSOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
-        return true;
-    }
-    
     /**
      * Find the nlambda largest and nlambda smallest eigenvalues of A
      * @param rA. System matrix
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, int nlambda, VectorType& rLambda)
-    {
-        double start_solver = OpenMPUtils::GetCurrentTime();
-        
-        if(TSparseSpaceType::Size(rLambda) != 2*nlambda)
-            TSparseSpaceType::Resize(rLambda, 2*nlambda);
-        
-        int m = TSparseSpaceType::Size1(rA);
-        int n = TSparseSpaceType::Size2(rA);
-        
-        typedef MatrixWithProduct<TSparseSpaceType> MatrixWithProductType;
-        MatrixWithProductType Awrap(&rA);
-        ARNonSymStdEig<double, MatrixWithProductType> dprob(n, 2*nlambda, &Awrap, &MatrixWithProduct<TSparseSpaceType>::MultMv, "BE");
-        dprob.FindEigenvectors();
-        Solution(dprob);
-
-        std::cout << "#### EIGENSOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
-        return true;
-    }
+    bool Solve(SparseMatrixType& rA, int nlambda, VectorType& rLambda);
 
     /// Return information about this object.
     virtual std::string Info() const
@@ -238,7 +178,7 @@ public:
         buffer << "ARPACK solver";
         return buffer.str();
     }
-    
+
     /**
      * Print information about this object.
      */
@@ -257,12 +197,12 @@ public:
 private:
 
     typename PreconditionerType::Pointer mPrecond;
-    
+
     /**
      * Prints eigenvalues of nonsymmetric eigen-problems on standard "std::cout" stream.
      */
-    template<class ARMATRIX, class ARFLOAT>
-    void Solution(ARNonSymStdEig<ARFLOAT, ARMATRIX> &Prob)
+    template<class TProblem>
+    void Solution(TProblem& Prob)
     {
         int i, n, nconv, mode;
 
@@ -327,6 +267,6 @@ private:
     which = 'SA' : Eigenvalues with smallest algebraic value (eigsh), that is, smallest eigenvalues inclusive of any negative sign.
     which = 'BE' : Eigenvalues from both ends of the spectrum (eigsh)
  */
-    
+
 
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ARPACK_SOLVER_H_INCLUDED  defined
