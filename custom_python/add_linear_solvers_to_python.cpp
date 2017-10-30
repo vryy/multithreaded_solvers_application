@@ -34,6 +34,7 @@
 #include "custom_linear_solvers/deflated_subdomain_nodal_based_cg_solver.h"
 #include "custom_linear_solvers/variable_solver.h"
 #include "custom_linear_solvers/scaling_solver2.h"
+#include "custom_linear_solvers/diagonal_fit_solver.h"
 #include "custom_preconditioners/solver_preconditioner.h"
 #include "custom_preconditioners/ilut_preconditioner.h"
 #include "custom_preconditioners/iluk_preconditioner.h"
@@ -164,6 +165,13 @@ namespace Python
         .def("AddSolver", &VariableSolverType::AddSolver)
         .def("AdditionalPhysicalDataIsNeeded", &VariableSolverType::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &VariableSolverType::ProvideAdditionalData)
+        ;
+
+        typedef DiagonalFitSolver<SparseSpaceType, LocalSpaceType> DiagonalFitSolverType;
+        class_<DiagonalFitSolverType, DiagonalFitSolverType::Pointer, bases<LinearSolverType> >
+        ("DiagonalFitSolver", init<LinearSolverType::Pointer>())
+        .def("AdditionalPhysicalDataIsNeeded", &DiagonalFitSolverType::AdditionalPhysicalDataIsNeeded)
+        .def("ProvideAdditionalData", &DiagonalFitSolverType::ProvideAdditionalData)
         ;
 
         typedef DeflatedCGSolver2<SparseSpaceType, LocalSpaceType> DeflatedCGSolver2Type;
