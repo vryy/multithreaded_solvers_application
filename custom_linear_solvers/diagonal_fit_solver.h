@@ -57,9 +57,18 @@ public:
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
 
     /**
-     * @param niter number of iterative refinements allowed
+     * Default Constructor
      */
-    DiagonalFitSolver(typename BaseType::Pointer pLinearSolver) : mpLinearSolver(pLinearSolver) {}
+    DiagonalFitSolver(typename BaseType::Pointer pLinearSolver)
+    : mpLinearSolver(pLinearSolver), mTol(1.0e-12)
+    {}
+
+    /**
+     * Extended Constructor
+     */
+    DiagonalFitSolver(typename BaseType::Pointer pLinearSolver, const double& Tol)
+    : mpLinearSolver(pLinearSolver), mTol(Tol)
+    {}
 
     /**
      * Destructor
@@ -98,7 +107,7 @@ public:
         mpLinearSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
 
         #ifdef CHECK_INCOMPATIBLE_ROWS
-        std::set<std::size_t> zero_rows = GetZeroRows(rA, 1.0e-12);
+        std::set<std::size_t> zero_rows = GetZeroRows(rA, mTol);
         std::set<std::size_t> incompatible_rows;
         std::set<std::size_t> incompatible_nodes;
 
@@ -106,7 +115,7 @@ public:
             if(rB(*it) != 0.0)
                 incompatible_rows.insert(*it);
 
-        std::cout << "incompatible_rows:";
+        std::cout << "incompatible_rows (at tol = " << mTol << "):";
         for(std::set<std::size_t>::iterator it = incompatible_rows.begin(); it != incompatible_rows.end(); ++it)
             std::cout << " " << *it;
         std::cout << std::endl;
@@ -125,7 +134,7 @@ public:
             }
         }
 
-        std::cout << "incompatible_nodes:";
+        std::cout << "incompatible_nodes (at tol = " << mTol << "):";
         for(std::set<std::size_t>::iterator it = incompatible_nodes.begin(); it != incompatible_nodes.end(); ++it)
             std::cout << " " << *it;
         std::cout << std::endl;
@@ -167,7 +176,7 @@ public:
         double diagonal_ave = 0.0;
         std::size_t diagonal_count = 0;
         std::size_t num_negative_rows = 0;
-        std::set<std::size_t> zero_rows = GetZeroRows(rA, 1.0e-12);
+        std::set<std::size_t> zero_rows = GetZeroRows(rA, mTol);
 
 //        std::vector<std::size_t> sample_rows = {96600, 96601, 96602, 106893, 106894, 106895};
 //        std::vector<std::size_t> sample_rows = {6999, 21807, 7000, 7349, 21814, 7350};
@@ -206,7 +215,7 @@ public:
         std::cout << std::endl;
 
         // print the zero rows
-        std::cout << zero_rows.size() << " zero rows detected; set diagonal to " << diagonal_ave
+        std::cout << zero_rows.size() << " zero rows (at tol = " << mTol << ") detected; set diagonal to " << diagonal_ave
                   << " and respective rhs to zero" << std::endl;
 
         // solve the system
@@ -255,6 +264,7 @@ public:
 private:
 
     typename BaseType::Pointer mpLinearSolver;
+    double mTol;
 
     template<typename TMatrixType>
     std::set<std::size_t> GetZeroRows(const TMatrixType& rA, const double& tol)

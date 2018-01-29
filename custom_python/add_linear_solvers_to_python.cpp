@@ -170,6 +170,7 @@ namespace Python
         typedef DiagonalFitSolver<SparseSpaceType, LocalSpaceType> DiagonalFitSolverType;
         class_<DiagonalFitSolverType, DiagonalFitSolverType::Pointer, bases<LinearSolverType> >
         ("DiagonalFitSolver", init<LinearSolverType::Pointer>())
+        .def(init<LinearSolverType::Pointer, const double&>())
         .def("AdditionalPhysicalDataIsNeeded", &DiagonalFitSolverType::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &DiagonalFitSolverType::ProvideAdditionalData)
         ;
