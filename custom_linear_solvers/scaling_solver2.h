@@ -152,6 +152,8 @@ public:
         mpSolver = pSolver;
         mScalingType = ScalingType; // 1: Ruiz scaling strategy
                                     // 2: MC29 scaling strategy
+                                    // 3: MC77 scaling strategy
+                                    // 4: diagonal scaling
         mCheckConditionNunber = false;
     }
 
@@ -296,27 +298,29 @@ public:
             std::cout << "ComputeConditionNumber completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
         }
 
-        std::cout << "CompuleScalingVector begin" << std::endl;
+        std::cout << "ComputeScalingVector begin, strategy = " << mScalingType << std::endl;
         start = OpenMPUtils::GetCurrentTime();
         VectorType DL, DR;
         switch(mScalingType)
         {
             case 1:
-                CompuleScalingVector(Acopy, DL, DR);
+                ComputeScalingVector(Acopy, DL, DR);
                 break;
             case 2:
-                CompuleScalingVector_mc29(Acopy, DL, DR);
+                ComputeScalingVector_mc29(Acopy, DL, DR);
                 break;
+            case 4:
+                ComputeScalingVector_diagonal(Acopy, DL, DR);
             default:
-                DR.resize(rX.size());
-                DL.resize(Bcopy.size());
+                DR.resize(rX.size(), false);
+                DL.resize(Bcopy.size(), false);
 //                KRATOS_WATCH(rX.size())
 //                KRATOS_WATCH(Bcopy.size())
                 std::fill(DL.begin(), DL.end(), 1.0);
                 std::fill(DR.begin(), DR.end(), 1.0);
                 break;
         }
-        std::cout << "CompuleScalingVector completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
+        std::cout << "ComputeScalingVector completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
 
         std::cout << "Scaling begin" << std::endl;
         start = OpenMPUtils::GetCurrentTime();
@@ -427,6 +431,9 @@ public:
                 break;
             case 2:
                 buffer << "MC29 scaling strategy";
+                break;
+            case 4:
+                buffer << "diagonal scaling strategy";
                 break;
             default:
                 buffer << "no scaling";
@@ -561,7 +568,7 @@ private:
     }
 
     // scaling vector computation using Ruiz algorithm
-    void CompuleScalingVector(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
+    void ComputeScalingVector(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
     {
         // Create a clone of matrix A
         SparseMatrixType rAc = rA;
@@ -571,8 +578,8 @@ private:
         std::size_t*   ja = rAc.index2_data().begin();
         double*         a = rAc.value_data().begin();
 
-        rDL.resize(n);
-        rDR.resize(n);
+        rDL.resize(n, false);
+        rDR.resize(n, false);
 
         // firstly initialize all scaling matrix to identity
         for(unsigned int i = 0; i < n; ++i)
@@ -636,7 +643,7 @@ private:
     }
 
     // scaling vector computation using MC29
-    int CompuleScalingVector_mc29(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
+    int ComputeScalingVector_mc29(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
     {
         int n = rA.size1();
         int ne = mcrow.size();
@@ -650,8 +657,8 @@ private:
         int lp = 0, ifail;
         mc29ad(&n, &n, &ne, a, &mcrow[0], &mccol[0], r, c, w, &lp, &ifail);
 
-        rDL.resize(n);
-        rDR.resize(n);
+        rDL.resize(n, false);
+        rDR.resize(n, false);
         for(unsigned int i = 0; i < n; ++i)
         {
             rDL(i) = exp(r[i]);
@@ -663,6 +670,20 @@ private:
         delete [] w;
 
         return ifail;
+    }
+
+    /// compute the scaling vector based on the diagonal
+    int ComputeScalingVector_diagonal(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
+    {
+        int n = rA.size1();
+        rDL.resize(n, false);
+        rDR.resize(n, false);
+        for(unsigned int i = 0; i < n; ++i)
+        {
+            double diag = rA(i, i);
+            rDL(i) = 1.0/sqrt(fabs(diag));
+            rDR(i) = 1.0/sqrt(fabs(diag));
+        }
     }
 
     /*
