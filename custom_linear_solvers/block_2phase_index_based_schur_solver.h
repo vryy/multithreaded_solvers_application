@@ -45,8 +45,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
 
-#if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SCHUR_SOLVER_H_INCLUDED )
-#define KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SHUR_SOLVER_H_INCLUDED
+#if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_2_PHASE_INDEX_BASED_SCHUR_SOLVER_H_INCLUDED )
+#define KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_2_PHASE_INDEX_BASED_SCHUR_SOLVER_H_INCLUDED
 
 
 // System includes
@@ -103,14 +103,14 @@ Then u in (1) is solved exactly
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class BlockPressureSchurSolver : public Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class Block2PhaseIndexBasedSchurSolver : public Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
 {
 public:
     ///@name Type Definitions
     ///@{
 
-    /// Counted pointer of  BlockPressureSchurSolver
-    KRATOS_CLASS_POINTER_DEFINITION( BlockPressureSchurSolver );
+    /// Counted pointer of  Block2PhaseIndexBasedSchurSolver
+    KRATOS_CLASS_POINTER_DEFINITION( Block2PhaseIndexBasedSchurSolver );
 
     typedef Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
 
@@ -131,18 +131,25 @@ public:
     ///@{
 
     /// Default constructor.
-    BlockPressureSchurSolver() : BaseType() {}
+    Block2PhaseIndexBasedSchurSolver() : BaseType() {}
 
-    BlockPressureSchurSolver(
+    Block2PhaseIndexBasedSchurSolver(
         typename LinearSolverType::Pointer pSolver
-    ) : BaseType(pSolver)
+    ) : BaseType(pSolver), mblock_size1(3), mblock_size2(1)
+    {}
+
+    Block2PhaseIndexBasedSchurSolver(
+        typename LinearSolverType::Pointer pSolver,
+        const unsigned int& block_size1,
+        const unsigned int& block_size2
+    ) : BaseType(pSolver), mblock_size1(block_size1), mblock_size2(block_size2)
     {}
 
     /// Copy constructor.
-     BlockPressureSchurSolver(const  BlockPressureSchurSolver& Other) : BaseType(Other) {}
+     Block2PhaseIndexBasedSchurSolver(const  Block2PhaseIndexBasedSchurSolver& Other) : BaseType(Other) {}
 
     /// Destructor.
-    virtual ~ BlockPressureSchurSolver() {}
+    virtual ~ Block2PhaseIndexBasedSchurSolver() {}
 
 
     ///@}
@@ -150,7 +157,7 @@ public:
     ///@{
 
     /// Assignment operator.
-     BlockPressureSchurSolver& operator=(const  BlockPressureSchurSolver& Other)
+     Block2PhaseIndexBasedSchurSolver& operator=(const  Block2PhaseIndexBasedSchurSolver& Other)
     {
         BaseType::operator=(Other);
         return *this;
@@ -160,32 +167,13 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
-    {
-        return true;
-    }
-
-    virtual void ProvideAdditionalData(
-        SparseMatrixType& rA,
-        VectorType& rX,
-        VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
     {
         //count pressure dofs
-        unsigned int n_pressure_dofs = 0;
-        unsigned int tot_active_dofs = 0;
+        unsigned int n_nodes = rA.size1() / (mblock_size1 + mblock_size2);
+        unsigned int n_pressure_dofs = n_nodes * mblock_size2;
+        unsigned int tot_active_dofs = rA.size1();
         unsigned int system_size = TSparseSpaceType::Size(rB);
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
-            if (it->EquationId() < system_size)
-            {
-                ++tot_active_dofs;
-                if ( (it->GetVariable().Key() == WATER_PRESSURE) || (it->GetVariable().Key() == AIR_PRESSURE) )
-                    ++n_pressure_dofs;
-            }
-        if (tot_active_dofs != rA.size1() )
-            KRATOS_THROW_ERROR (std::logic_error,"total system size does not coincide with the free dof map","");
 
         KRATOS_WATCH(tot_active_dofs)
         KRATOS_WATCH(n_pressure_dofs)
@@ -198,35 +186,32 @@ public:
         BaseType::mis_pressure_block.resize(tot_active_dofs, false);
         //construct aux_lists as needed
         //"other_counter[i]" i will contain the position in the global system of the i-th NON-pressure node
-        //"pressure_counter[i]" will contain the in the global system of the i-th NON-pressure node
+        //"pressure_counter[i]" will contain the in the global system of the i-th pressure node
         //
         //mglobal_to_local_indexing[i] will contain the position in the local blocks of the
         unsigned int pressure_counter = 0;
         unsigned int other_counter = 0;
         unsigned int global_pos;
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (unsigned int i = 0; i < tot_active_dofs; ++i)
         {
-            global_pos = it->EquationId();
-            if (global_pos < system_size)
+            global_pos = i;
+            if ( global_pos % (mblock_size1 + mblock_size2) >= mblock_size1 )
             {
-                if ( (it->GetVariable().Key() == WATER_PRESSURE) || (it->GetVariable().Key() == AIR_PRESSURE) )
-                {
-                    BaseType::mpressure_indices[pressure_counter] = global_pos;
-                    BaseType::mglobal_to_local_indexing[global_pos] = pressure_counter;
-                    BaseType::mis_pressure_block[global_pos] = true;
-                    ++pressure_counter;
-                }
-                else
-                {
-                    BaseType::mother_indices[other_counter] = global_pos;
-                    BaseType::mglobal_to_local_indexing[global_pos] = other_counter;
-                    BaseType::mis_pressure_block[global_pos] = false;
-                    ++other_counter;
-                }
+                BaseType::mpressure_indices[pressure_counter] = global_pos;
+                BaseType::mglobal_to_local_indexing[global_pos] = pressure_counter;
+                BaseType::mis_pressure_block[global_pos] = true;
+                ++pressure_counter;
+            }
+            else
+            {
+                BaseType::mother_indices[other_counter] = global_pos;
+                BaseType::mglobal_to_local_indexing[global_pos] = other_counter;
+                BaseType::mis_pressure_block[global_pos] = false;
+                ++other_counter;
             }
         }
 
-        BaseType::mpSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
+        BaseType::Initialize(rA, rX, rB);
     }
 
     ///@}
@@ -318,6 +303,8 @@ private:
     ///@name Member Variables
     ///@{
 
+    unsigned int mblock_size1;
+    unsigned int mblock_size2;
 
     ///@}
     ///@name Private Operators
@@ -336,7 +323,7 @@ private:
 
     ///@}
 
-}; // Class  BlockPressureSchurSolver
+}; // Class  Block2PhaseIndexBasedSchurSolver
 
 ///@}
 
@@ -351,14 +338,14 @@ private:
 
 /// input stream function
 template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >> (std::istream& IStream, BlockPressureSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
+inline std::istream& operator >> (std::istream& IStream, Block2PhaseIndexBasedSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
 {
     return IStream;
 }
 
 /// output stream function
 template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream, const  BlockPressureSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
+inline std::ostream& operator << (std::ostream& OStream, const  Block2PhaseIndexBasedSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
 {
     rThis.PrintInfo(OStream);
     OStream << std::endl;
@@ -374,5 +361,5 @@ inline std::ostream& operator << (std::ostream& OStream, const  BlockPressureSch
 #undef CHECK_DIAGONAL_DOMINANCE
 #undef STRINGIFY
 
-#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SHUR_SOLVER_H_INCLUDED  defined 
+#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_2_PHASE_INDEX_BASED_SCHUR_SOLVER_H_INCLUDED  defined 
 

@@ -1,5 +1,5 @@
-//   
-//   Project Name:        Kratos       
+//
+//   Project Name:        Kratos
 //   Last modified by:    $Author: hbui $
 //   Date:                $Date: Apr 19, 2012 $
 //   Revision:            $Revision: 1.0 $
@@ -7,9 +7,9 @@
 //
 
 
-// System includes 
+// System includes
 
-// External includes 
+// External includes
 #include <boost/python.hpp>
 
 // Project includes
@@ -28,6 +28,8 @@
 #include "custom_linear_solvers/bicgstab_solver.h"
 #include "custom_linear_solvers/bicgstab_block_pressure_solver.h"
 #include "custom_linear_solvers/block_pressure_staggered_solver.h"
+#include "custom_linear_solvers/block_2phase_schur_solver.h"
+#include "custom_linear_solvers/block_2phase_index_based_schur_solver.h"
 #include "custom_linear_solvers/block_pressure_schur_solver.h"
 #include "custom_linear_solvers/bicgstab_scaling_solver.h"
 #include "custom_linear_solvers/deflated_cg_solver_2.h"
@@ -35,13 +37,16 @@
 #include "custom_linear_solvers/variable_solver.h"
 #include "custom_linear_solvers/scaling_solver2.h"
 #include "custom_linear_solvers/diagonal_fit_solver.h"
+#include "custom_linear_solvers/richardson_solver.h"
 #include "custom_preconditioners/solver_preconditioner.h"
 #include "custom_preconditioners/ilut_preconditioner.h"
 #include "custom_preconditioners/iluk_preconditioner.h"
 #include "custom_preconditioners/ilu_lr_preconditioner.h"
 #include "custom_preconditioners/ilu0_lr_preconditioner.h"
 #include "custom_preconditioners/ilut_lr_preconditioner.h"
-#include "custom_preconditioners/block_pressure_preconditioner.h"
+#include "custom_preconditioners/block_2phase_schur_preconditioner.h"
+#include "custom_preconditioners/block_pressure_schur_preconditioner.h"
+#include "custom_preconditioners/block_pressure_index_based_schur_preconditioner.h"
 #include "custom_preconditioners/block_jacobi_pressure_preconditioner.h"
 #include "custom_preconditioners/block_jacobi_preconditioner.h"
 #include "custom_preconditioners/block_jacobi_nodal_based_preconditioner.h"
@@ -59,14 +64,14 @@
 
 namespace Kratos
 {
-    
+
 namespace Python
 {
     void MultithreadedSolversApplication_AddLinearSolversToPython()
     {
         typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
         typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
-        
+
         typedef LinearSolver<SparseSpaceType,  LocalSpaceType> LinearSolverType;
         typedef DirectSolver<SparseSpaceType,  LocalSpaceType> DirectSolverType;
         typedef IterativeSolver<SparseSpaceType, LocalSpaceType> IterativeSolverType;
@@ -77,7 +82,7 @@ namespace Python
         //***************************************************************************
         //linear solvers
         //***************************************************************************
-        
+
         #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_UMFPACK
 	    typedef UmfPackSolver<SparseSpaceType, LocalSpaceType> UmfPackSolverType;
 	    class_<UmfPackSolverType, UmfPackSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
@@ -90,7 +95,7 @@ namespace Python
         class_<SuperLUMTSolverType, SuperLUMTSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
         ( "SuperLUMTSolver", init<>() )
         ;
-        
+
         #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
         typedef PardisoSolver<SparseSpaceType, LocalSpaceType> PardisoSolverType;
 	    class_<PardisoSolverType, PardisoSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
@@ -99,7 +104,7 @@ namespace Python
 //        .def(self_ns::str(self))
         ;
         #endif
-        
+
         typedef GmresSolver<SparseSpaceType, LocalSpaceType> GmresSolverType;
         class_<GmresSolverType, GmresSolverType::Pointer, bases<IterativeSolverType> >
         ("GmresSolver", init<double, unsigned int, unsigned int, PreconditionerType::Pointer>())
@@ -112,7 +117,7 @@ namespace Python
         .def(init<double, unsigned int, std::string, PreconditionerType::Pointer>())
         .def(self_ns::str(self))
         ;
-        
+
         typedef BicgstabBlockPressureSolver<SparseSpaceType, LocalSpaceType> BicgstabBlockPressureSolverType;
         class_<BicgstabBlockPressureSolverType, BicgstabBlockPressureSolverType::Pointer, bases<LinearSolverType> >
         ("BicgstabBlockPressureSolver", init<double, unsigned int, PreconditionerType::Pointer, double, double, double, double>())
@@ -142,7 +147,7 @@ namespace Python
         .def("DisableCheckConditionNumber", &ScalingSolver2Type::DisableCheckConditionNumber)
         .def("EnableCheckConditionNumber", &ScalingSolver2Type::EnableCheckConditionNumber)
         ;
-        
+
         typedef BlockPressureStaggeredSolver<SparseSpaceType, LocalSpaceType> BlockPressureStaggeredSolverType;
         class_<BlockPressureStaggeredSolverType, BlockPressureStaggeredSolverType::Pointer, bases<LinearSolverType> >
         ("BlockPressureStaggeredSolver", init<LinearSolverType::Pointer, LinearSolverType::Pointer>())
@@ -151,12 +156,29 @@ namespace Python
         .def("ProvideAdditionalData", &BlockPressureStaggeredSolverType::ProvideAdditionalData)
         ;
 
+        typedef Block2PhaseSchurSolver<SparseSpaceType, LocalSpaceType> Block2PhaseSchurSolverType;
+        class_<Block2PhaseSchurSolverType, Block2PhaseSchurSolverType::Pointer, bases<LinearSolverType> >
+        ("Block2PhaseSchurSolver", init<LinearSolverType::Pointer>())
+        .def("AdditionalPhysicalDataIsNeeded", &Block2PhaseSchurSolverType::AdditionalPhysicalDataIsNeeded)
+        .def("ProvideAdditionalData", &Block2PhaseSchurSolverType::ProvideAdditionalData)
+        .def(self_ns::str(self))
+        ;
+
         typedef BlockPressureSchurSolver<SparseSpaceType, LocalSpaceType> BlockPressureSchurSolverType;
-        class_<BlockPressureSchurSolverType, BlockPressureSchurSolverType::Pointer, bases<LinearSolverType> >
+        class_<BlockPressureSchurSolverType, BlockPressureSchurSolverType::Pointer, bases<Block2PhaseSchurSolverType> >
         ("BlockPressureSchurSolver", init<LinearSolverType::Pointer>())
         .def(self_ns::str(self))
         .def("AdditionalPhysicalDataIsNeeded", &BlockPressureSchurSolverType::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &BlockPressureSchurSolverType::ProvideAdditionalData)
+        ;
+
+        typedef Block2PhaseIndexBasedSchurSolver<SparseSpaceType, LocalSpaceType> Block2PhaseIndexBasedSchurSolverType;
+        class_<Block2PhaseIndexBasedSchurSolverType, Block2PhaseIndexBasedSchurSolverType::Pointer, bases<Block2PhaseSchurSolverType> >
+        ("Block2PhaseIndexBasedSchurSolver", init<LinearSolverType::Pointer>())
+        .def(init<LinearSolverType::Pointer, const unsigned int&, const unsigned int&>())
+        .def("AdditionalPhysicalDataIsNeeded", &Block2PhaseIndexBasedSchurSolverType::AdditionalPhysicalDataIsNeeded)
+        .def("ProvideAdditionalData", &Block2PhaseIndexBasedSchurSolverType::ProvideAdditionalData)
+        .def(self_ns::str(self))
         ;
 
         typedef VariableSolver<SparseSpaceType, LocalSpaceType> VariableSolverType;
@@ -189,6 +211,17 @@ namespace Python
         .def(self_ns::str(self))
         .def("AdditionalPhysicalDataIsNeeded", &DeflatedSubdomainNodalBasedCGSolverType::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &DeflatedSubdomainNodalBasedCGSolverType::ProvideAdditionalData)
+        ;
+
+        typedef RichardsonSolver<SparseSpaceType, LocalSpaceType> RichardsonSolverType;
+        class_<RichardsonSolverType, RichardsonSolverType::Pointer, bases<IterativeSolverType> >
+        ("RichardsonSolver", init<double, double, unsigned int, PreconditionerType::Pointer>())
+        .def(init<double>())
+        .def(init<double, double, unsigned int>())
+        .def(init<double, double, unsigned int, std::string, PreconditionerType::Pointer>())
+        .def(self_ns::str(self))
+        .def("AdditionalPhysicalDataIsNeeded", &RichardsonSolverType::AdditionalPhysicalDataIsNeeded)
+        .def("ProvideAdditionalData", &RichardsonSolverType::ProvideAdditionalData)
         ;
 
         //***************************************************************************
@@ -242,10 +275,28 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef BlockPressurePreconditioner<SparseSpaceType, LocalSpaceType> BlockPressurePreconditionerType;
-        class_<BlockPressurePreconditionerType, BlockPressurePreconditionerType::Pointer, bases<PreconditionerType> >
-        ("BlockPressurePreconditioner", init<PreconditionerType::Pointer, PreconditionerType::Pointer, std::string>())
-        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, std::string, LinearSolverType::Pointer>())
+        typedef Block2PhaseSchurPreconditioner<SparseSpaceType, LocalSpaceType> Block2PhaseSchurPreconditionerType;
+        class_<Block2PhaseSchurPreconditionerType, Block2PhaseSchurPreconditionerType::Pointer, bases<PreconditionerType> >
+        ("Block2PhaseSchurPreconditionerType", init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&>())
+        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer>())
+        .def(self_ns::str(self))
+        ;
+
+        typedef BlockPressureSchurPreconditioner<SparseSpaceType, LocalSpaceType> BlockPressureSchurPreconditionerType;
+        class_<BlockPressureSchurPreconditionerType, BlockPressureSchurPreconditionerType::Pointer, bases<Block2PhaseSchurPreconditionerType> >
+        ("BlockPressureSchurPreconditioner", init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&>())
+        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, const std::string&>())
+        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer>())
+        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer, const std::string&>())
+        .def(self_ns::str(self))
+        ;
+
+        typedef BlockPressureIndexBasedSchurPreconditioner<SparseSpaceType, LocalSpaceType> BlockPressureIndexBasedSchurPreconditionerType;
+        class_<BlockPressureIndexBasedSchurPreconditionerType, BlockPressureIndexBasedSchurPreconditionerType::Pointer, bases<Block2PhaseSchurPreconditionerType> >
+        ("BlockPressureIndexBasedSchurPreconditioner", init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, const std::size_t&, const std::size_t&>())
+        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer, const std::size_t&, const std::size_t&>())
+        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, const std::string&, const std::size_t&, const std::size_t&>())
+        .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer, const std::string&, const std::size_t&, const std::size_t&>())
         .def(self_ns::str(self))
         ;
 
@@ -279,7 +330,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
     }
-	
+
 }  // namespace Python.
 
 } // Namespace Kratos

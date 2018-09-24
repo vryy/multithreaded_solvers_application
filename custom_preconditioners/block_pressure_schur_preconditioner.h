@@ -35,40 +35,39 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ==============================================================================
 */
-
 //
 //   Project Name:        Kratos
 //   Last Modified by:    $Author: hbui $
-//   Date:                $Date: 7 Nov 2014 $
-//   Revision:            $Revision: 1.1 $
+//   Date:                $Date: 26 Aug 2014 $
+//   Revision:            $Revision: 1.2 $
 //
 //
 
+#if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SCHUR_PRECONDITIONER_H_INCLUDED)
+#define KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SCHUR_PRECONDITIONER_H_INCLUDED
 
-#if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SCHUR_SOLVER_H_INCLUDED )
-#define KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SHUR_SOLVER_H_INCLUDED
+
 
 
 // System includes
-#include <cmath>
+
 
 
 // External includes
-#include "boost/smart_ptr.hpp"
+#include <boost/smart_ptr.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
 
 // Project includes
 #include "includes/define.h"
+#include "utilities/openmp_utils.h"
 #include "linear_solvers/linear_solver.h"
-#include "custom_linear_solvers/block_2phase_schur_solver.h"
-
-
-#define STRINGIFY(name) #name
-// #define CHECK_DIAGONAL_DOMINANCE
+#include "custom_preconditioners/block_2phase_schur_preconditioner.h"
 
 
 namespace Kratos
 {
+
 
 ///@name Kratos Globals
 ///@{
@@ -89,41 +88,37 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
 
-/// Short class definition.
-/** Detail class definition.
-THis solver solve the coupled u-p problem by using a staggerred scheme:
-[A  B1][u] = [ru]
-[B2  C][p]   [rp]
+///@name  Preconditioners
+///@{
 
-=> u = A^(-1) * (ru -B1 * p)                                (1)
-   (C - B2 * A^(-1) * B1) * p = (rp - B2 * A^(-1) * ru)     (2)
-   
-Firstly p in (2) is solved approximately by approximating A^(-1) by diag(A)^(-1) (remarks: A needs to be diagonal-dominant for this to be a good approximation)
-Then u in (1) is solved exactly
+/// BlockPressureSchurPreconditioner class.
+/**
+REF: White, Borja
 */
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class BlockPressureSchurSolver : public Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+template<class TSparseSpaceType, class TDenseSpaceType>
+class BlockPressureSchurPreconditioner : public Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>
 {
 public:
     ///@name Type Definitions
     ///@{
 
-    /// Counted pointer of  BlockPressureSchurSolver
-    KRATOS_CLASS_POINTER_DEFINITION( BlockPressureSchurSolver );
+    /// Pointer definition of BlockPressureSchurPreconditioner
+    KRATOS_CLASS_POINTER_DEFINITION (BlockPressureSchurPreconditioner);
 
-    typedef Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
 
-    typedef typename BaseType::LinearSolverType LinearSolverType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> PreconditionerType;
+
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
 
     typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
 
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
-    
+
     typedef std::size_t  SizeType;
-    
+
     typedef std::size_t  IndexType;
 
     ///@}
@@ -131,18 +126,48 @@ public:
     ///@{
 
     /// Default constructor.
-    BlockPressureSchurSolver() : BaseType() {}
+    BlockPressureSchurPreconditioner(
+        typename PreconditionerType::Pointer prec_A,
+        typename PreconditionerType::Pointer prec_S,
+        const std::string& SchurComputeMode)
+    : BaseType(prec_A, prec_S, SchurComputeMode)
+    {}
 
-    BlockPressureSchurSolver(
-        typename LinearSolverType::Pointer pSolver
-    ) : BaseType(pSolver)
+    BlockPressureSchurPreconditioner(
+        typename PreconditionerType::Pointer prec_A,
+        typename PreconditionerType::Pointer prec_S,
+        const std::string& SchurComputeMode,
+        const std::string& InverseOption)
+    : BaseType(prec_A, prec_S, SchurComputeMode, InverseOption)
+    {}
+
+    BlockPressureSchurPreconditioner(
+        typename PreconditionerType::Pointer prec_A,
+        typename PreconditionerType::Pointer prec_S,
+        const std::string& SchurComputeMode,
+        typename LinearSolverType::Pointer solver_S)
+    : BaseType(prec_A, prec_S, SchurComputeMode, solver_S)
+    {}
+
+    BlockPressureSchurPreconditioner(
+        typename PreconditionerType::Pointer prec_A,
+        typename PreconditionerType::Pointer prec_S,
+        const std::string& SchurComputeMode,
+        typename LinearSolverType::Pointer solver_S,
+        const std::string& InverseOption)
+    : BaseType(prec_A, prec_S, SchurComputeMode, solver_S, InverseOption)
     {}
 
     /// Copy constructor.
-     BlockPressureSchurSolver(const  BlockPressureSchurSolver& Other) : BaseType(Other) {}
+    BlockPressureSchurPreconditioner(const BlockPressureSchurPreconditioner& Other)
+    : BaseType(Other)
+    {}
+
 
     /// Destructor.
-    virtual ~ BlockPressureSchurSolver() {}
+    virtual ~BlockPressureSchurPreconditioner()
+    {
+    }
 
 
     ///@}
@@ -150,11 +175,12 @@ public:
     ///@{
 
     /// Assignment operator.
-     BlockPressureSchurSolver& operator=(const  BlockPressureSchurSolver& Other)
+    BlockPressureSchurPreconditioner& operator=(const BlockPressureSchurPreconditioner& Other)
     {
         BaseType::operator=(Other);
         return *this;
     }
+
 
     ///@}
     ///@name Operations
@@ -164,6 +190,7 @@ public:
     {
         return true;
     }
+
 
     virtual void ProvideAdditionalData(
         SparseMatrixType& rA,
@@ -178,12 +205,15 @@ public:
         unsigned int tot_active_dofs = 0;
         unsigned int system_size = TSparseSpaceType::Size(rB);
         for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        {
             if (it->EquationId() < system_size)
             {
                 ++tot_active_dofs;
                 if ( (it->GetVariable().Key() == WATER_PRESSURE) || (it->GetVariable().Key() == AIR_PRESSURE) )
                     ++n_pressure_dofs;
             }
+        }
+
         if (tot_active_dofs != rA.size1() )
             KRATOS_THROW_ERROR (std::logic_error,"total system size does not coincide with the free dof map","");
 
@@ -226,7 +256,11 @@ public:
             }
         }
 
-        BaseType::mpSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
+//        if(BaseType::mprec_A->AdditionalPhysicalDataIsNeeded())
+//            BaseType::mprec_A->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part); //TODO: the parameters need to be customized to the block A
+//
+//        if(BaseType::mprec_S->AdditionalPhysicalDataIsNeeded())
+//            BaseType::mprec_S->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part); //TODO: the parameters need to be customized to the block S
     }
 
     ///@}
@@ -247,21 +281,20 @@ public:
     virtual std::string Info() const
     {
         std::stringstream buffer;
-        buffer << "Linear solver using Schur complement reduction scheme for displacement-pressure" << std::endl;
-        buffer << BaseType::Info();
+        buffer << BaseType::Info() << " for displacement-pressure system";
         return buffer.str();
     }
 
+
     /// Print information about this object.
-    void PrintInfo(std::ostream& OStream) const
+    virtual void  PrintInfo(std::ostream& OStream) const
     {
         OStream << Info();
     }
 
-    /// Print object's data.
-    void PrintData(std::ostream& OStream) const
+
+    virtual void PrintData(std::ostream& OStream) const
     {
-        BaseType::PrintData(OStream);
     }
 
 
@@ -313,7 +346,6 @@ private:
     ///@name Static Member Variables
     ///@{
 
-
     ///@}
     ///@name Member Variables
     ///@{
@@ -330,13 +362,26 @@ private:
 
 
     ///@}
-    ///@name Un accessible methods
+    ///@name Private  Access
+    ///@{
+
+
+    ///@}
+    ///@name Private Inquiry
+    ///@{
+
+
+    ///@}
+    ///@name Unaccessible methods
     ///@{
 
 
     ///@}
 
-}; // Class  BlockPressureSchurSolver
+}; // Class BlockPressureSchurPreconditioner
+
+///@}
+
 
 ///@}
 
@@ -350,19 +395,23 @@ private:
 
 
 /// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >> (std::istream& IStream, BlockPressureSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
+template<class TSparseSpaceType, class TDenseSpaceType>
+inline std::istream& operator >> (std::istream& IStream,
+                                  BlockPressureSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
 {
     return IStream;
 }
 
+
 /// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream, const  BlockPressureSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
+template<class TSparseSpaceType, class TDenseSpaceType>
+inline std::ostream& operator << (std::ostream& OStream,
+                                  const BlockPressureSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
 {
     rThis.PrintInfo(OStream);
     OStream << std::endl;
     rThis.PrintData(OStream);
+
 
     return OStream;
 }
@@ -371,8 +420,6 @@ inline std::ostream& operator << (std::ostream& OStream, const  BlockPressureSch
 
 }  // namespace Kratos.
 
-#undef CHECK_DIAGONAL_DOMINANCE
-#undef STRINGIFY
 
-#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SHUR_SOLVER_H_INCLUDED  defined 
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SCHUR_PRECONDITIONER_H_INCLUDED  defined
 
