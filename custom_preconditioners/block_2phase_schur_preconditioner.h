@@ -56,6 +56,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // External includes
 #include <boost/smart_ptr.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/progress.hpp>
 
 
 // Project includes
@@ -116,6 +117,8 @@ public:
 
     typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
 
+    typedef boost::shared_ptr<SparseMatrixType> SparseMatrixPointerType;
+
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
@@ -135,6 +138,7 @@ public:
         const std::string& SchurComputeMode
     ) : BaseType(), mprec_A(prec_A), mprec_S(prec_S), mSchurComputeMode(SchurComputeMode)
     , mInverseOption("SL")
+    , mpS(SparseMatrixPointerType(new SparseMatrixType()))
     {
         if(mSchurComputeMode == std::string("SCHUR_SOLVER"))
             KRATOS_THROW_ERROR(std::logic_error, "In this Schur complement compute mode, a solver must be provided", "")
@@ -147,6 +151,7 @@ public:
         const std::string& InverseOption
     ) : BaseType(), mprec_A(prec_A), mprec_S(prec_S), mSchurComputeMode(SchurComputeMode)
     , mInverseOption(InverseOption)
+    , mpS(SparseMatrixPointerType(new SparseMatrixType()))
     {
         if(mSchurComputeMode == std::string("SCHUR_SOLVER"))
             KRATOS_THROW_ERROR(std::logic_error, "In this Schur complement compute mode, a solver must be provided", "")
@@ -159,7 +164,11 @@ public:
         typename LinearSolverType::Pointer solver_S
     ) : BaseType(), mprec_A(prec_A), mprec_S(prec_S), mSchurComputeMode(SchurComputeMode)
     , msolver_S(solver_S), mInverseOption("SL")
-    {}
+    , mpS(SparseMatrixPointerType(new SparseMatrixType()))
+    {
+        if(mSchurComputeMode != std::string("SCHUR_SOLVER"))
+            KRATOS_THROW_ERROR(std::logic_error, "Only SCHUR_SOLVER is supported", "")
+    }
 
     Block2PhaseSchurPreconditioner(
         typename BaseType::Pointer prec_A,
@@ -169,7 +178,11 @@ public:
         const std::string& InverseOption
     ) : BaseType(), mprec_A(prec_A), mprec_S(prec_S), mSchurComputeMode(SchurComputeMode)
     , msolver_S(solver_S), mInverseOption(InverseOption)
-    {}
+    , mpS(SparseMatrixPointerType(new SparseMatrixType()))
+    {
+        if(mSchurComputeMode != std::string("SCHUR_SOLVER"))
+            KRATOS_THROW_ERROR(std::logic_error, "Only SCHUR_SOLVER is supported", "")
+    }
 
     /// Copy constructor.
     Block2PhaseSchurPreconditioner(const Block2PhaseSchurPreconditioner& Other)
@@ -206,19 +219,31 @@ public:
     ///@name Operations
     ///@{
 
+    void SetSchurMatrix(SparseMatrixPointerType pS)
+    {
+        mpS = pS;
+        mSchurComputeMode = "SCHUR_GIVEN";
+    }
+
     virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
     {
         std::cout << "Fill blocks begin" << std::endl;
         double start = OpenMPUtils::GetCurrentTime();
-        this->FillBlockMatrices(rA, mA, mB1, mB2, mC);
-        KRATOS_WATCH(this->ComputeFrobeniusNorm(mA))
-        KRATOS_WATCH(this->ComputeFrobeniusNorm(mB1))
-        KRATOS_WATCH(this->ComputeFrobeniusNorm(mB2))
-        KRATOS_WATCH(this->ComputeFrobeniusNorm(mC))
+        MultithreadedSolversMathUtils::FillBlockMatrices(rA,
+            mother_indices, mpressure_indices, mglobal_to_local_indexing, mis_pressure_block,
+            mA, mB1, mB2, mC);
+        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mA))
+        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mB1))
+        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mB2))
+        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mC))
         // KRATOS_WATCH(mA)
         // KRATOS_WATCH(mB1)
         // KRATOS_WATCH(mB2)
         // KRATOS_WATCH(mC)
+        // WriteMatrixMarketMatrix("A.mm", mA, false);
+        // WriteMatrixMarketMatrix("B1.mm", mB1, false);
+        // WriteMatrixMarketMatrix("B2.mm", mB2, false);
+        // WriteMatrixMarketMatrix("C.mm", mC, false);
         std::cout << "Fill blocks completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
 
         TSparseSpaceType::Resize(mp, mpressure_indices.size());
@@ -232,21 +257,31 @@ public:
 //        KRATOS_WATCH(norm_frobenius(mB2))
 //        KRATOS_WATCH(norm_frobenius(mC))
 
-//        KRATOS_WATCH(ComputeFrobeniusNorm(mA))
-//        KRATOS_WATCH(ComputeFrobeniusNorm(mB1))
-//        KRATOS_WATCH(ComputeFrobeniusNorm(mB2))
-//        KRATOS_WATCH(ComputeFrobeniusNorm(mC))
+//        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mA))
+//        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mB1))
+//        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mB2))
+//        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mC))
 
 //        mprec_A->Initialize(mA, mu, mru);
         mprec_A->Initialize(mA, mu, rB); //take rB as temporary, but it should not be
         std::cout << "mprec_A is initialized" << std::endl;
+        // KRATOS_WATCH(mSchurComputeMode)
+        // KRATOS_WATCH(mpS)
+        // KRATOS_WATCH(mpS->size1())
+        // KRATOS_WATCH(mpS->size2())
+        // // KRATOS_WATCH((*mpS)(0, 0))
+        // KRATOS_WATCH(*mpS)
 
-        this->CalculateSchurComplement(mS, mA, mB1, mB2, mC);
-        KRATOS_WATCH(this->ComputeFrobeniusNorm(mS))
-        std::cout << "Schur complement is computed" << std::endl;
+        if (mSchurComputeMode != std::string("SCHUR_GIVEN"))
+        {
+            this->CalculateSchurComplement(*mpS, mA, mB1, mB2, mC);
+            std::cout << "Schur complement is computed" << std::endl;
+        }
+        KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(*mpS))
+        // WriteMatrixMarketMatrix("S.mm", *mpS, false);
 
-//        mprec_S->Initialize(mS, mp, mrp);
-        mprec_S->Initialize(mS, mp, rB); //take rB as temporary, but it should not be
+//        mprec_S->Initialize(*mpS, mp, mrp);
+        mprec_S->Initialize(*mpS, mp, rB); //take rB as temporary, but it should not be
         std::cout << "mprec_S is initialized" << std::endl;
 
         std::cout << "Block preconditioner is initialized" << std::endl;
@@ -298,8 +333,8 @@ public:
     */
     virtual VectorType& ApplyLeft(VectorType& rX)
     {
-        GetUPart(rX, mu);
-        GetPPart(rX, mp);
+        MultithreadedSolversMathUtils::GetPart(rX, mother_indices, mu);
+        MultithreadedSolversMathUtils::GetPart(rX, mpressure_indices, mp);
 
         if (mInverseOption == std::string("SL")) // lower triangle inversion
         {
@@ -350,8 +385,8 @@ public:
             KRATOS_THROW_ERROR(std::logic_error, "Unknown option", mInverseOption)
         }
 
-        WriteUPart(rX, mu);
-        WritePPart(rX, mp);
+        MultithreadedSolversMathUtils::WritePart(rX, mother_indices, mu);
+        MultithreadedSolversMathUtils::WritePart(rX, mpressure_indices, mp);
 
         return rX;
     }
@@ -421,7 +456,7 @@ protected:
 
     std::vector<SizeType> mpressure_indices;
     std::vector<SizeType> mother_indices;
-    std::vector<int> mglobal_to_local_indexing;
+    std::vector<SizeType> mglobal_to_local_indexing;
     std::vector<int> mis_pressure_block;
 
     typename BaseType::Pointer mprec_A;
@@ -437,42 +472,6 @@ protected:
     ///@name Protected Operations
     ///@{
 
-    //this function extracts from a vector which has the size of the
-    //overall r, the part that corresponds to u-dofs
-    void GetUPart (const VectorType& rtot, VectorType& ru)
-    {
-        if (ru.size() != mother_indices.size() )
-            ru.resize (mother_indices.size(), false);
-        #pragma omp parallel for
-        for (SizeType i = 0; i < ru.size(); ++i)
-            ru[i] = rtot[mother_indices[i]];
-    }
-
-    //this function extracts from a vector which has the size of the
-    //overall r, the part that corresponds to p-dofs
-    void GetPPart (const VectorType& rtot, VectorType& rp)
-    {
-        if (rp.size() != mpressure_indices.size() )
-            rp.resize (mpressure_indices.size(), false);
-        #pragma omp parallel for
-        for (SizeType i = 0; i < rp.size(); ++i)
-            rp[i] = rtot[mpressure_indices[i]];
-    }
-
-    void WriteUPart (VectorType& rtot, const VectorType& ru)
-    {
-        #pragma omp parallel for
-        for (SizeType i = 0; i < ru.size(); ++i)
-            rtot[mother_indices[i]] = ru[i];
-    }
-
-    void WritePPart (VectorType& rtot, const VectorType& rp)
-    {
-        #pragma omp parallel for
-        for (SizeType i = 0; i < rp.size(); ++i)
-            rtot[mpressure_indices[i]] = rp[i];
-    }
-
     void CalculateSchurComplement(
         SparseMatrixType& S,
         SparseMatrixType& A,
@@ -484,24 +483,27 @@ protected:
 
         TSparseSpaceType::Resize(S, mpressure_indices.size(), mpressure_indices.size());
 
-        //allocate the Schur complement
-        ConstructSystemMatrix(S, B1, B2, C); //this is only effective for Schur_Diagonal & Schur_DiagonalLumping mode
-
         if(mSchurComputeMode == std::string("SCHUR_DIAGONAL"))
         {
+            //allocate the Schur complement
+            // ConstructSystemMatrix(S, B1, B2, C);
             // calculate the Schur by diagonal approximant of A
             Vector approxA(mother_indices.size());
             ComputeDiagonalByExtracting(A, approxA);
             //fill the Schur complement
-            CalculateSchurComplementByDiagonalApproximation(S, A, B1, B2, C, approxA);
+            // CalculateSchurComplementByDiagonalApproximation(S, A, B1, B2, C, approxA);
+            CalculateSchurComplementByDiagonalApproximationSimple(S, A, B1, B2, C, approxA);
         }
         else if(mSchurComputeMode == std::string("SCHUR_DIAGONAL_LUMPING"))
         {
+            //allocate the Schur complement
+            // ConstructSystemMatrix(S, B1, B2, C);
             // calculate the Schur by diagonal approximant of A
             Vector approxA(mother_indices.size());
             ComputeDiagonalByLumping(A, approxA);
             //fill the Schur complement
-            CalculateSchurComplementByDiagonalApproximation(S, A, B1, B2, C, approxA);
+            // CalculateSchurComplementByDiagonalApproximation(S, A, B1, B2, C, approxA);
+            CalculateSchurComplementByDiagonalApproximationSimple(S, A, B1, B2, C, approxA);
         }
         else if(mSchurComputeMode == std::string("SCHUR_PRECONDITIONER"))
         {
@@ -550,7 +552,7 @@ private:
     SparseMatrixType mB1;
     SparseMatrixType mB2;
     SparseMatrixType mC;
-    SparseMatrixType mS;
+    SparseMatrixPointerType mpS;
 
     VectorType mp;
     VectorType mu;
@@ -566,81 +568,6 @@ private:
     ///@}
     ///@name Private Operations
     ///@{
-
-    ///this function generates the subblocks of matrix J
-    ///as J = ( A  B1 ) u
-    ///       ( B2 C  ) p
-    void FillBlockMatrices (SparseMatrixType& rA,
-        SparseMatrixType& A,
-        SparseMatrixType& B1,
-        SparseMatrixType& B2,
-        SparseMatrixType& C
-    ) const
-    {
-        KRATOS_TRY
-
-        //get access to J data
-        const SizeType* index1 = rA.index1_data().begin();
-        const SizeType* index2 = rA.index2_data().begin();
-        const double*   values = rA.value_data().begin();
-
-        A.clear();
-        B1.clear();
-        B2.clear();
-        C.clear();
-
-        //do allocation
-        TSparseSpaceType::Resize(A,  mother_indices.size(), mother_indices.size());
-        TSparseSpaceType::Resize(B1, mother_indices.size(), mpressure_indices.size());
-        TSparseSpaceType::Resize(B2, mpressure_indices.size(), mother_indices.size());
-        TSparseSpaceType::Resize(C,  mpressure_indices.size(), mpressure_indices.size());
-
-        //allocate the blocks by push_back
-        for (SizeType i = 0; i < rA.size1(); ++i)
-        {
-            unsigned int row_begin = index1[i];
-            unsigned int row_end   = index1[i + 1];
-            unsigned int local_row_id = mglobal_to_local_indexing[i];
-
-            if ( mis_pressure_block[i] == false) //either A or B1
-            {
-                for (unsigned int j = row_begin; j < row_end; ++j)
-                {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mglobal_to_local_indexing[col_index];
-                    if (mis_pressure_block[col_index] == false) //A block
-                        // A.push_back ( local_row_id, local_col_id, value);
-                        A( local_row_id, local_col_id) = value;
-                    else //B1 block
-                        // B1.push_back ( local_row_id, local_col_id, value);
-                        B1( local_row_id, local_col_id) = value;
-                }
-            }
-            else //either B2 or C
-            {
-                for (unsigned int j = row_begin; j < row_end; ++j)
-                {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mglobal_to_local_indexing[col_index];
-                    if (mis_pressure_block[col_index] == false) //B2 block
-                        // B2.push_back ( local_row_id, local_col_id, value);
-                        B2( local_row_id, local_col_id ) = value;
-                    else //C block
-                        // C.push_back ( local_row_id, local_col_id, value);
-                        C( local_row_id, local_col_id ) = value;
-                }
-            }
-        }
-
-        A.complete_index1_data();
-        B1.complete_index1_data();
-        B2.complete_index1_data();
-        C.complete_index1_data();
-
-        KRATOS_CATCH ("")
-    }
 
     /**
      * Compute the Schur complement A = L - D*Inv(Diag(K))*G. The multiplication
@@ -764,7 +691,29 @@ private:
         						rS(i,col) += L_values[j];
         					}
         				}*/
+    }
 
+    /**
+     * Compute the Schur complement S = C - B2*Inv(Diag(A))*B1.
+     */
+    void CalculateSchurComplementByDiagonalApproximationSimple (
+        SparseMatrixType& S,
+        SparseMatrixType& A,
+        SparseMatrixType& B1,
+        SparseMatrixType& B2,
+        SparseMatrixType& C,
+        VectorType& diagA
+    ) const
+    {
+        VectorType invDiagA(diagA.size());
+        for(std::size_t i = 0; i < diagA.size(); ++i)
+            invDiagA[i] = 1.0 / diagA(i);
+        // KRATOS_WATCH(invDiagA)
+        SparseMatrixType tmpS = B1;
+        MultithreadedSolversMathUtils::RowScale(tmpS, invDiagA);
+        MultithreadedSolversMathUtils::MatrixMult(S, B2, tmpS);
+        S *= -1.0;
+        noalias(S) += C;
     }
 
     void CalculateSchurComplementByPreconditioner(
@@ -981,39 +930,20 @@ private:
             unsigned int jj = 0;
             bool has_diagonal = false;
             for (unsigned int j = row_begin; j < row_end; ++j)
+            {
                 if(index2[j] == i)
                 {
                     jj = j;
                     has_diagonal = true;
                     break;
                 }
+            }
 
             if( has_diagonal )
                 diagA[i] = values[jj];
             else
                 diagA[i] = 0.0;
         }
-    }
-
-    double ComputeFrobeniusNorm(SparseMatrixType& rA) const
-    {
-        SizeType n = rA.size1();
-        const SizeType* ia = rA.index1_data().begin();
-        const SizeType* ja = rA.index2_data().begin();
-        const double*	   a  = rA.value_data().begin();
-
-        double norm = 0.0;
-//        KRATOS_WATCH(rA.size1())
-//        KRATOS_WATCH(rA.size2())
-        for(SizeType i = 0; i < n; ++i)
-        {
-//            std::cout << "i: " << i << ", ia[i]: " << ia[i] << std::endl;
-            int nz = ia[i + 1] - ia[i];
-            for(int j = 0; j < nz; ++j)
-                norm += pow(a[ia[i] + j], 2);
-        }
-
-        return sqrt(norm);
     }
 
     ///@}
