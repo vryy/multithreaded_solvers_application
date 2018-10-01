@@ -38,6 +38,7 @@
 #include "custom_linear_solvers/scaling_solver2.h"
 #include "custom_linear_solvers/diagonal_fit_solver.h"
 #include "custom_linear_solvers/richardson_solver.h"
+#include "custom_linear_solvers/chebyshev_solver.h"
 #include "custom_preconditioners/solver_preconditioner.h"
 #include "custom_preconditioners/ilut_preconditioner.h"
 #include "custom_preconditioners/iluk_preconditioner.h"
@@ -220,8 +221,19 @@ namespace Python
         .def(init<double, double, unsigned int>())
         .def(init<double, double, unsigned int, std::string, PreconditionerType::Pointer>())
         .def(self_ns::str(self))
-        .def("AdditionalPhysicalDataIsNeeded", &RichardsonSolverType::AdditionalPhysicalDataIsNeeded)
-        .def("ProvideAdditionalData", &RichardsonSolverType::ProvideAdditionalData)
+        ;
+
+        typedef ChebyshevSolver<SparseSpaceType, LocalSpaceType> ChebyshevSolverType;
+        class_<ChebyshevSolverType, ChebyshevSolverType::Pointer, bases<IterativeSolverType> >
+        ("ChebyshevSolver", init<>())
+        .def(init<double, unsigned int>())
+        .def(init<double, unsigned int, PreconditionerType::Pointer>())
+        .def(init<double, unsigned int, PreconditionerType::Pointer, const double&, const double&>())
+        .def(self_ns::str(self))
+        .def("SetMinEigenvalue", &ChebyshevSolverType::SetMinEigenvalue)
+        .def("SetMaxEigenvalue", &ChebyshevSolverType::SetMaxEigenvalue)
+        .def("SetEstimateMinEigenvalueByGershgorin", &ChebyshevSolverType::SetEstimateMinEigenvalueByGershgorin)
+        .def("SetEstimateMaxEigenvalueByGershgorin", &ChebyshevSolverType::SetEstimateMaxEigenvalueByGershgorin)
         ;
 
         //***************************************************************************
@@ -279,6 +291,7 @@ namespace Python
         class_<Block2PhaseSchurPreconditionerType, Block2PhaseSchurPreconditionerType::Pointer, bases<PreconditionerType> >
         ("Block2PhaseSchurPreconditionerType", init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&>())
         .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer>())
+        .def("SetSchurMatrix", &Block2PhaseSchurPreconditionerType::SetSchurMatrix)
         .def(self_ns::str(self))
         ;
 
