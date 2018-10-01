@@ -166,7 +166,8 @@ public:
 
         if(mPrecondType == std::string("Left"))
         {
-            BaseType::GetPreconditioner()->Initialize(rA, rX, rB);
+            if (this->GetPreconditioner() != NULL)
+                BaseType::GetPreconditioner()->Initialize(rA, rX, rB);
         }
         else
         {
