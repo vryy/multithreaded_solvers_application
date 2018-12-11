@@ -107,7 +107,7 @@ public:
     typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
 
     typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
-    
+
     typedef typename TSparseSpaceType::MatrixPointerType SparseMatrixPointerType;
 
     typedef typename TSparseSpaceType::VectorType VectorType;
@@ -115,7 +115,7 @@ public:
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
 
     typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
-    
+
     typedef typename LinearSolverType::Pointer LinearSolverPointerType;
 
     typedef std::size_t  SizeType;
@@ -168,8 +168,8 @@ public:
         mpSolver->Initialize(rA, rX, rB);
         mA = rA;
     }
-    
-    
+
+
     virtual bool AdditionalPhysicalDataIsNeeded()
     {
         return false;
@@ -189,17 +189,17 @@ public:
     virtual VectorType& ApplyLeft(VectorType& rX)
     {
         SizeType size = TSparseSpaceType::Size(rX);
-        
+
         VectorType pX(size, 0.00);
-        
+
         SparseMatrixType tmpA = mA; // to avoid mA is modified
-        
+
         mpSolver->Solve(tmpA, pX, rX);
-        
+
 //        KRATOS_WATCH(pX);
-        
+
         TSparseSpaceType::Copy(pX, rX);
-        
+
         return rX;
     }
 
@@ -245,7 +245,7 @@ public:
     ///@}
     ///@name Friends
     ///@{
-    
+
 
     ///@}
 
@@ -257,7 +257,7 @@ protected:
     ///@}
     ///@name Protected member Variables
     ///@{
-    
+
 
     ///@}
     ///@name Protected Operators
@@ -268,7 +268,7 @@ protected:
     ///@name Protected Operations
     ///@{
 
-    
+
     ///@}
     ///@name Protected  Access
     ///@{
@@ -364,5 +364,5 @@ inline std::ostream& operator << (std::ostream& OStream, const SolverPreconditio
 }  // namespace Kratos.
 
 
-#endif // KRATOS_SOLVER_PRECONDITIONER_H_INCLUDED  defined 
+#endif // KRATOS_SOLVER_PRECONDITIONER_H_INCLUDED  defined
 
