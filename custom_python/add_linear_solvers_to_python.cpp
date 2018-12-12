@@ -198,7 +198,6 @@ namespace Python
         .def("DisableCheckConditionNumber", &BicgstabScalingSolverType::DisableCheckConditionNumber)
         .def("EnableCheckConditionNumber", &BicgstabScalingSolverType::EnableCheckConditionNumber)
         ;
-        #endif
 
         typedef ScalingSolver2<SparseSpaceType, LocalSpaceType> ScalingSolver2Type;
         class_<ScalingSolver2Type, ScalingSolver2Type::Pointer, bases<LinearSolverType> >
@@ -209,6 +208,7 @@ namespace Python
         .def("DisableCheckConditionNumber", &ScalingSolver2Type::DisableCheckConditionNumber)
         .def("EnableCheckConditionNumber", &ScalingSolver2Type::EnableCheckConditionNumber)
         ;
+        #endif
 
         typedef BlockPressureStaggeredSolver<SparseSpaceType, LocalSpaceType> BlockPressureStaggeredSolverType;
         class_<BlockPressureStaggeredSolverType, BlockPressureStaggeredSolverType::Pointer, bases<LinearSolverType> >
