@@ -64,11 +64,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "linear_solvers/iterative_solver.h"
 
 #ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
-#include "custom_utilities/feast_solver.h"
+#include "custom_eigen_solvers/feast_solver.h"
 #endif
 
 #ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
-#include "custom_utilities/arpack_solver.h"
+#include "custom_eigen_solvers/arpack_solver.h"
 #endif
 
 #include "hsl.h"

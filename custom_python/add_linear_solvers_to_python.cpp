@@ -31,7 +31,9 @@
 #include "custom_linear_solvers/block_2phase_schur_solver.h"
 #include "custom_linear_solvers/block_2phase_index_based_schur_solver.h"
 #include "custom_linear_solvers/block_pressure_schur_solver.h"
+#ifdef MULTITHREADED_SOLVERS_APP_USE_MKL
 #include "custom_linear_solvers/bicgstab_scaling_solver.h"
+#endif
 #include "custom_linear_solvers/deflated_cg_solver_2.h"
 #include "custom_linear_solvers/deflated_subdomain_nodal_based_cg_solver.h"
 #include "custom_linear_solvers/variable_solver.h"
@@ -63,11 +65,68 @@
 #include "custom_linear_solvers/pardiso_solver.h"
 #endif
 
+#ifdef MULTITHREADED_SOLVERS_APP_USE_SPECTRA
+#include "custom_eigen_solvers/spectra_eigenvalues_solver.h"
+#endif
+
 namespace Kratos
 {
 
 namespace Python
 {
+
+    #ifdef MULTITHREADED_SOLVERS_APP_USE_SPECTRA
+    boost::python::list SpectraEigenvaluesSolver_SolveLargestUnsym(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA, const int& ne)
+    {
+        boost::python::list values;
+
+        std::vector<double> eigenvalues_real;
+        std::vector<double> eigenvalues_imag;
+        rDummy.SolveLargestUnsym(rA, ne, eigenvalues_real, eigenvalues_imag);
+
+        for (std::size_t i = 0; i < eigenvalues_real.size(); ++i)
+        {
+            boost::python::list eval;
+            eval.append(eigenvalues_real[i]);
+            eval.append(eigenvalues_imag[i]);
+            values.append(eval);
+        }
+
+        return values;
+    }
+
+    boost::python::list SpectraEigenvaluesSolver_SolveLargestSym(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA, const int& ne)
+    {
+        boost::python::list values;
+
+        std::vector<double> eigenvalues;
+        rDummy.SolveLargestSym(rA, ne, eigenvalues);
+
+        for (std::size_t i = 0; i < eigenvalues.size(); ++i)
+        {
+            values.append(eigenvalues[i]);
+        }
+
+        return values;
+    }
+
+    boost::python::list SpectraEigenvaluesSolver_SolveSmallestSPD(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA,
+        SpectraEigenvaluesSolver::LinearSolverType::Pointer pLinearSolver, const int& ne)
+    {
+        boost::python::list values;
+
+        std::vector<double> eigenvalues;
+        rDummy.SolveSmallestSPD(rA, pLinearSolver, ne, eigenvalues);
+
+        for (std::size_t i = 0; i < eigenvalues.size(); ++i)
+        {
+            values.append(eigenvalues[i]);
+        }
+
+        return values;
+    }
+    #endif
+
     void MultithreadedSolversApplication_AddLinearSolversToPython()
     {
         typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
@@ -127,6 +186,7 @@ namespace Python
         .def("ProvideAdditionalData", &BicgstabBlockPressureSolverType::ProvideAdditionalData)
         ;
 
+        #ifdef MULTITHREADED_SOLVERS_APP_USE_MKL
         // TODO: to be removed (superseded by ScalingSolver2)
         typedef BicgstabScalingSolver<SparseSpaceType, LocalSpaceType> BicgstabScalingSolverType;
         class_<BicgstabScalingSolverType, BicgstabScalingSolverType::Pointer, bases<LinearSolverType> >
@@ -138,6 +198,7 @@ namespace Python
         .def("DisableCheckConditionNumber", &BicgstabScalingSolverType::DisableCheckConditionNumber)
         .def("EnableCheckConditionNumber", &BicgstabScalingSolverType::EnableCheckConditionNumber)
         ;
+        #endif
 
         typedef ScalingSolver2<SparseSpaceType, LocalSpaceType> ScalingSolver2Type;
         class_<ScalingSolver2Type, ScalingSolver2Type::Pointer, bases<LinearSolverType> >
@@ -239,6 +300,7 @@ namespace Python
         //***************************************************************************
         //preconditioners
         //***************************************************************************
+
         typedef SolverPreconditioner<SparseSpaceType, LocalSpaceType> SolverPreconditionerType;
         class_<SolverPreconditionerType, SolverPreconditionerType::Pointer, bases<PreconditionerType> >
         ("SolverPreconditioner", init<LinearSolverType::Pointer>())
@@ -342,6 +404,19 @@ namespace Python
         .def("SetPreconditioner", &BlockJacobiNodalBasedPressurePreconditionerType::SetPreconditioner)
         .def(self_ns::str(self))
         ;
+
+        //***************************************************************************
+        //eigenvalue solvers
+        //***************************************************************************
+
+        #ifdef MULTITHREADED_SOLVERS_APP_USE_SPECTRA
+        class_<SpectraEigenvaluesSolver, SpectraEigenvaluesSolver::Pointer, boost::noncopyable>
+        ("SpectraEigenvaluesSolver", init<>())
+        .def("SolveLargestUnsym", &SpectraEigenvaluesSolver_SolveLargestUnsym)
+        .def("SolveLargestSym", &SpectraEigenvaluesSolver_SolveLargestSym)
+        .def("SolveSmallestSPD", &SpectraEigenvaluesSolver_SolveSmallestSPD)
+        ;
+        #endif
     }
 
 }  // namespace Python.

@@ -63,11 +63,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "linear_solvers/iterative_solver.h"
 
 #ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
-#include "custom_utilities/feast_solver.h"
+#include "custom_eigen_solvers/feast_solver.h"
 #endif
 
 #ifdef MULTITHREADED_SOLVERS_APP_USE_ARPACK
-#include "custom_utilities/arpack_solver.h"
+#include "custom_eigen_solvers/arpack_solver.h"
 #endif
 
 namespace Kratos
@@ -208,7 +208,7 @@ public:
     {
         //GetTimeTable()->Start(Info());
 
-        BaseType::GetPreconditioner()->Initialize(rA, rX, rB);
+        // BaseType::GetPreconditioner()->Initialize(rA, rX, rB);
 
         bool is_solved = true;
         VectorType x(TDenseSpaceType::Size1(rX));
@@ -436,7 +436,8 @@ private:
     {
         double resid, tol = this->GetTolerance();
         unsigned int max_iter = this->GetMaxIterationsNumber();
-	    int i, j = 1, k, size = rX.size();
+	    int i, j = 1, k;
+        std::size_t size = rX.size();
 	    double rho_1, rho_2, alpha, beta, omega, norms, normr, normb;
 	    VectorType p(size), s(size), t(size), v(size), r(size), rtilde(size);
 
