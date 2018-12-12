@@ -80,6 +80,7 @@ endif()
 
 set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
     ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_eigen_solvers_to_python.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_linear_solvers_to_python.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_utilities_to_python.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_processes_to_python.cpp

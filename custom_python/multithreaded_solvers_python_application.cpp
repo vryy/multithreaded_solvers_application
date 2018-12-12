@@ -63,6 +63,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "includes/define.h"
 #include "multithreaded_solvers_application.h"
 #include "custom_python/add_linear_solvers_to_python.h"
+#include "custom_python/add_eigen_solvers_to_python.h"
 #include "custom_python/add_utilities_to_python.h"
 #include "custom_python/add_processes_to_python.h"
 
@@ -85,6 +86,7 @@ namespace Python
 			 ;
 
 	MultithreadedSolversApplication_AddLinearSolversToPython();
+	MultithreadedSolversApplication_AddEigenSolversToPython();
 	MultithreadedSolversApplication_AddUtilitiesToPython();
 	MultithreadedSolversApplication_AddProcessesToPython();
 

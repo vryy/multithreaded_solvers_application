@@ -166,11 +166,11 @@ public:
     ///@{
 
     /// Find the largest eigenvalues of the unsymmetric matrix
-    static void SolveLargestUnsym(CompressedMatrix& rA, const int& ne,
-        std::vector<double>& eigenvalues_real, std::vector<double>& eigenvalues_imag)
+    static int SolveLargestUnsym(CompressedMatrix& rA, const int& ne,
+        std::vector<double>& eigenvalues_real, std::vector<double>& eigenvalues_imag, const int mem_factor = 2)
     {
         CompressedMatrixSpectraOp op(rA);
-        Spectra::GenEigsSolver<double, Spectra::LARGEST_MAGN, CompressedMatrixSpectraOp> eigs(&op, ne, 2*ne);
+        Spectra::GenEigsSolver<double, Spectra::LARGEST_MAGN, CompressedMatrixSpectraOp> eigs(&op, ne, mem_factor*ne);
 
         // Initialize and compute
         eigs.init();
@@ -191,16 +191,18 @@ public:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute largest eigenvalues", "")
+            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute largest eigenvalues, error code =", eigs.info())
         }
+
+        return eigs.info();
     }
 
     /// Find the largest eigenvalues of the symmetric matrix
-    static void SolveLargestSym(CompressedMatrix& rA, const int& ne,
-        std::vector<double>& eigenvalues)
+    static int SolveLargestSym(CompressedMatrix& rA, const int& ne,
+        std::vector<double>& eigenvalues, const int mem_factor = 2)
     {
         CompressedMatrixSpectraOp op(rA);
-        Spectra::SymEigsSolver<double, Spectra::LARGEST_MAGN, CompressedMatrixSpectraOp> eigs(&op, ne, 2*ne);
+        Spectra::SymEigsSolver<double, Spectra::LARGEST_MAGN, CompressedMatrixSpectraOp> eigs(&op, ne, mem_factor*ne);
 
         // Initialize and compute
         eigs.init();
@@ -219,17 +221,19 @@ public:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute largest eigenvalues", "")
+            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute largest eigenvalues, error code =", eigs.info())
         }
+
+        return eigs.info();
     }
 
     /// Find the smallest eigenvalues of the symmetric matrix
     /// The matrix shall be SPD so that the eigenvalues around 0.0 are determined
-    static void SolveSmallestSPD(CompressedMatrix& rA, LinearSolverType::Pointer pLinearSolver,
-        const int& ne, std::vector<double>& eigenvalues)
+    static int SolveSmallestSPD(CompressedMatrix& rA, LinearSolverType::Pointer pLinearSolver,
+        const int& ne, std::vector<double>& eigenvalues, const int mem_factor = 2)
     {
         CompressedMatrixInversedSpectraOp op(pLinearSolver, rA);
-        Spectra::SymEigsShiftSolver<double, Spectra::LARGEST_MAGN, CompressedMatrixInversedSpectraOp> eigs(&op, ne, 2*ne, 0.0);
+        Spectra::SymEigsShiftSolver<double, Spectra::LARGEST_MAGN, CompressedMatrixInversedSpectraOp> eigs(&op, ne, mem_factor*ne, 0.0);
 
         // Initialize and compute
         eigs.init();
@@ -248,8 +252,10 @@ public:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute smallest eigenvalues", "")
+            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute smallest eigenvalues, error code =", eigs.info())
         }
+
+        return eigs.info();
     }
 
     ///@}

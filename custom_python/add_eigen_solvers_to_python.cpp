@@ -38,13 +38,13 @@ namespace Python
 {
 
     #ifdef MULTITHREADED_SOLVERS_APP_USE_SPECTRA
-    boost::python::list SpectraEigenvaluesSolver_SolveLargestUnsym(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA, const int& ne)
+    boost::python::list SpectraEigenvaluesSolver_SolveLargestUnsym(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA, const int& ne, const int& mem_factor)
     {
         boost::python::list values;
 
         std::vector<double> eigenvalues_real;
         std::vector<double> eigenvalues_imag;
-        rDummy.SolveLargestUnsym(rA, ne, eigenvalues_real, eigenvalues_imag);
+        rDummy.SolveLargestUnsym(rA, ne, eigenvalues_real, eigenvalues_imag, mem_factor);
 
         for (std::size_t i = 0; i < eigenvalues_real.size(); ++i)
         {
@@ -57,12 +57,12 @@ namespace Python
         return values;
     }
 
-    boost::python::list SpectraEigenvaluesSolver_SolveLargestSym(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA, const int& ne)
+    boost::python::list SpectraEigenvaluesSolver_SolveLargestSym(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA, const int& ne, const int& mem_factor)
     {
         boost::python::list values;
 
         std::vector<double> eigenvalues;
-        rDummy.SolveLargestSym(rA, ne, eigenvalues);
+        rDummy.SolveLargestSym(rA, ne, eigenvalues, mem_factor);
 
         for (std::size_t i = 0; i < eigenvalues.size(); ++i)
         {
@@ -73,12 +73,12 @@ namespace Python
     }
 
     boost::python::list SpectraEigenvaluesSolver_SolveSmallestSPD(SpectraEigenvaluesSolver& rDummy, CompressedMatrix& rA,
-        SpectraEigenvaluesSolver::LinearSolverType::Pointer pLinearSolver, const int& ne)
+        SpectraEigenvaluesSolver::LinearSolverType::Pointer pLinearSolver, const int& ne, const int& mem_factor)
     {
         boost::python::list values;
 
         std::vector<double> eigenvalues;
-        rDummy.SolveSmallestSPD(rA, pLinearSolver, ne, eigenvalues);
+        rDummy.SolveSmallestSPD(rA, pLinearSolver, ne, eigenvalues, mem_factor);
 
         for (std::size_t i = 0; i < eigenvalues.size(); ++i)
         {
@@ -89,15 +89,10 @@ namespace Python
     }
     #endif
 
-    void MultithreadedSolversApplication_AddLinearSolversToPython()
+    void MultithreadedSolversApplication_AddEigenSolversToPython()
     {
         typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
         typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
-
-        typedef LinearSolver<SparseSpaceType,  LocalSpaceType> LinearSolverType;
-        typedef DirectSolver<SparseSpaceType,  LocalSpaceType> DirectSolverType;
-        typedef IterativeSolver<SparseSpaceType, LocalSpaceType> IterativeSolverType;
-        typedef Preconditioner<SparseSpaceType,  LocalSpaceType> PreconditionerType;
 
         using namespace boost::python;
 
