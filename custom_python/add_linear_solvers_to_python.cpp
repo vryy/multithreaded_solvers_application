@@ -33,11 +33,11 @@
 #include "custom_linear_solvers/block_pressure_schur_solver.h"
 #ifdef MULTITHREADED_SOLVERS_APP_USE_MKL
 #include "custom_linear_solvers/bicgstab_scaling_solver.h"
+#include "custom_linear_solvers/scaling_solver2.h"
 #endif
 #include "custom_linear_solvers/deflated_cg_solver_2.h"
 #include "custom_linear_solvers/deflated_subdomain_nodal_based_cg_solver.h"
 #include "custom_linear_solvers/variable_solver.h"
-#include "custom_linear_solvers/scaling_solver2.h"
 #include "custom_linear_solvers/diagonal_fit_solver.h"
 #include "custom_linear_solvers/richardson_solver.h"
 #include "custom_linear_solvers/chebyshev_solver.h"
@@ -198,7 +198,6 @@ namespace Python
         .def("DisableCheckConditionNumber", &BicgstabScalingSolverType::DisableCheckConditionNumber)
         .def("EnableCheckConditionNumber", &BicgstabScalingSolverType::EnableCheckConditionNumber)
         ;
-        #endif
 
         typedef ScalingSolver2<SparseSpaceType, LocalSpaceType> ScalingSolver2Type;
         class_<ScalingSolver2Type, ScalingSolver2Type::Pointer, bases<LinearSolverType> >
@@ -209,6 +208,7 @@ namespace Python
         .def("DisableCheckConditionNumber", &ScalingSolver2Type::DisableCheckConditionNumber)
         .def("EnableCheckConditionNumber", &ScalingSolver2Type::EnableCheckConditionNumber)
         ;
+        #endif
 
         typedef BlockPressureStaggeredSolver<SparseSpaceType, LocalSpaceType> BlockPressureStaggeredSolverType;
         class_<BlockPressureStaggeredSolverType, BlockPressureStaggeredSolverType::Pointer, bases<LinearSolverType> >
