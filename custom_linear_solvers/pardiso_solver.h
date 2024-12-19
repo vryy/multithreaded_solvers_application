@@ -55,7 +55,7 @@
 
 /* PARDISO prototype. */
 extern "C" void pardisoinit (void   *, int    *,   int *, int *, double *, int *);
-extern "C" void pardiso     (void   *, int    *,   int *, int *,    int *, int *, 
+extern "C" void pardiso     (void   *, int    *,   int *, int *,    int *, int *,
                              double *, int    *,    int *, int *,   int *, int *,
                              int *, double *, double *, int *, double *);
 extern "C" void pardiso_chkmatrix  (int *, int *, double *, int *, int *, int *);
@@ -205,8 +205,8 @@ public:
         /* Pardiso control parameters */
         int iparm[64];
         double dparm[64];
-        int maxfct, mnum, phase, error, msglvl;
-        
+        int maxfct, mnum, phase, error = 0, msglvl;
+
         /* Auxiliary variables */
         int i;
         double ddum;    // Double dummy
