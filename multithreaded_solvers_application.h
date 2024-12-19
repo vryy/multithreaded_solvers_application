@@ -1,5 +1,5 @@
-//   
-//   Project Name:        Kratos       
+//
+//   Project Name:        Kratos
 //   Last Modified by:    $Author: hbui $
 //   Date:                $Date: Jan 25, 2013 $
 //   Revision:            $Revision: 1.1 $
@@ -14,10 +14,10 @@
 
 // System includes
 #include <string>
-#include <iostream> 
+#include <iostream>
 
 
-// External includes 
+// External includes
 
 
 // Project includes
@@ -25,218 +25,212 @@
 #include "includes/kratos_application.h"
 #include "includes/variables.h"
 
-
 namespace Kratos
 {
 
-	///@name Kratos Globals
-	///@{ 
+///@name Kratos Globals
+///@{
 
-	// Variables definition
-    KRATOS_DEFINE_VARIABLE(int, SYSTEM_SIZE )
-    KRATOS_DEFINE_VARIABLE(boost::numeric::ublas::vector<int>, SYSTEM_PERMUTATION_VECTOR )
+// Variables definition
+KRATOS_DEFINE_APPLICATION_VARIABLE(MULTITHREADED_SOLVERS_APPLICATION, int, SYSTEM_SIZE )
+KRATOS_DEFINE_APPLICATION_VARIABLE(MULTITHREADED_SOLVERS_APPLICATION, boost::numeric::ublas::vector<int>, SYSTEM_PERMUTATION_VECTOR )
 
-	///@} 
-	///@name Type Definitions
-	///@{ 
+///@}
+///@name Type Definitions
+///@{
 
-	///@} 
-	///@name  Enum's
-	///@{
+///@}
+///@name  Enum's
+///@{
 
-	///@}
-	///@name  Functions 
-	///@{
+///@}
+///@name  Functions
+///@{
 
-	///@}
-	///@name Kratos Classes
-	///@{
+///@}
+///@name Kratos Classes
+///@{
 
-	/// Short class definition.
-	/** Detail class definition.
-	*/
-	class KratosMultithreadedSolversApplication : public KratosApplication
-	{
-	public:
-		///@name Type Definitions
-		///@{
-		
+/// Short class definition.
+/** Detail class definition.
+*/
+class KRATOS_API(MULTITHREADED_SOLVERS_APPLICATION) KratosMultithreadedSolversApplication : public KratosApplication
+{
+public:
+    ///@name Type Definitions
+    ///@{
 
-		/// Pointer definition of KratosMultiphaseApplication
-		KRATOS_CLASS_POINTER_DEFINITION(KratosMultithreadedSolversApplication);
 
-		///@}
-		///@name Life Cycle 
-		///@{ 
+    /// Pointer definition of KratosMultiphaseApplication
+    KRATOS_CLASS_POINTER_DEFINITION(KratosMultithreadedSolversApplication);
 
-		/// Default constructor.
-		KratosMultithreadedSolversApplication(){}
+    ///@}
+    ///@name Life Cycle
+    ///@{
 
-		/// Destructor.
-		virtual ~KratosMultithreadedSolversApplication(){}
+    /// Default constructor.
+    KratosMultithreadedSolversApplication() {}
 
+    /// Destructor.
+    ~KratosMultithreadedSolversApplication() override {}
 
-		///@}
-		///@name Operators 
-		///@{
 
+    ///@}
+    ///@name Operators
+    ///@{
 
-		///@}
-		///@name Operations
-		///@{
 
-		virtual void Register();
+    ///@}
+    ///@name Operations
+    ///@{
 
+    void Register() override;
 
+    ///@}
+    ///@name Access
+    ///@{
 
-		///@}
-		///@name Access
-		///@{ 
 
+    ///@}
+    ///@name Inquiry
+    ///@{
 
-		///@}
-		///@name Inquiry
-		///@{
 
+    ///@}
+    ///@name Input and output
+    ///@{
 
-		///@}      
-		///@name Input and output
-		///@{
+    /// Turn back information as a string.
+    std::string Info() const override
+    {
+        return "KratosMultithreadedSolversApplication";
+    }
 
-		/// Turn back information as a string.
-		virtual std::string Info() const
-		{
-			return "KratosMultithreadedSolversApplication";
-		}
+    /// Print information about this object.
+    void PrintInfo(std::ostream& rOStream) const override
+    {
+        rOStream << Info();
+        PrintData(rOStream);
+    }
 
-		/// Print information about this object.
-		virtual void PrintInfo(std::ostream& rOStream) const
-		{
-			rOStream << Info();
-			PrintData(rOStream);
-		}
+    ///// Print object's data.
+    void PrintData(std::ostream& rOStream) const override
+    {
+        KRATOS_WATCH("in Kratos multithreaded solvers's application");
+        KRATOS_WATCH(KratosComponents<VariableData>::GetComponents().size() );
+        rOStream << "Variables:" << std::endl;
+        KratosComponents<VariableData>().PrintData(rOStream);
+        rOStream << std::endl;
+        rOStream << "Elements:" << std::endl;
+        KratosComponents<Element>().PrintData(rOStream);
+        rOStream << std::endl;
+        rOStream << "Conditions:" << std::endl;
+        KratosComponents<Condition>().PrintData(rOStream);
+    }
 
-		///// Print object's data.
-      virtual void PrintData(std::ostream& rOStream) const
-      {
-      	KRATOS_WATCH("in Kratos multithreaded solvers's application");
-      	KRATOS_WATCH(KratosComponents<VariableData>::GetComponents().size() );
-		rOStream << "Variables:" << std::endl;
-		KratosComponents<VariableData>().PrintData(rOStream);
-		rOStream << std::endl;
-		rOStream << "Elements:" << std::endl;
-		KratosComponents<Element>().PrintData(rOStream);
-		rOStream << std::endl;
-		rOStream << "Conditions:" << std::endl;
-		KratosComponents<Condition>().PrintData(rOStream);
-      }
 
+    ///@}
+    ///@name Friends
+    ///@{
 
-		///@}      
-		///@name Friends
-		///@{
 
+    ///@}
 
-		///@}
+protected:
+    ///@name Protected static Member Variables
+    ///@{
 
-	protected:
-		///@name Protected static Member Variables 
-		///@{ 
 
+    ///@}
+    ///@name Protected member Variables
+    ///@{
 
-		///@} 
-		///@name Protected member Variables 
-		///@{ 
 
+    ///@}
+    ///@name Protected Operators
+    ///@{
 
-		///@} 
-		///@name Protected Operators
-		///@{ 
 
+    ///@}
+    ///@name Protected Operations
+    ///@{
 
-		///@} 
-		///@name Protected Operations
-		///@{ 
 
+    ///@}
+    ///@name Protected  Access
+    ///@{
 
-		///@} 
-		///@name Protected  Access 
-		///@{ 
 
+    ///@}
+    ///@name Protected Inquiry
+    ///@{
 
-		///@}      
-		///@name Protected Inquiry 
-		///@{ 
 
+    ///@}
+    ///@name Protected LifeCycle
+    ///@{
 
-		///@}    
-		///@name Protected LifeCycle 
-		///@{ 
 
+    ///@}
 
-		///@}
+private:
+    ///@name Static Member Variables
+    ///@{
 
-	private:
-		///@name Static Member Variables 
-		///@{ 
 
+    ///@}
+    ///@name Member Variables
+    ///@{
 
-		///@} 
-		///@name Member Variables 
-		///@{ 
 
+    ///@}
+    ///@name Private Operators
+    ///@{
 
-		///@} 
-		///@name Private Operators
-		///@{ 
 
+    ///@}
+    ///@name Private Operations
+    ///@{
 
-		///@} 
-		///@name Private Operations
-		///@{ 
 
+    ///@}
+    ///@name Private  Access
+    ///@{
 
-		///@} 
-		///@name Private  Access 
-		///@{ 
 
+    ///@}
+    ///@name Private Inquiry
+    ///@{
 
-		///@}    
-		///@name Private Inquiry 
-		///@{ 
 
+    ///@}
+    ///@name Un accessible methods
+    ///@{
 
-		///@}    
-		///@name Un accessible methods 
-		///@{ 
+    /// Assignment operator.
+    KratosMultithreadedSolversApplication& operator=(KratosMultithreadedSolversApplication const& rOther);
 
-		/// Assignment operator.
-		KratosMultithreadedSolversApplication& operator=(KratosMultithreadedSolversApplication const& rOther);
+    /// Copy constructor.
+    KratosMultithreadedSolversApplication(KratosMultithreadedSolversApplication const& rOther);
 
-		/// Copy constructor.
-		KratosMultithreadedSolversApplication(KratosMultithreadedSolversApplication const& rOther);
 
+    ///@}
 
-		///@}    
+}; // Class KratosMultithreadedSolversApplication
 
-	}; // Class KratosMultithreadedSolversApplication 
+///@}
 
-	///@} 
 
+///@name Type Definitions
+///@{
 
-	///@name Type Definitions       
-	///@{ 
 
+///@}
+///@name Input and output
+///@{
 
-	///@} 
-	///@name Input and output 
-	///@{ 
-
-	///@} 
-
+///@}
 
 }  // namespace Kratos.
 
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_H_INCLUDED  defined 
-
-
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_H_INCLUDED  defined
