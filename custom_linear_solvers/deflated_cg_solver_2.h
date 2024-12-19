@@ -431,7 +431,7 @@ private:
         // temporarily set uh to zero. I don't know how uh_0 is calculated
         TSparseSpaceType::SetToZero(uh);
 
-        boost::progress_display show_progress( this->GetMaxIterationsNumber() );
+        Kratos::progress_display show_progress( this->GetMaxIterationsNumber() );
         BaseType::mIterationsNumber = 0;
         double eps;
         do
