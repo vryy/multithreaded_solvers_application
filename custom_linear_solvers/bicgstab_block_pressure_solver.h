@@ -70,7 +70,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 //#define CHECK_EIGENVALUES
-
+#ifndef DBL_MIN
+#define DBL_MIN 2.2250738585072014e-308
+#define BicgstabBlockPressureSolver_define_DBL_MIN
+#endif
 
 namespace Kratos
 {
@@ -688,5 +691,8 @@ inline std::ostream& operator << (std::ostream& OStream,
 
 #undef CHECK_EIGENVALUES
 
-#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined 
+#undef BicgstabBlockPressureSolver_define_DBL_MIN
+#undef DBL_MIN
+
+#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined
 
