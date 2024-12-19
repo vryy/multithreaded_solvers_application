@@ -116,6 +116,55 @@ public:
             rtot[indices[i]] = ru[i];
     }
 
+    ///this function extracts the subblock A of matrix J
+    ///as J = ( A  B1 ) u
+    ///       ( B2 C  ) p
+    template<typename TSparseMatrixType, typename TIndexType = std::size_t, typename TValueType = double>
+    static void FillBlockMatrices (const TSparseMatrixType& rA,
+        const std::vector<TIndexType>& first_indices,
+        const std::vector<TIndexType>& second_indices,
+        const std::vector<TIndexType>& global_to_local_indexing,
+        const std::vector<int>& is_second_block,
+        TSparseMatrixType& A)
+    {
+        KRATOS_TRY
+
+        //get access to J data
+        const TIndexType* index1 = rA.index1_data().begin();
+        const TIndexType* index2 = rA.index2_data().begin();
+        const TValueType* values = rA.value_data().begin();
+
+        A.clear();
+
+        //do allocation
+        A.resize(first_indices.size(), first_indices.size(), false);
+
+        //allocate the blocks by push_back
+        for (TIndexType i = 0; i < rA.size1(); ++i)
+        {
+            TIndexType row_begin = index1[i];
+            TIndexType row_end   = index1[i + 1];
+            TIndexType local_row_id = global_to_local_indexing[i];
+
+            if ( is_second_block[i] == false) //either A or B1
+            {
+                for (TIndexType j = row_begin; j < row_end; ++j)
+                {
+                    TIndexType col_index = index2[j];
+                    TValueType value = values[j];
+                    TIndexType local_col_id = global_to_local_indexing[col_index];
+                    if (is_second_block[col_index] == false) //A block
+//                        A.push_back ( local_row_id, local_col_id, value);
+                        A( local_row_id, local_col_id ) = value;
+                }
+            }
+        }
+
+        A.complete_index1_data();
+
+        KRATOS_CATCH ("")
+    }
+
     ///this function generates the subblocks of matrix J
     ///as J = ( A  B1 ) u
     ///       ( B2 C  ) p
@@ -286,6 +335,17 @@ public:
             if(diag_norm < off_diag_norm)
                 std::cout << "Matrix A is not diagonal dominant at row " << i << ", the ratio is " << diag_norm / off_diag_norm << std::endl;
         }
+    }
+
+    template<typename TMatrixType>
+    static double DiagonalNorm(const TMatrixType& rA)
+    {
+        const std::size_t n = rA.size1();
+        double diag = 0.0;
+        for(std::size_t i = 0; i < n; ++i)
+            diag += pow(rA(i, i), 2);
+        diag = sqrt(diag);
+        return diag;
     }
 
     template<typename TSparseMatrixType, typename TIndexType = std::size_t, typename TValueType = double>
