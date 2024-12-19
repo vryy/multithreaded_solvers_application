@@ -56,11 +56,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // External includes
 #include <boost/smart_ptr.hpp>
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/progress.hpp>
 
 // Project includes
 #include "includes/define.h"
 #include "utilities/openmp_utils.h"
+#include "utilities/progress.h"
 #include "linear_solvers/preconditioner.h"
 #include "linear_solvers/linear_solver.h"
 
@@ -273,7 +273,7 @@ public:
         for( i = 0; i < n; ++i ) iw[i] = -1;
 
         /* beginning of main loop */
-        boost::progress_display show_progress( n );
+        Kratos::progress_display show_progress( n );
         for( i = 0; i < n; ++i ) {
             // create row-wise data structure from matrix A
             nzcount = rA.index1_data()[i + 1] - rA.index1_data()[i];    //number of nonzeros of row i

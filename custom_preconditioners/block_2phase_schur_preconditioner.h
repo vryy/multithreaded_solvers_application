@@ -56,13 +56,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // External includes
 #include <boost/smart_ptr.hpp>
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/progress.hpp>
 
 
 // Project includes
 #include "includes/define.h"
 #include "linear_solvers/linear_solver.h"
 #include "utilities/openmp_utils.h"
+#include "utilities/progress.h"
 
 // #define STRINGIFY(name) #name
 // #define SCHUR_DIAGONAL          0
@@ -725,7 +725,7 @@ private:
         typename BaseType::Pointer prec_A_Schur) const
     {
         typename TDenseSpaceType::MatrixType Tmp(TSparseSpaceType::Size1(B2), TSparseSpaceType::Size2(B1));
-        boost::progress_display show_progress(TSparseSpaceType::Size2(B1));
+        Kratos::progress_display show_progress(TSparseSpaceType::Size2(B1));
         for(IndexType i = 0; i < TSparseSpaceType::Size2(B1); ++i)
         {
             VectorType b1(TSparseSpaceType::Size1(B1));

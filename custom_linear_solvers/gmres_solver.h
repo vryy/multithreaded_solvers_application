@@ -56,11 +56,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 // External includes
 #include <boost/smart_ptr.hpp>
-#include <boost/progress.hpp>
 
 
 // Project includes
 #include "includes/define.h"
+#include "utilities/progress.h"
 #include "linear_solvers/iterative_solver.h"
 
 
@@ -382,7 +382,7 @@ private:
 	        v.push_back(tmpv);
         }
         
-        boost::progress_display show_progress( max_iter );
+        Kratos::progress_display show_progress( max_iter );
 	    while (j <= max_iter) {
 		    TSparseSpaceType::Assign(v[0], 1.0 / beta, r);
 		    

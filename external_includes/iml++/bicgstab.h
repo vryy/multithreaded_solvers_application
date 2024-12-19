@@ -1,7 +1,7 @@
 #ifndef _BICGSTAB_TEMPLATE_H_
 #define _BICGSTAB_TEMPLATE_H_
 
-#include <boost/progress.hpp>
+#include "utilities/progress.h"
 
 //*****************************************************************
 // Iterative template routine -- BiCGSTAB
@@ -44,7 +44,7 @@ int BiCGSTAB(const Matrix &A, Vector &x, const Vector &b,
 		return 0;
 	}
 
-    boost::progress_display show_progress( max_iter );
+    Kratos::progress_display show_progress( max_iter );
 	for (int i = 1; i <= max_iter; ++i) {
 		rho_1(0) = dot(rtilde, r);
 		if (rho_1(0) == 0) {

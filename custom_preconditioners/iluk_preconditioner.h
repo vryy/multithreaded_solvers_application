@@ -56,11 +56,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // External includes
 #include <boost/smart_ptr.hpp>
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/progress.hpp>
 
 // Project includes
 #include "includes/define.h"
 #include "utilities/openmp_utils.h"
+#include "utilities/progress.h"
 #include "linear_solvers/preconditioner.h"
 #include "linear_solvers/linear_solver.h"
 
@@ -233,7 +233,7 @@ public:
         U = mlu->U;
         D = mlu->D;
 
-        boost::progress_display show_progress(2 * n);
+        Kratos::progress_display show_progress(2 * n);
         /* symbolic factorization to calculate level of fill index arrays */
         if( ( ierr = lofC( mlfil, rA, mlu, fp, show_progress ) ) != 0 ) {
             fprintf( fp, "iluk error: lofC\n" );
@@ -494,7 +494,7 @@ private:
     ///@name Private Operations
     ///@{
 
-    int lofC( int lofM, SparseMatrixType& rA, iluptr lu, FILE *fp, boost::progress_display& progress )
+    int lofC( int lofM, SparseMatrixType& rA, iluptr lu, FILE *fp, Kratos::progress_display& progress )
     {
         /*--------------------------------------------------------------------
          * symbolic ilu factorization to calculate structure of ilu matrix

@@ -1,7 +1,7 @@
 #ifndef _GMRES_TEMPLATE_H_
 #define _GMRES_TEMPLATE_H_
 
-#include <boost/progress.hpp>
+#include "utilities/progress.h"
 
 //*****************************************************************
 // Iterative template routine -- GMRES
@@ -67,7 +67,7 @@ int GMRES(const Operator &A, Vector &x, const Vector &b,
 
 	Vector *v = new Vector[m + 1];
 
-    boost::progress_display show_progress( max_iter );
+    Kratos::progress_display show_progress( max_iter );
 	while (j <= max_iter) {
 		v[0] = r * (1.0 / beta); // ??? r / beta
 		s = 0.0;

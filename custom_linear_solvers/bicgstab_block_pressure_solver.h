@@ -485,7 +485,7 @@ private:
 		    return 0;
 	    }
 
-        boost::progress_display show_progress( max_iter );
+        Kratos::progress_display show_progress( max_iter );
 	    for (int i = 1; i <= max_iter; ++i) {
 	        rho_1 = TSparseSpaceType::Dot(rtilde, r);
 //	        KRATOS_WATCH(normr)
