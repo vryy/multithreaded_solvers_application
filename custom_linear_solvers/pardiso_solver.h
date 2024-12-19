@@ -130,13 +130,13 @@ public:
     {
         mReusePerm = value;
     }
-    
+
     void ResetReusePermutation()
     {
         mReusePerm = true;
         mPermutationReady = false;
     }
-    
+
     /**
      * Normal solve method.
      * Solves the linear system Ax=b and puts the result on SystemVector& rX.
@@ -193,15 +193,15 @@ public:
          * 13   complex and nonsymmetric
          */
         int mtype = 1;
-        
+
         /* Number of right hand sides */
         int nrhs = 1;
-        
+
         /* Internal solver memory pointer pt, */
         /* 32-bit: int pt[64]; 64-bit: long int pt[64] */
         /* or void *pt[64] should be OK on both architectures */
         void *pt[64];
-        
+
         /* Pardiso control parameters */
         int iparm[64];
         double dparm[64];
@@ -211,7 +211,7 @@ public:
         int i;
         double ddum;    // Double dummy
         int* perm;  // Permutation array
-        
+
         /* -------------------------------------------------------------------- */
         /* ..  Setup Pardiso control parameters and initialize the solvers      */
         /*     internal adress pointers. This is only necessary for the FIRST   */
@@ -268,16 +268,16 @@ public:
         //iparm[1] = 0; /* Fill-in reordering by minimum degree algorithm*/
         iparm[1] = 2; /* Fill-in reordering from METIS */
 //        iparm[1] = 3; /* Fill-in reordering from METIS with OpenMP support*/ //not available in original pardiso
-        
+
         /* Numbers of processors, value of OMP_NUM_THREADS */
         iparm[2] = OpenMPUtils::GetNumThreads(); //omp_get_max_threads();
         std::cout << "Number of threads/procs (for MKL): " << iparm[2] << std::endl;
-        
+
         if( mRefinements > 0 )
             iparm[3] = 1; /* iterative-direct algorithm */
         else
             iparm[3] = 0; /* no iterative-direct algorithm */
-            
+
         if(mReusePerm == false)
         {
             iparm[4] = 0; /* No user fill-in reducing permutation */
@@ -296,7 +296,7 @@ public:
                 std::copy(mPerm.begin(), mPerm.end(), perm);
             }
         }
-        
+
         iparm[5] = 0;               /* Write solution into x */
         iparm[6] = 0;               /* Not in use */
         iparm[7] = mRefinements;    /* Max numbers of iterative refinement steps */
@@ -320,7 +320,7 @@ public:
         mnum = 1;                   /* Which factorization to use. */
         msglvl = 0;                 /* Print statistical information to the screen */
         error = 0;                  /* Initialize error flag */
-        
+
         /* -------------------------------------------------------------------- */
         /* .. Reordering and Symbolic Factorization. This step also allocates   */
         /* all memory that is necessary for the factorization.                  */
@@ -334,7 +334,7 @@ public:
                  iparm, &msglvl, &ddum, &ddum, &error, dparm);
         if (error != 0)
             KRATOS_THROW_ERROR(std::logic_error, "ERROR during symbolic factorization:", error);
-        
+
         if(mReusePerm == true)
         {
             if(mPermutationReady == false)
@@ -344,7 +344,7 @@ public:
                 mPermutationReady = true;
             }
         }
-        
+
         #ifdef ENABLE_PROFILING
         printf("Reordering completed ... %f s\n", OpenMPUtils::GetCurrentTime() - tmp_timing_solver);
         #else
@@ -367,7 +367,7 @@ public:
                  iparm, &msglvl, &ddum, &ddum, &error, dparm);
         if (error != 0)
             KRATOS_THROW_ERROR(std::logic_error, "ERROR during numerical factorization:", error);
-            
+
         #ifdef ENABLE_PROFILING
         printf("Factorization completed ... %f s\n", OpenMPUtils::GetCurrentTime() - tmp_timing_solver);
         #else
@@ -375,7 +375,7 @@ public:
         #endif
         printf("Number of perturbed pivots                  = %d\n", iparm[13]);
         printf("Memory numerical factorization and solution = %d KBs\n", iparm[16]);
-        
+
         /* -------------------------------------------------------------------- */
         /* .. Back substitution and iterative refinement.                       */
         /* -------------------------------------------------------------------- */
@@ -389,7 +389,7 @@ public:
                  iparm, &msglvl, b, x, &error, dparm);
         if (error != 0)
             KRATOS_THROW_ERROR(std::logic_error, "ERROR during solution:", error);
-        
+
         #ifdef ENABLE_PROFILING
         printf("Solve completed ... %f s\n", OpenMPUtils::GetCurrentTime() - tmp_timing_solver);
         #else
@@ -402,7 +402,7 @@ public:
             printf("Number of CGS iteration                        = %d\n", iparm[19]);
         printf("Number of positive eigenvalues                 = %d\n", iparm[21]); //remarks: only for symmetric matrix (mtype = -2), as of pardiso 5.0.0
         printf("Number of negative eigenvalues                 = %d\n", iparm[22]); //remarks: only for symmetric matrix (mtype = -2), as of pardiso 5.0.0
-        
+
         /* -------------------------------------------------------------------- */
         /* .. Termination and release of memory. */
         /* -------------------------------------------------------------------- */
@@ -413,7 +413,7 @@ public:
         delete [] index1_vector;
         delete [] index2_vector;
         delete [] perm;
-        
+
         std::cout << "#### SOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
         return true;
     }
@@ -439,7 +439,7 @@ public:
         buffer << "PARDISO solver";
         return buffer.str();
     }
-    
+
     /**
      * Print information about this object.
      */
@@ -462,7 +462,7 @@ private:
     bool mPermutationReady; //indicate that the permutation vector is ready or not
     boost::numeric::ublas::vector<int> mPerm; //array to store the permutation arrary in case the permutation is reused
     bool mIsInitialized;
-    
+
     /**
      * Assignment operator.
      */
@@ -504,6 +504,6 @@ private:
 
 }  // namespace Kratos.
 
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_PARDISO_SOLVER_H_INCLUDED  defined 
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_PARDISO_SOLVER_H_INCLUDED  defined
 
 

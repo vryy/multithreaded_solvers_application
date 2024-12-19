@@ -46,13 +46,11 @@
 #define  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_FEAST_SOLVER_H_INCLUDED
 
 // System includes
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 // External includes
-#include <boost/timer.hpp>
-#include <boost/smart_ptr.hpp>
 #include <boost/numeric/bindings/traits/sparse_traits.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_sparse.hpp>
@@ -66,10 +64,7 @@
 #include "includes/ublas_interface.h"
 #include "utilities/openmp_utils.h"
 
-namespace ublas = boost::numeric::ublas;
-
 namespace Kratos {
-
 
 /**
 FEAST is an eigenvalue solver that's good to find the eigenvalues in the specified interval. However, how to know that interval is unknown, maybe from practice/experience

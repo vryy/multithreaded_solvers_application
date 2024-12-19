@@ -54,7 +54,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 // External includes
-#include "boost/smart_ptr.hpp"
 
 
 // Project includes
@@ -97,7 +96,7 @@ THis solver solve the coupled u-p problem by using a staggerred scheme:
 
 => u = A^(-1) * (ru -B1 * p)                                (1)
    (C - B2 * A^(-1) * B1) * p = (rp - B2 * A^(-1) * ru)     (2)
-   
+
 Firstly p in (2) is solved approximately by approximating A^(-1) by diag(A)^(-1) (remarks: A needs to be diagonal-dominant for this to be a good approximation)
 Then u in (1) is solved exactly
 */
@@ -121,9 +120,9 @@ public:
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
-    
+
     typedef std::size_t  SizeType;
-    
+
     typedef std::size_t  IndexType;
 
     ///@}
@@ -361,5 +360,5 @@ inline std::ostream& operator << (std::ostream& OStream, const  Block2PhaseIndex
 #undef CHECK_DIAGONAL_DOMINANCE
 #undef STRINGIFY
 
-#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_2_PHASE_INDEX_BASED_SCHUR_SOLVER_H_INCLUDED  defined 
+#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_2_PHASE_INDEX_BASED_SCHUR_SOLVER_H_INCLUDED  defined
 

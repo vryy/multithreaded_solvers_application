@@ -54,7 +54,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 // External includes
-#include "boost/smart_ptr.hpp"
 
 
 // Project includes
@@ -112,9 +111,9 @@ public:
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
-    
+
     typedef std::size_t  SizeType;
-    
+
     typedef std::size_t  IndexType;
 
     ///@}
@@ -248,7 +247,7 @@ public:
         mpStructuralSolver->Initialize(mA, mu, rB); //take rB as temporary, but it should not be
         mpPressureSolver->Initialize(mC, mp, rB); //take rB as temporary, but it should not be
     }
-    
+
     /** Normal solve method.
     Solves the linear system Ax=b and puts the result on SystemVector& rX.
     rX is also th initial guess for iterative methods.
@@ -261,9 +260,9 @@ public:
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;
-        
+
         Initialize(rA, rX, rB);
-        
+
         VectorType f, u, p, d, g, e;
         VectorType du, dp, u0, p0;
         VectorType a, b;
@@ -271,23 +270,23 @@ public:
         // Get the initial u & p
         GetUPart(rX, u);
         GetPPart(rX, p);
-        
+
         // Get f, g
         GetUPart(rB, f);
         GetPPart(rB, g);
-        
+
         d.resize(f.size(), false);
         e.resize(g.size(), false);
         du.resize(u.size(), false);
         dp.resize(p.size(), false);
         a.resize(u.size(), false);
         b.resize(p.size(), false);
-        
+
         u0.resize(u.size(), false);
         p0.resize(p.size(), false);
         noalias(u0) = u;
         noalias(p0) = p;
-        
+
         int iter = 0;
         int max_iter = 10;
         double tol = 1.0e-10;
@@ -302,25 +301,25 @@ public:
             noalias(e) = g;
             noalias(d) -= prod(mB2, u);
             noalias(d) -= prod(mC, p);
-            
+
             // primal correction
             mpStructuralSolver->Solve(mA, du, d);
-            
+
             // new defect
             noalias(e) -= prod(mB2, du);
-            
+
             // dual correction
             mpPressureSolver->Solve(mC, dp, e);
-            
+
             // compute new step
             noalias(a) = prod(mA, du) + prod(mB1, dp);
             noalias(b) = prod(mB2, du) + prod(mC, dp);
             double alpha = (inner_prod(f, a) + inner_prod(e, b)) / (inner_prod(a, a) + inner_prod(b, b));
-            
+
             // update
             noalias(u) += alpha * du;
             noalias(p) += alpha * dp;
-            
+
             // compute convergence criteria
             KRATOS_WATCH(norm_2(du))
             KRATOS_WATCH(norm_2(dp))
@@ -411,7 +410,7 @@ protected:
     std::vector<SizeType> mother_indices;
     std::vector<int> mglobal_to_local_indexing;
     std::vector<int> mis_pressure_block;
-    
+
     ///@}
     ///@name Protected Operators
     ///@{
@@ -485,13 +484,13 @@ private:
 
     typename LinearSolverType::Pointer mpStructuralSolver;
     typename LinearSolverType::Pointer mpPressureSolver;
-    
+
     SparseMatrixType mA;
     SparseMatrixType mB1;
     SparseMatrixType mB2;
     SparseMatrixType mC;
     SparseMatrixType mS;
-    
+
     VectorType mp;
     VectorType mu;
 
@@ -649,5 +648,5 @@ inline std::ostream& operator << (std::ostream& OStream,
 
 #undef CHECK_EIGENVALUES
 
-#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined 
+#endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined
 

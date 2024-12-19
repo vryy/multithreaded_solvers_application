@@ -116,9 +116,9 @@ public:
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
-    
+
     typedef std::size_t  SizeType;
-    
+
     typedef std::size_t  IndexType;
 
     #if defined(MULTITHREADED_SOLVERS_APP_USE_FEAST) && defined(CHECK_EIGENVALUES_USING_FEAST)
@@ -240,11 +240,11 @@ public:
                 }
             }
         }
-        
+
         if(BaseType::GetPreconditioner()->AdditionalPhysicalDataIsNeeded())
             BaseType::GetPreconditioner()->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
     }
-    
+
     /** Normal solve method.
     Solves the linear system Ax=b and puts the result on SystemVector& rX.
     rX is also th initial guess for iterative methods.
@@ -259,7 +259,7 @@ public:
             return false;
 
         //GetTimeTable()->Start(Info());
-        
+
         std::cout << "Scaling begin" << std::endl;
         double start = OpenMPUtils::GetCurrentTime();
         RowScale(rA);
@@ -267,15 +267,15 @@ public:
         double start1 = OpenMPUtils::GetCurrentTime();
         ColumnScale(rA);
         std::cout << "Column scale completed..." << OpenMPUtils::GetCurrentTime() - start1 << " s" << std::endl;
-        
+
         for(int i = 0; i < mother_indices.size(); ++i)
             rB(mother_indices[i]) *= ma1;
-            
+
         for(int i = 0; i < mpressure_indices.size(); ++i)
             rB(mpressure_indices[i]) *= ma2;
-            
+
         std::cout << "Scaling completed... " << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
-        
+
         #ifdef CHECK_EIGENVALUES
         EigenSolverType eigen_solver;
         VectorType lambdas(10);
@@ -283,22 +283,22 @@ public:
 //        eigen_solver.SolveLargest(rA, 5, lambdas);
 //        std::cout << "Checking smallest eigenvalues..." << std::endl;
 //        eigen_solver.SolveSmallest(rA, 5, lambdas);
-        
+
         std::cout << "Checking eigenvalues between -1.0 and 1.0 ..." << std::endl;
         int nlambda0 = 50;
         VectorType rLamdas;
         eigen_solver.Solve(rA, nlambda0, rLamdas, -1.0, 1.0);
         #endif
-        
+
 
         BaseType::GetPreconditioner()->Initialize(rA, rX, rB);
-        
+
 //        BaseType::GetPreconditioner()->ApplyInverseRight(rX);
 
 //        BaseType::GetPreconditioner()->ApplyLeft(rB);
 
         int ierr = IterativeSolve(rA, rX, rB);
-        
+
         if(ierr != 0)
             std::cout << "Warning: the iterative solver encountered some problem, error code = " << ierr << std::endl;
 
@@ -306,7 +306,7 @@ public:
 
         for(int i = 0; i < mother_indices.size(); ++i)
             rX(mother_indices[i]) *= mb1;
-            
+
         for(int i = 0; i < mpressure_indices.size(); ++i)
             rX(mpressure_indices[i]) *= mb2;
 
@@ -409,7 +409,7 @@ protected:
     std::vector<SizeType> mother_indices;
     std::vector<int> mglobal_to_local_indexing;
     std::vector<int> mis_pressure_block;
-    
+
     ///@}
     ///@name Protected Operators
     ///@{
@@ -536,7 +536,7 @@ private:
 	        TSparseSpaceType::UnaliasedAdd(rX, alpha, phat);
 	        TSparseSpaceType::UnaliasedAdd(rX, omega, shat);
 	        TSparseSpaceType::ScaleAndAdd(1.0, s, -omega, t, r);
-	        
+
 	        rho_2 = rho_1;
 	        normr = TSparseSpaceType::TwoNorm(r);
 //	        KRATOS_WATCH(alpha)
@@ -557,7 +557,7 @@ private:
 		        this->SetResidualNorm(resid);
 	            return 3;
 	        }
-	        
+
 	        ++show_progress;
 	    }
 
@@ -574,7 +574,7 @@ private:
         std::size_t*   ia = rA.index1_data().begin();
         std::size_t*   ja = rA.index2_data().begin();
         double*         a = rA.value_data().begin();
-        
+
         #pragma omp parallel for
         for(int i = 0; i < mother_indices.size(); ++i)
         {
@@ -583,7 +583,7 @@ private:
             for(int j = 0; j < nz; ++j)
                 a[ia[r] + j] *= ma1;
         }
-        
+
         #pragma omp parallel for
         for(int i = 0; i < mpressure_indices.size(); ++i)
         {
@@ -593,7 +593,7 @@ private:
                 a[ia[r] + j] *= ma2;
         }
     }
-    
+
     void ColumnScale(SparseMatrixType& rA)
     {
         int n = rA.size1();
@@ -608,7 +608,7 @@ private:
             for(int j = 0; j < nz; ++j)
                 all_indices_column_pos[ja[ia[i] + j]].push_back(ia[i] + j);
         }
-        
+
         #pragma omp parallel for
         for(int i = 0; i < mother_indices.size(); ++i)
         {

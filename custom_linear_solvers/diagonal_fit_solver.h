@@ -1,4 +1,4 @@
-/*          
+/*
  * see multithreaded_solvers_application/LICENSE.txt                      *
  *========================================================================*
  * Created at Institute for Structural Mechanics                          *
@@ -12,14 +12,12 @@
 #if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_DIAGONAL_FIT_SOLVER_H_INCLUDED )
 #define  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_DIAGONAL_FIT_SOLVER_H_INCLUDED
 
-// System includes 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+// System includes
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
-// External includes 
-#include <boost/timer.hpp>
-#include <boost/smart_ptr.hpp>
+// External includes
 #include <boost/numeric/bindings/traits/sparse_traits.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_sparse.hpp>
@@ -30,8 +28,6 @@
 #include "includes/ublas_interface.h"
 
 #define CHECK_INCOMPATIBLE_ROWS
-
-namespace ublas = boost::numeric::ublas;
 
 namespace Kratos {
 
@@ -245,7 +241,7 @@ public:
         buffer << "DiagonalFitSolver";
         return buffer.str();
     }
-    
+
     /**
      * Print information about this object.
      */

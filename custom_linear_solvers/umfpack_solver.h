@@ -12,13 +12,12 @@
 #if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_UMFPACK_SOLVER_H_INCLUDED )
 #define  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_UMFPACK_SOLVER_H_INCLUDED
 
-// External includes 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+// System includes
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
-#include <boost/timer.hpp>
-#include <boost/smart_ptr.hpp>
+// External includes
 #include <boost/numeric/bindings/traits/sparse_traits.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_sparse.hpp>
@@ -29,8 +28,6 @@
 #include "includes/define.h"
 #include "includes/ublas_interface.h"
 #include "utilities/openmp_utils.h"
-
-namespace ublas = boost::numeric::ublas;
 
 namespace Kratos {
 template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
@@ -128,7 +125,7 @@ public:
         buffer << "UmfPack solver";
         return buffer.str();
     }
-    
+
     /**
      * Print information about this object.
      */

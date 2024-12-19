@@ -54,7 +54,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 // External includes
-#include "boost/smart_ptr.hpp"
 
 
 // Project includes
@@ -133,9 +132,13 @@ public:
     /// Default constructor.
     Block2PhaseSchurSolver() {}
 
-    Block2PhaseSchurSolver(
-        typename BaseType::Pointer pSolver
-    ) : BaseType(), mpSolver(pSolver)
+    Block2PhaseSchurSolver(typename BaseType::Pointer pSolver)
+    : BaseType(), mpSolverA(pSolver), mpSolverS(pSolver)
+    {}
+
+    Block2PhaseSchurSolver(typename BaseType::Pointer pSolverA,
+        typename BaseType::Pointer pSolverS)
+    : BaseType(), mpSolverA(pSolverA), mpSolverS(pSolverS)
     {}
 
     /// Copy constructor.
