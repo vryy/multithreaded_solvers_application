@@ -54,10 +54,10 @@ endif()
 
 ## generate variables with the sources
 set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/external_includes/condition.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/mesh_rcm.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/condition.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/mesh_rcm.cpp
 )
 
 if(${MULTITHREADED_SOLVERS_APP_USE_FEAST} MATCHES TRUE)
@@ -80,12 +80,12 @@ endif()
 
 set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
     ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_eigen_solvers_to_python.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_linear_solvers_to_python.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_utilities_to_python.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_processes_to_python.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/tools.f
-	${CMAKE_CURRENT_SOURCE_DIR}/custom_python/multithreaded_solvers_python_application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_eigen_solvers_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_linear_solvers_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_utilities_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_processes_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/tools.f
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/multithreaded_solvers_python_application.cpp
 )
 
 #find_library(UMFPACK_LIB NAMES umfpack PATHS /usr/local/lib)
@@ -98,10 +98,11 @@ set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
 ##find_library(BOOST_SYSTEM_LIB NAMES boost_system PATHS ${BOOST_ROOT}/lib)
 ##find_library(BOOST_RANDOM_LIB NAMES boost_random PATHS ${BOOST_ROOT}/lib)
 
-if(PARDISO_LIBRARY)
+if(DEFINED PARDISO_LIBRARY)
+    message("MultithreadedSolversApplication Pardiso solver is activated")
     message("PARDISO_LIBRARY: " "${PARDISO_LIBRARY}")
     add_definitions(-DMULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO)
-endif(PARDISO_LIBRARY)
+endif()
 
 if(${USE_INTEL_GREATER_THAN_13} MATCHES TRUE)
     message("***************************************************************************")
@@ -126,12 +127,18 @@ elseif(${USE_INTEL_GREATER_THAN_17} MATCHES TRUE)
     message("****** set USE_INTEL_GREATER_THAN_13 to TRUE to use a more modern version *")
     message("***************************************************************************")
     find_package(MKLSOLVER17 REQUIRED)
+elseif(${USE_INTEL_GREATER_THAN_24} MATCHES TRUE)
+    message("***************************************************************************")
+    message("****** kratos configured for using the mkl shipped with intel >= 2017 *****")
+    message("****** set USE_INTEL_GREATER_THAN_13 to TRUE to use a more modern version *")
+    message("***************************************************************************")
+    find_package(MKLSOLVER24 REQUIRED)
 elseif(${USE_INTEL_MIC} MATCHES TRUE)
     message("***************************************************************************")
     message("****** kratos configured for using the mkl for Intel Xeon Phi         *****")
     message("***************************************************************************")
     find_package(MKLSOLVERmic REQUIRED)
-    else(${USE_INTEL_GREATER_THAN_13} MATCHES TRUE)
+else()
     message("***************************************************************************")
     message("****** kratos configured for using the mkl shipped with intel < 2012*******")
     message("****** set USE_INTEL_GREATER_THAN_13 to TRUE to use a more modern version *")
@@ -169,7 +176,9 @@ target_link_libraries(KratosMultithreadedSolversApplication superlu_mt)
 target_link_libraries(KratosMultithreadedSolversApplication ${UMFPACK_LIBRARIES})
 target_link_libraries(KratosMultithreadedSolversApplication rt)
 target_link_libraries(KratosMultithreadedSolversApplication ${METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP})
-target_link_libraries(KratosMultithreadedSolversApplication ${PARDISO_LIBRARY})
+if(DEFINED PARDISO_LIBRARY)
+    target_link_libraries(KratosMultithreadedSolversApplication ${PARDISO_LIBRARY})
+endif()
 
 if(${MULTITHREADED_SOLVERS_APP_USE_ARPACK} MATCHES TRUE)
     target_link_libraries(KratosMultithreadedSolversApplication arpack)
@@ -179,6 +188,7 @@ if(${MULTITHREADED_SOLVERS_APP_USE_FEAST} MATCHES TRUE)
     # REMARKS: Feast uses various subroutines of MKL, so we have to link manually here
     target_link_libraries(KratosMultithreadedSolversApplication feast_sparse)
     target_link_libraries(KratosMultithreadedSolversApplication feast)
+    # TODO the libraries below depends on the MKL version. One must customize that according to the MKL library
     target_link_libraries(KratosMultithreadedSolversApplication mkl_intel_lp64)
     target_link_libraries(KratosMultithreadedSolversApplication mkl_intel_thread)
     target_link_libraries(KratosMultithreadedSolversApplication mkl_core)
@@ -192,20 +202,24 @@ endif()
 
 target_link_libraries(KratosMultithreadedSolversApplication ${BLAS_LIBRARIES})
 target_link_libraries(KratosMultithreadedSolversApplication ${LAPACK_LIBRARIES})
-target_link_libraries(KratosMultithreadedSolversApplication ${MKLSOLVER_LIBRARIES})
+if (${MKLSOLVER_FOUND} MATCHES "YES")
+    target_link_libraries(KratosMultithreadedSolversApplication ${MKLSOLVER_LIBRARIES})
+endif()
 target_link_libraries(KratosMultithreadedSolversApplication hsl)
-target_link_libraries(KratosMultithreadedSolversApplication gfortran)
+# target_link_libraries(KratosMultithreadedSolversApplication gfortran) # TODO check if we need to enable
 set_target_properties(KratosMultithreadedSolversApplication PROPERTIES COMPILE_DEFINITIONS "KRATOS_CORE=IMPORT;MULTITHREADED_SOLVERS_APPLICATION=EXPORT;")
 set_target_properties(KratosMultithreadedSolversApplication PROPERTIES PREFIX "")
 install(TARGETS KratosMultithreadedSolversApplication DESTINATION libs )
-install(FILES ${PARDISO_LIBRARY} DESTINATION libs )
+if(DEFINED PARDISO_LIBRARY)
+    install(FILES ${PARDISO_LIBRARY} DESTINATION libs )
+endif()
 
 # get_property(inc_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
 # message("TestApplication subdir inc_dirs = ${inc_dirs}")
 
 # changing the .dll suffix to .pyd
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set_target_properties(KratosMultithreadedSolversApplication PROPERTIES SUFFIX .pyd)
+    set_target_properties(KratosMultithreadedSolversApplication PROPERTIES SUFFIX .pyd)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 if(${INSTALL_PYTHON_FILES} MATCHES ON)
@@ -218,3 +232,5 @@ endif(${INSTALL_PYTHON_FILES} MATCHES ON)
 
 # Add to the KratosMultiphisics Python module
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/MultithreadedSolversApplication.py" DESTINATION KratosMultiphysics )
+
+message("**** finish configuring KratosMultithreadedSolversApplication ****")
