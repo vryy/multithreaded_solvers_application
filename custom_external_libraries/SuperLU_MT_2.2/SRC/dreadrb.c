@@ -147,7 +147,7 @@ static int dReadValues(FILE *fp, int n, double *destination, int perline,
 
     i = 0;
     while (i < n) {
-        j = fgets(buf, 100, fp);    /* read a line at a time */
+        j = (int) fgets(buf, 100, fp);    /* read a line at a time */
         for (j=0; j<perline && i<n; j++) {
             tmp = buf[(j+1)*persize];     /* save the char at that place */
             buf[(j+1)*persize] = 0;       /* null terminate */

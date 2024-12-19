@@ -1,4 +1,4 @@
-/*          
+/*
  * see multithreaded_solvers_application/LICENSE.txt                      *
  *========================================================================*
  * Created at Institute for Structural Mechanics                          *
@@ -94,9 +94,10 @@ public:
         umfpack_di_symbolic(n, n, index1_vector, index2_vector, a, &Symbolic, NULL, NULL);
         umfpack_di_numeric(index1_vector, index2_vector, a, Symbolic, &Numeric, NULL, NULL);
         umfpack_di_free_symbolic(&Symbolic);
-        umfpack_di_solve(UMFPACK_At, index1_vector, index2_vector, a, &rX[0], &rB[0], Numeric, NULL, NULL); //since UMFPACK uses compressed sparse column by default, so the system of A'x = b should be solved
+        umfpack_di_solve(UMFPACK_At, index1_vector, index2_vector, a, &rX[0], &rB[0], Numeric, NULL, NULL);
+        //since UMFPACK uses compressed sparse column by default, so the system of A'x = b will be solved by default. We use UMFPACK_At to solve the transpose of A', which is A itself.
         umfpack_di_free_numeric(&Numeric);
-        
+
         delete [] index1_vector;
         delete [] index2_vector;
 
