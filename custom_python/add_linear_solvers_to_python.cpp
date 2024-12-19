@@ -31,6 +31,7 @@
 #include "custom_linear_solvers/block_2phase_schur_solver.h"
 #include "custom_linear_solvers/block_2phase_index_based_schur_solver.h"
 #include "custom_linear_solvers/block_pressure_schur_solver.h"
+#include "custom_linear_solvers/drained_solver.h"
 #ifdef MULTITHREADED_SOLVERS_APP_USE_MKL
 #include "custom_linear_solvers/bicgstab_scaling_solver.h"
 #include "custom_linear_solvers/scaling_solver2.h"
@@ -240,6 +241,14 @@ namespace Python
         .def(init<LinearSolverType::Pointer, const unsigned int&, const unsigned int&>())
         .def("AdditionalPhysicalDataIsNeeded", &Block2PhaseIndexBasedSchurSolverType::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &Block2PhaseIndexBasedSchurSolverType::ProvideAdditionalData)
+        .def(self_ns::str(self))
+        ;
+
+        typedef DrainedSolver<SparseSpaceType, LocalSpaceType> DrainedSolverType;
+        class_<DrainedSolverType, DrainedSolverType::Pointer, bases<LinearSolverType> >
+        ("DrainedSolver", init<LinearSolverType::Pointer>())
+        .def("AdditionalPhysicalDataIsNeeded", &DrainedSolverType::AdditionalPhysicalDataIsNeeded)
+        .def("ProvideAdditionalData", &DrainedSolverType::ProvideAdditionalData)
         .def(self_ns::str(self))
         ;
 
