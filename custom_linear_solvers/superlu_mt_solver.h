@@ -46,7 +46,6 @@
 #define  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SUPERLU_MT_SOLVER_H_INCLUDED
 
 // External includes
-#include "boost/smart_ptr.hpp"
 
 #include "includes/ublas_interface.h"
 #include "utilities/openmp_utils.h"
@@ -70,7 +69,7 @@ public:
     /**
      * Counted pointer of SuperLUMTSolver
      */
-    typedef boost::shared_ptr<SuperLUMTSolver> Pointer;
+    KRATOS_CLASS_POINTER_DEFINITION(SuperLUMTSolver);
 
     typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
 
@@ -88,7 +87,7 @@ public:
     /**
      * Destructor
      */
-    virtual ~SuperLUMTSolver() {}
+    ~SuperLUMTSolver() override {}
 
     /**
      * Normal solve method.
@@ -98,7 +97,7 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         std::cout << "matrix size in solver:  " << rA.size1() << std::endl;
         std::cout << "RHS size in solver SLU_MT: " << rB.size() << std::endl;
@@ -141,20 +140,20 @@ public:
         drop_tol    = 0.0;
         lwork       = 0;
         nrhs        = 1;
-    
-    	printf("SuperLU_MT is called with %d threads\n", nprocs);
+
+        printf("SuperLU_MT is called with %d threads\n", nprocs);
         if ( lwork > 0 )
         {
-	        work = SUPERLU_MALLOC(lwork);
-    	    printf("Use work space of size LWORK = %d bytes\n", lwork);
-	        if ( !work )
-	            SUPERLU_ABORT("DLINSOLX: cannot allocate work[]");
+            work = SUPERLU_MALLOC(lwork);
+            printf("Use work space of size LWORK = %d bytes\n", lwork);
+            if ( !work )
+                SUPERLU_ABORT("DLINSOLX: cannot allocate work[]");
         }
-    
+
         //create a copy of the matrix
         start = OpenMPUtils::GetCurrentTime();
-        int *index1_vector = new (std::nothrow) int[rA.index1_data().size()];
-        int *index2_vector = new (std::nothrow) int[rA.index2_data().size()];
+        std::vector<int> index1_vector(rA.index1_data().size());
+        std::vector<int> index2_vector(rA.index2_data().size());
 //         double *values_vector = new (std::nothrow) double[rA.value_data().size()];
 
         for( unsigned int i = 0; i < rA.index1_data().size(); i++ )
@@ -162,14 +161,14 @@ public:
 
         for( unsigned int i = 0; i < rA.index2_data().size(); i++ )
             index2_vector[i] = (int)rA.index2_data()[i];
-        
+
         firstfact = (fact == FACTORED || refact == YES);
 
         dCreate_CompCol_Matrix (&Aslu, rA.size1(), rA.size2(),
                                 rA.nnz(),
                                 rA.value_data().begin(),
-                                index2_vector, //can not avoid a copy as ublas uses unsigned int internally
-                                index1_vector, //can not avoid a copy as ublas uses unsigned int internally
+                                index2_vector.data(), //can not avoid a copy as ublas uses unsigned int internally
+                                index1_vector.data(), //can not avoid a copy as ublas uses unsigned int internally
                                 SLU_NC, SLU_D, SLU_GE
                                );
 
@@ -179,32 +178,32 @@ public:
         //allocate memory for permutation arrays
         if (!(perm_r = intMalloc(rA.size1()))) SUPERLU_ABORT("Malloc fails for perm_r[].");
         if (!(perm_c = intMalloc(rA.size2()))) SUPERLU_ABORT("Malloc fails for perm_c[].");
-        if (!(R = (double *) SUPERLU_MALLOC(Aslu.nrow * sizeof(double)))) 
+        if (!(R = (double *) SUPERLU_MALLOC(Aslu.nrow * sizeof(double))))
             SUPERLU_ABORT("SUPERLU_MALLOC fails for R[].");
         if (!(C = (double *) SUPERLU_MALLOC(Aslu.ncol * sizeof(double))))
             SUPERLU_ABORT("SUPERLU_MALLOC fails for C[].");
         if (!(ferr = (double *) SUPERLU_MALLOC(nrhs * sizeof(double))))
             SUPERLU_ABORT("SUPERLU_MALLOC fails for ferr[].");
-        if (!(berr = (double *) SUPERLU_MALLOC(nrhs * sizeof(double)))) 
+        if (!(berr = (double *) SUPERLU_MALLOC(nrhs * sizeof(double))))
             SUPERLU_ABORT("SUPERLU_MALLOC fails for berr[].");
-        
+
         stop = OpenMPUtils::GetCurrentTime();
-    	printf("SuperLU_MT: allocation for system of equations comleted: %f s\n", stop - start);
-    	start = stop;
+        printf("SuperLU_MT: allocation for system of equations comleted: %f s\n", stop - start);
+        start = stop;
 
         /*
          * Get column permutation vector perm_c[], according to permc_spec:
-         *   permc_spec = 0: natural ordering 
+         *   permc_spec = 0: natural ordering
          *   permc_spec = 1: minimum degree ordering on structure of A'*A
          *   permc_spec = 2: minimum degree ordering on structure of A'+A
          *   permc_spec = 3: approximate minimum degree for unsymmetric matrices
-         */    	
+         */
         permc_spec = 1;
         get_perm_c(permc_spec, &Aslu, perm_c);
-        
+
         stop = OpenMPUtils::GetCurrentTime();
-    	printf("SuperLU_MT: reordering completed: %f s\n", stop - start);
-    	start = stop;
+        printf("SuperLU_MT: reordering completed: %f s\n", stop - start);
+        start = stop;
 
         superlumt_options.nprocs = nprocs;
         superlumt_options.fact = fact;
@@ -221,40 +220,40 @@ public:
         superlumt_options.perm_r = perm_r;
         superlumt_options.work = work;
         superlumt_options.lwork = lwork;
-        
-        /* 
+
+        /*
          * Solve the system and compute the condition number
          * and error bounds using pdgssvx.
          */
         pdgssvx(nprocs, &superlumt_options, &Aslu, perm_c, perm_r,
-	        &equed, R, C, &L, &U, &B, &X, &rpg, &rcond,
-	        ferr, berr, &superlu_memusage, &info);
+            &equed, R, C, &L, &U, &B, &X, &rpg, &rcond,
+            ferr, berr, &superlu_memusage, &info);
 
         stop = OpenMPUtils::GetCurrentTime();
-    	printf("SuperLU_MT: solve completed: %f s\n", stop - start);
-    	start = stop;
-    	
+        printf("SuperLU_MT: solve completed: %f s\n", stop - start);
+        start = stop;
+
         printf("pdgssvx(): info %d\n", info);
 
         //print matrix analysis result and deallocate memory
         if ( info == 0 || info == rX.size() + 1 )
         {
-	        printf("Recip. pivot growth = %e\n", rpg);
-	        printf("Recip. condition number = %e\n", rcond);
-	        printf("%8s%16s%16s\n", "rhs", "FERR", "BERR");
-	        for (unsigned int i = 0; i < nrhs; ++i)
-	            printf("%8d%16e%16e\n", i+1, ferr[i], berr[i]);
-	           
+            printf("Recip. pivot growth = %e\n", rpg);
+            printf("Recip. condition number = %e\n", rcond);
+            printf("%8s%16s%16s\n", "rhs", "FERR", "BERR");
+            for (unsigned int i = 0; i < nrhs; ++i)
+                printf("%8d%16e%16e\n", i+1, ferr[i], berr[i]);
+
             Lstore = (SCPformat *) L.Store;
             Ustore = (NCPformat *) U.Store;
-	        printf("No of nonzeros in factor L = %d\n", Lstore->nnz);
-        	printf("No of nonzeros in factor U = %d\n", Ustore->nnz);
-        	printf("No of nonzeros in L+U = %d\n", Lstore->nnz + Ustore->nnz - rX.size());
-	        printf("L\\U MB %.3f\ttotal MB needed %.3f\texpansions %d\n",
-	           superlu_memusage.for_lu/1e6, superlu_memusage.total_needed/1e6,
-	           superlu_memusage.expansions);
-	        
-	        fflush(stdout);
+            printf("No of nonzeros in factor L = %d\n", Lstore->nnz);
+            printf("No of nonzeros in factor U = %d\n", Ustore->nnz);
+            printf("No of nonzeros in L+U = %d\n", Lstore->nnz + Ustore->nnz - rX.size());
+            printf("L\\U MB %.3f\ttotal MB needed %.3f\texpansions %d\n",
+               superlu_memusage.for_lu/1e6, superlu_memusage.total_needed/1e6,
+               superlu_memusage.expansions);
+
+            fflush(stdout);
         }
         else if ( info > 0 && lwork == -1 )
             printf("** Estimated memory: %d bytes\n", info - rX.size());
@@ -274,8 +273,6 @@ public:
             Destroy_CompCol_NCP(&U);
         }
 
-        delete [] index1_vector;
-        delete [] index2_vector;
 //         delete [] b_vector;
 
         //CHECK WITH VALGRIND IF THIS IS NEEDED ...or if it is done by the lines above
@@ -296,26 +293,28 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
         //TODO
         bool is_solved = false;
-        
+
+        KRATOS_ERROR << "This solver can be used for single RHS only";
+
         return is_solved;
     }
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "SuperLU_MT solver";
         return buffer.str();
     }
-    
+
     /**
      * Print information about this object.
      */
-    void  PrintInfo(std::ostream& rOStream) const
+    void PrintInfo(std::ostream& rOStream) const override
     {
         rOStream << "SuperLU_MT solver finished.";
     }
@@ -323,7 +322,7 @@ public:
     /**
      * Print object's data.
      */
-    void  PrintData(std::ostream& rOStream) const
+    void PrintData(std::ostream& rOStream) const override
     {
     }
 
@@ -341,35 +340,6 @@ private:
 
 }; // Class SkylineLUFactorizationSolver
 
-
-/**
- * input stream function
- */
-template<class TSparseSpaceType, class TDenseSpaceType,class TReordererType>
-inline std::istream& operator >> (std::istream& rIStream, SuperLUMTSolver< TSparseSpaceType,
-                                  TDenseSpaceType, TReordererType>& rThis)
-{
-    return rIStream;
-}
-
-/**
- * output stream function
- */
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator << (std::ostream& rOStream,
-                                  const SuperLUMTSolver<TSparseSpaceType,
-                                  TDenseSpaceType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(rOStream);
-    rOStream << std::endl;
-    rThis.PrintData(rOStream);
-
-    return rOStream;
-}
-
-
 }  // namespace Kratos.
 
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SUPERLU_SOLVER_H_INCLUDED  defined 
-
-
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SUPERLU_SOLVER_H_INCLUDED  defined

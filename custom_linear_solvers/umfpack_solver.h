@@ -55,7 +55,7 @@ public:
     /**
      * Destructor
      */
-    virtual ~UmfPackSolver() {}
+    ~UmfPackSolver() override {}
 
     /**
      * Normal solve method.
@@ -65,7 +65,7 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         double start_solver = OpenMPUtils::GetCurrentTime();
 
@@ -78,8 +78,8 @@ public:
         double* a = rA.value_data().begin();
 
         /* manual index vector generation */
-        int* index1_vector = new int[rA.index1_data().size()];
-        int* index2_vector = new int[rA.index2_data().size()];
+        std::vector<int> index1_vector(rA.index1_data().size());
+        std::vector<int> index2_vector(rA.index2_data().size());
         std::cout << "Size of the problem: " << n << std::endl;
         std::cout << "Size of index1_vector: " << rA.index1_data().size() << std::endl;
         std::cout << "Size of index2_vector: " << rA.index2_data().size() << std::endl;
@@ -91,15 +91,26 @@ public:
             index2_vector[i] = (int) (rA.index2_data()[i]);
 
         void *Symbolic, *Numeric;
-        umfpack_di_symbolic(n, n, index1_vector, index2_vector, a, &Symbolic, NULL, NULL);
-        umfpack_di_numeric(index1_vector, index2_vector, a, Symbolic, &Numeric, NULL, NULL);
-        umfpack_di_free_symbolic(&Symbolic);
-        umfpack_di_solve(UMFPACK_At, index1_vector, index2_vector, a, &rX[0], &rB[0], Numeric, NULL, NULL);
-        //since UMFPACK uses compressed sparse column by default, so the system of A'x = b will be solved by default. We use UMFPACK_At to solve the transpose of A', which is A itself.
-        umfpack_di_free_numeric(&Numeric);
+        int status;
+        status = umfpack_di_symbolic(n, n, index1_vector.data(), index2_vector.data(), a, &Symbolic, NULL, NULL);
+        if (status != UMFPACK_OK)
+            KRATOS_ERROR << "Error with symbolic factorization, error code = " << status;
 
-        delete [] index1_vector;
-        delete [] index2_vector;
+        std::vector<double> Control(UMFPACK_CONTROL);
+        std::vector<double> Info(UMFPACK_INFO);
+        umfpack_di_defaults( Control.data() );
+        status = umfpack_di_numeric(index1_vector.data(), index2_vector.data(), a, Symbolic, &Numeric, Control.data(), Info.data());
+        if (status != UMFPACK_OK)
+            KRATOS_ERROR << "Error with numeric factorization, error code = " << status;
+
+        //since UMFPACK uses compressed sparse column by default, so the system of A'x = b will be solved by default. We use UMFPACK_At to solve the transpose of A', which is A itself.
+        status = umfpack_di_solve(UMFPACK_At, index1_vector.data(), index2_vector.data(), a, &rX[0], &rB[0], Numeric, NULL, NULL);
+        if (status != UMFPACK_OK)
+            KRATOS_ERROR << "Error with back solve, error code = " << status;
+
+        // clean up
+        if (Symbolic) umfpack_di_free_symbolic(&Symbolic);
+        if (Numeric) umfpack_di_free_numeric(&Numeric);
 
         std::cout << "#### SOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
         return true;
@@ -113,14 +124,14 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
-        KRATOS_THROW_ERROR(std::logic_error, "ERROR: This solver can be used for single RHS only", "");
+        KRATOS_ERROR << "This solver can be used for single RHS only";
         return false;
     }
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "UmfPack solver";
@@ -130,7 +141,7 @@ public:
     /**
      * Print information about this object.
      */
-    void PrintInfo(std::ostream& rOStream) const
+    void PrintInfo(std::ostream& rOStream) const override
     {
         rOStream << "UmfPack solver finished.";
     }
@@ -138,7 +149,7 @@ public:
     /**
      * Print object's data.
      */
-    void PrintData(std::ostream& rOStream) const
+    void PrintData(std::ostream& rOStream) const override
     {
     }
 
@@ -155,30 +166,6 @@ private:
 
 };
 // Class UmfPackSolver
-
-/**
- * input stream function
- */
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >>(
-        std::istream& rIStream,
-        UmfPackSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis) {
-    return rIStream;
-}
-
-/**
- * output stream function
- */
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator <<(
-        std::ostream& rOStream,
-        const UmfPackSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis) {
-    rThis.PrintInfo(rOStream);
-    rOStream << std::endl;
-    rThis.PrintData(rOStream);
-
-    return rOStream;
-}
 
 } // namespace Kratos.
 
