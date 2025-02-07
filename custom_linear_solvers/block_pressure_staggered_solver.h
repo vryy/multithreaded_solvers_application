@@ -1,39 +1,5 @@
 /*
-==============================================================================
-Kratos
-A General Purpose Software for Multi-Physics Finite Element Analysis
-Version 1.0 (Released on march 05, 2007).
-
-Copyright 2007
-Pooyan Dadvand, Riccardo Rossi
-pooyan@cimne.upc.edu
-rrossi@cimne.upc.edu
-CIMNE (International Center for Numerical Methods in Engineering),
-Gran Capita' s/n, 08034 Barcelona, Spain
-
-Permission is hereby granted, free  of charge, to any person obtaining
-a  copy  of this  software  and  associated  documentation files  (the
-"Software"), to  deal in  the Software without  restriction, including
-without limitation  the rights to  use, copy, modify,  merge, publish,
-distribute,  sublicense and/or  sell copies  of the  Software,  and to
-permit persons to whom the Software  is furnished to do so, subject to
-the following condition:
-
-Distribution of this code for  any  commercial purpose  is permissible
-ONLY BY DIRECT ARRANGEMENT WITH THE COPYRIGHT OWNER.
-
-The  above  copyright  notice  and  this permission  notice  shall  be
-included in all copies or substantial portions of the Software.
-
-THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
-EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT  SHALL THE AUTHORS OR COPYRIGHT HOLDERS  BE LIABLE FOR ANY
-CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER IN AN  ACTION OF CONTRACT,
-TORT  OR OTHERWISE, ARISING  FROM, OUT  OF OR  IN CONNECTION  WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-==============================================================================
+see multithreaded_solvers_application/LICENSE.txt
 */
 
 //
@@ -59,6 +25,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Project includes
 #include "includes/define.h"
 #include "linear_solvers/iterative_solver.h"
+#include "custom_utilities/multithreaded_solvers_math_utils.h"
 
 
 //#define CHECK_EIGENVALUES
@@ -198,6 +165,8 @@ public:
         unsigned int pressure_counter = 0;
         unsigned int other_counter = 0;
         unsigned int global_pos;
+        madof_set.clear();
+        msdof_set.clear();
         for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             global_pos = it->EquationId();
@@ -208,6 +177,7 @@ public:
                     mpressure_indices[pressure_counter] = global_pos;
                     mglobal_to_local_indexing[global_pos] = pressure_counter;
                     mis_pressure_block[global_pos] = true;
+                    msdof_set.push_back(*it);
                     ++pressure_counter;
                 }
                 else
@@ -215,34 +185,32 @@ public:
                     mother_indices[other_counter] = global_pos;
                     mglobal_to_local_indexing[global_pos] = other_counter;
                     mis_pressure_block[global_pos] = false;
+                    madof_set.push_back(*it);
                     ++other_counter;
                 }
             }
         }
-        
+
         if(mpStructuralSolver->AdditionalPhysicalDataIsNeeded())
-            mpStructuralSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
+            mpStructuralSolver->ProvideAdditionalData(rA, rX, rB, madof_set, r_model_part);
         if(mpPressureSolver->AdditionalPhysicalDataIsNeeded())
-            mpPressureSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
+            mpPressureSolver->ProvideAdditionalData(rA, rX, rB, msdof_set, r_model_part);
     }
-    
+
     virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
     {
         std::cout << "Fill blocks begin" << std::endl;
         double start = OpenMPUtils::GetCurrentTime();
-        FillBlockMatrices(rA, mA, mB1, mB2, mC);
+        MultithreadedSolversMathUtils::FillBlockMatrices(rA,
+            mother_indices, mpressure_indices, mglobal_to_local_indexing, mis_pressure_block,
+            mA, mB1, mB2, mC);
         std::cout << "Fill blocks completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
-        
+
         //this is rather slow
 //        KRATOS_WATCH(norm_frobenius(mA))
 //        KRATOS_WATCH(norm_frobenius(mB1))
 //        KRATOS_WATCH(norm_frobenius(mB2))
 //        KRATOS_WATCH(norm_frobenius(mC))
-        
-        KRATOS_WATCH(ComputeFrobeniusNorm(mA))
-        KRATOS_WATCH(ComputeFrobeniusNorm(mB1))
-        KRATOS_WATCH(ComputeFrobeniusNorm(mB2))
-        KRATOS_WATCH(ComputeFrobeniusNorm(mC))
 
         mpStructuralSolver->Initialize(mA, mu, rB); //take rB as temporary, but it should not be
         mpPressureSolver->Initialize(mC, mp, rB); //take rB as temporary, but it should not be
@@ -325,31 +293,18 @@ public:
             KRATOS_WATCH(norm_2(dp))
             double eps_u = alpha * norm_2(du) / norm_2(u - u0);
             double eps_p = alpha * norm_2(dp) / norm_2(p - p0);
-            double eps = sqrt(pow(eps_u, 2) + pow(eps_p, 2)); 
+            double eps = sqrt(pow(eps_u, 2) + pow(eps_p, 2));
             converged = (eps < tol) || (iter >= max_iter);
             ++iter;
             std::cout << "###########################iteration " << iter << ", eps_u = " << eps_u << ", eps_p = " << eps_p << ", alpha = "  << alpha << std::endl;
         }
         while(!converged);
-        
+
         if(iter >= max_iter)
             KRATOS_THROW_ERROR(std::logic_error, "Convergence in staggered scheme is not achieved", "")
-        
+
         WriteUPart(rX, u);
         WritePPart(rX, p);
-    }
-
-    /**
-    Multi solve method for solving a set of linear systems with same coefficient matrix.
-    Solves the linear system Ax=b and puts the result on SystemVector& rX.
-    rX is also th initial guess for iterative methods.
-    @param rA. System matrix
-    @param rX. Solution vector. it's also the initial
-    guess for iterative linear solvers.
-    @param rB. Right hand side vector.
-    */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
-    {
     }
 
     ///@}
@@ -408,7 +363,7 @@ protected:
 
     std::vector<SizeType> mpressure_indices;
     std::vector<SizeType> mother_indices;
-    std::vector<int> mglobal_to_local_indexing;
+    std::vector<SizeType> mglobal_to_local_indexing;
     std::vector<int> mis_pressure_block;
 
     ///@}
@@ -494,6 +449,9 @@ private:
     VectorType mp;
     VectorType mu;
 
+    typename ModelPart::DofsArrayType madof_set;
+    typename ModelPart::DofsArrayType msdof_set;
+
     ///@}
     ///@name Private Operators
     ///@{
@@ -503,89 +461,7 @@ private:
     ///@name Private Operations
     ///@{
 
-    ///this function generates the subblocks of matrix J
-    ///as J = ( A  B1 ) u
-    ///       ( B2 C  ) p
-    void FillBlockMatrices (SparseMatrixType& rA, SparseMatrixType& A, SparseMatrixType& B1, SparseMatrixType& B2, SparseMatrixType& C)
-    {
-        KRATOS_TRY
-        
-        //get access to J data
-        const SizeType* index1 = rA.index1_data().begin();
-        const SizeType* index2 = rA.index2_data().begin();
-        const double*   values = rA.value_data().begin();
 
-        A.clear();
-        B1.clear();
-        B2.clear();
-        C.clear();
-
-        //do allocation
-        TSparseSpaceType::Resize(A,  mother_indices.size(), mother_indices.size());
-        TSparseSpaceType::Resize(B1, mother_indices.size(), mpressure_indices.size());
-        TSparseSpaceType::Resize(B2, mpressure_indices.size(), mother_indices.size());
-        TSparseSpaceType::Resize(C,  mpressure_indices.size(), mpressure_indices.size());
-	    
-	    TSparseSpaceType::Resize(mp, mpressure_indices.size());
-	    TSparseSpaceType::Set(mp, 0.00);
-	    TSparseSpaceType::Resize(mu, mother_indices.size());
-	    TSparseSpaceType::Set(mu, 0.00);
-
-        //allocate the blocks by push_back
-        for (unsigned int i = 0; i < rA.size1(); ++i)
-        {
-            unsigned int row_begin = index1[i];
-            unsigned int row_end   = index1[i + 1];
-            unsigned int local_row_id = mglobal_to_local_indexing[i];
-
-            if ( mis_pressure_block[i] == false) //either A or B1
-            {
-                for (unsigned int j = row_begin; j < row_end; ++j)
-                {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mglobal_to_local_indexing[col_index];
-                    if (mis_pressure_block[col_index] == false) //A block
-                        A.push_back ( local_row_id, local_col_id, value);
-                    else //B1 block
-                        B1.push_back ( local_row_id, local_col_id, value);
-                }
-            }
-            else //either B2 or C
-            {
-                for (unsigned int j = row_begin; j < row_end; ++j)
-                {
-                    unsigned int col_index = index2[j];
-                    double value = values[j];
-                    unsigned int local_col_id = mglobal_to_local_indexing[col_index];
-                    if (mis_pressure_block[col_index] == false) //B2 block
-                        B2.push_back ( local_row_id, local_col_id, value);
-                    else //C block
-                        C.push_back ( local_row_id, local_col_id, value);
-                }
-            }
-        }
-
-        KRATOS_CATCH ("")
-    }
-    
-    double ComputeFrobeniusNorm(SparseMatrixType& rA)
-    {
-        int n = rA.size1();
-        const std::size_t* ia = rA.index1_data().begin();
-        const std::size_t* ja = rA.index2_data().begin();
-        const double*	   a  = rA.value_data().begin();
-        
-        double norm = 0.0;
-        for(int i = 0; i < n; ++i)
-        {
-            int nz = ia[i + 1] - ia[i];
-            for(int j = 0; j < nz; ++j)
-                norm += pow(a[ia[i] + j], 2);
-        }
-        return sqrt(norm);
-    }
-    
     ///@}
     ///@name Private  Access
     ///@{
@@ -616,37 +492,10 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::istream& operator >> (std::istream& IStream,
-                                   BlockPressureStaggeredSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const  BlockPressureStaggeredSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
 #undef CHECK_EIGENVALUES
 
 #endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined
-

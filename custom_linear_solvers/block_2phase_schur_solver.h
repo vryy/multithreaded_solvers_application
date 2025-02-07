@@ -1,39 +1,5 @@
 /*
-==============================================================================
-Kratos
-A General Purpose Software for Multi-Physics Finite Element Analysis
-Version 1.0 (Released on march 05, 2007).
-
-Copyright 2007
-Pooyan Dadvand, Riccardo Rossi
-pooyan@cimne.upc.edu
-rrossi@cimne.upc.edu
-CIMNE (International Center for Numerical Methods in Engineering),
-Gran Capita' s/n, 08034 Barcelona, Spain
-
-Permission is hereby granted, free  of charge, to any person obtaining
-a  copy  of this  software  and  associated  documentation files  (the
-"Software"), to  deal in  the Software without  restriction, including
-without limitation  the rights to  use, copy, modify,  merge, publish,
-distribute,  sublicense and/or  sell copies  of the  Software,  and to
-permit persons to whom the Software  is furnished to do so, subject to
-the following condition:
-
-Distribution of this code for  any  commercial purpose  is permissible
-ONLY BY DIRECT ARRANGEMENT WITH THE COPYRIGHT OWNER.
-
-The  above  copyright  notice  and  this permission  notice  shall  be
-included in all copies or substantial portions of the Software.
-
-THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
-EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT  SHALL THE AUTHORS OR COPYRIGHT HOLDERS  BE LIABLE FOR ANY
-CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER IN AN  ACTION OF CONTRACT,
-TORT  OR OTHERWISE, ARISING  FROM, OUT  OF OR  IN CONNECTION  WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-==============================================================================
+see multithreaded_solvers_application/LICENSE.txt
 */
 
 //
@@ -142,10 +108,11 @@ public:
     {}
 
     /// Copy constructor.
-    Block2PhaseSchurSolver(const  Block2PhaseSchurSolver& Other) : BaseType(Other) {}
+    Block2PhaseSchurSolver(const  Block2PhaseSchurSolver& Other)
+    : BaseType(Other) {}
 
     /// Destructor.
-    virtual ~Block2PhaseSchurSolver() {}
+    ~Block2PhaseSchurSolver() override {}
 
 
     ///@}
@@ -163,23 +130,24 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
         typename ModelPart::DofsArrayType& rdof_set,
         ModelPart& r_model_part
-    )
+    ) override
     {
-        mpSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
+        mpSolverA->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
+        mpSolverS->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
     }
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         std::cout << "Fill blocks begin" << std::endl;
         double start = OpenMPUtils::GetCurrentTime();
@@ -209,7 +177,8 @@ public:
         MultithreadedSolversMathUtils::CheckDiagonalDominance(mA);
         #endif
 
-        mpSolver->Initialize(mA, mu, rB); //take rB as temporary, but it should not be
+        mpSolverA->Initialize(mA, mu, rB); //take rB as temporary, but it should not be
+        mpSolverS->Initialize(mC, mp, rB); //take rB as temporary, but it should not be
     }
 
     /** Normal solve method.
@@ -220,16 +189,17 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;
 
         Initialize(rA, rX, rB);
+        #ifdef ENABLE_MORE_OUTPUT
         std::cout << "Initialize completed" << std::endl;
-
         KRATOS_WATCH(rA.size1())
         KRATOS_WATCH(rA.size2())
+        #endif
 
         VectorType ru, rp, u, p;
 
@@ -241,14 +211,9 @@ public:
         MultithreadedSolversMathUtils::GetPart(rB, mother_indices, ru);
         MultithreadedSolversMathUtils::GetPart(rB, mpressure_indices, rp);
 
-        KRATOS_WATCH(u.size())
-        KRATOS_WATCH(p.size())
-        KRATOS_WATCH(ru.size())
-        KRATOS_WATCH(rp.size())
 
         // Extract inverse of diagonal of mA
         std::size_t n = mA.size1();
-        KRATOS_WATCH(n)
         VectorType invDiagBlockA(n);
         for(std::size_t i = 0; i < n; ++i)
             invDiagBlockA[i] = 1.0 / mA(i, i);
@@ -258,23 +223,20 @@ public:
 
         // Solve for p
         VectorType tmp_u = ru;
-        KRATOS_WATCH(norm_2(tmp_u))
 //        KRATOS_WATCH(tmp_u)
-        KRATOS_WATCH(norm_2(invDiagBlockA))
         MultithreadedSolversMathUtils::VectorScale(tmp_u, invDiagBlockA);
 //        KRATOS_WATCH(tmp_u)
-        KRATOS_WATCH(norm_2(tmp_u))
         Vector aux1(mB2.size1());
         TSparseSpaceType::Mult(mB2, tmp_u, aux1);
-        KRATOS_WATCH(norm_2(aux1))
         VectorType rhs_p = rp - aux1;
-        KRATOS_WATCH(norm_2(rhs_p))
 //        KRATOS_WATCH(rhs_p.size())
 //        KRATOS_WATCH(rp.size())
 //        KRATOS_WATCH(mB2.size1())
 //        KRATOS_WATCH(mB2.size2())
 //        KRATOS_WATCH(rhs_p.size())
+        #ifdef ENABLE_MORE_OUTPUT
         std::cout << "Create RHS for p completed" << std::endl;
+        #endif
 
         SparseMatrixType tmpS = mB1;
         MultithreadedSolversMathUtils::RowScale(tmpS, invDiagBlockA);
@@ -282,25 +244,35 @@ public:
         MultithreadedSolversMathUtils::MatrixMult(S, mB2, static_cast<DenseMatrixType>(tmpS));
         S *= -1.0;
         noalias(S) += mC;
+        #ifdef ENABLE_MORE_OUTPUT
         std::cout << "Compute Schur completed" << std::endl;
         KRATOS_WATCH(norm_frobenius(S))
+        #endif
 
         SparseMatrixType sS = S;
+        #ifdef ENABLE_MORE_OUTPUT
         KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(sS))
-        mpSolver->Solve(sS, p, rhs_p);
+        #endif
+        mpSolverS->Solve(sS, p, rhs_p);
 //        KRATOS_WATCH(p)
+        #ifdef ENABLE_MORE_OUTPUT
         KRATOS_WATCH(norm_2(p))
         std::cout << "Solve for p completed" << std::endl;
+        #endif
 
         // Solve for u
         Vector aux2(ru.size());
         TSparseSpaceType::Mult(mB1, p, aux2);
         noalias(ru) -= aux2;
+        #ifdef ENABLE_MORE_OUTPUT
         KRATOS_WATCH(norm_2(ru))
-        mpSolver->Solve(mA, u, ru);
+        #endif
+        mpSolverA->Solve(mA, u, ru);
 //        KRATOS_WATCH(u)
+        #ifdef ENABLE_MORE_OUTPUT
         KRATOS_WATCH(norm_2(u))
         std::cout << "Solve for u completed" << std::endl;
+        #endif
 
         // Write back the result to solution vector
         MultithreadedSolversMathUtils::WritePart(rX, mother_indices, u);
@@ -318,9 +290,9 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
-        KRATOS_THROW_ERROR(std::logic_error, "Multisolve is not yet supported for", typeid(*this).name())
+        KRATOS_ERROR << "Multisolve is not yet supported for " << typeid(*this).name();
     }
 
     ///@}
@@ -338,21 +310,23 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
-        buffer << "Linear solver using Schur complement reduction scheme for 2 phases, linear solver = " << mpSolver->Info();
+        buffer << "Linear solver using Schur complement reduction scheme for 2 phases";
+        buffer << ", A linear solver = " << mpSolverA->Info();
+        buffer << ", S linear solver = " << mpSolverS->Info();
         return buffer.str();
     }
 
     /// Print information about this object.
-    void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
     /// Print object's data.
-    void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
@@ -374,12 +348,16 @@ protected:
     ///@name Protected member Variables
     ///@{
 
-    typename BaseType::Pointer mpSolver;
+    typename BaseType::Pointer mpSolverA;
+    typename BaseType::Pointer mpSolverS;
 
     std::vector<SizeType> mpressure_indices;
     std::vector<SizeType> mother_indices;
     std::vector<SizeType> mglobal_to_local_indexing;
     std::vector<int> mis_pressure_block;
+
+    typename ModelPart::DofsArrayType madof_set;
+    typename ModelPart::DofsArrayType msdof_set;
 
     ///@}
     ///@name Protected Operators
@@ -466,30 +444,12 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >> (std::istream& IStream, Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream, const  Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
 #undef CHECK_DIAGONAL_DOMINANCE
 #undef STRINGIFY
+#undef ENABLE_MORE_OUTPUT
 
 #endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_2_PHASE_SCHUR_SOLVER_H_INCLUDED  defined
-

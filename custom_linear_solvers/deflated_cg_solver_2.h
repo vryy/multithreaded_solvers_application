@@ -1,40 +1,6 @@
 /*
-==============================================================================
-Kratos
-A General Purpose Software for Multi-Physics Finite Element Analysis
-Version 1.0 (Released on march 05, 2007).
-
-Copyright 2007
-Pooyan Dadvand, Riccardo Rossi
-pooyan@cimne.upc.edu
-rrossi@cimne.upc.edu
-CIMNE (International Center for Numerical Methods in Engineering),
-Gran Capita' s/n, 08034 Barcelona, Spain
-
-Permission is hereby granted, free  of charge, to any person obtaining
-a  copy  of this  software  and  associated  documentation files  (the
-"Software"), to  deal in  the Software without  restriction, including
-without limitation  the rights to  use, copy, modify,  merge, publish,
-distribute,  sublicense and/or  sell copies  of the  Software,  and to
-permit persons to whom the Software  is furnished to do so, subject to
-the following condition:
-
-Distribution of this code for  any  commercial purpose  is permissible
-ONLY BY DIRECT ARRANGEMENT WITH THE COPYRIGHT OWNER.
-
-The  above  copyright  notice  and  this permission  notice  shall  be
-included in all copies or substantial portions of the Software.
-
-THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
-EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT  SHALL THE AUTHORS OR COPYRIGHT HOLDERS  BE LIABLE FOR ANY
-CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER IN AN  ACTION OF CONTRACT,
-TORT  OR OTHERWISE, ARISING  FROM, OUT  OF OR  IN CONNECTION  WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-==============================================================================
- */
+see multithreaded_solvers_application/LICENSE.txt
+*/
 
 //
 //   Project Name:        Kratos
@@ -114,6 +80,8 @@ public:
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+
+    typedef DeflationUtils<SparseMatrixType, VectorType> DeflationUtilsType;
 
     ///@}
     ///@name Life Cycle
@@ -285,7 +253,7 @@ protected:
     {
         int max_reduced_size = 100;
         std::cout << "Construct the deflation space using standard aggregation assuming 1 dof per node, max_reduced_size = " << max_reduced_size << std::endl;
-        DeflationUtils::ConstructW(max_reduced_size, rA, w, Adeflated);
+        DeflationUtilsType::ConstructW(max_reduced_size, rA, w, Adeflated);
     }
 
     ///@}
@@ -334,9 +302,9 @@ private:
                 LUSkylineFactorization<TSparseSpaceType, TDenseSpaceType>& rFact)
     {
         VectorType t(reduced_size), d(reduced_size);
-        DeflationUtils::ApplyWtranspose(w, rX, t);
+        DeflationUtilsType::ApplyWtranspose(w, rX, t);
         rFact.backForwardSolve(reduced_size, t, d);
-        DeflationUtils::ApplyW(w, d, rY);
+        DeflationUtilsType::ApplyW(w, d, rY);
     }
 
     /// Perform the multiplication rY = P * rX, where P is the projection matrix P = I - KW(W^T K W)^(-1)W^T
@@ -383,7 +351,7 @@ private:
         this->ConstructW(rA, w, Adeflated);
 
         //fill reduced matrix Adeflated
-        DeflationUtils::FillDeflatedMatrix(rA, w, Adeflated);
+        DeflationUtilsType::FillDeflatedMatrix(rA, w, Adeflated);
 
         std::size_t reduced_size = Adeflated.size1();
         KRATOS_WATCH(reduced_size)
@@ -500,40 +468,10 @@ private:
 ///@{
 
 
-/// input stream function
-
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::istream & operator >>(std::istream& IStream,
-                                  DeflatedCGSolver2<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::ostream & operator <<(std::ostream& OStream,
-                                  const DeflatedCGSolver2<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 } // namespace Kratos.
 
 #undef PRINT_W_DISTRIBUTION
 
-#endif // MULTITHREADED_SOLVERS_APP_DEFLATED_SUBDOMAIN_CG_SOLVER_H_INCLUDED  defined 
-
-
+#endif // MULTITHREADED_SOLVERS_APP_DEFLATED_SUBDOMAIN_CG_SOLVER_H_INCLUDED  defined
