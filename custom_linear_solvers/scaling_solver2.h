@@ -71,7 +71,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "custom_eigen_solvers/arpack_solver.h"
 #endif
 
+#ifdef MULTITHREADED_SOLVERS_APP_USE_HSL
 #include "hsl.h"
+#endif
 #include "external_includes/condition.hpp"
 #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
 #include "custom_utilities/pardiso_condition.h"
@@ -290,9 +292,12 @@ public:
             KRATOS_WATCH(norm1_A)
             double Cond = norm1_A * norm1_invA;
             #else
-//            double Cond = ComputeConditionNumberDGECON(Acopy);
-            double Cond = ComputeConditionNumberMC75(Acopy);
-//            double Cond = ComputeConditionNumberHager(Acopy);
+            double Cond = 0.0;
+//            Cond = ComputeConditionNumberDGECON(Acopy);
+            #ifdef MULTITHREADED_SOLVERS_APP_USE_HSL
+            Cond = ComputeConditionNumberMC75(Acopy);
+            #endif
+//            Cond = ComputeConditionNumberHager(Acopy);
             #endif
             KRATOS_WATCH(Cond)
             std::cout << "ComputeConditionNumber completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
@@ -306,9 +311,11 @@ public:
             case 1:
                 ComputeScalingVector(Acopy, DL, DR);
                 break;
+            #ifdef MULTITHREADED_SOLVERS_APP_USE_HSL
             case 2:
                 ComputeScalingVector_mc29(Acopy, DL, DR);
                 break;
+            #endif
             case 4:
                 ComputeScalingVector_diagonal(Acopy, DL, DR);
             default:
@@ -356,9 +363,12 @@ public:
             KRATOS_WATCH(norm1_A)
             double Cond = norm1_A * norm1_invA;
             #else
-//            double Cond = ComputeConditionNumberDGECON(Acopy);
-            double Cond = ComputeConditionNumberMC75(Acopy);
-//            double Cond = ComputeConditionNumberHager(Acopy);
+            double Cond = 0.0;
+//            Cond = ComputeConditionNumberDGECON(Acopy);
+            #ifdef MULTITHREADED_SOLVERS_APP_USE_HSL
+            Cond = ComputeConditionNumberMC75(Acopy);
+            #endif
+//            Cond = ComputeConditionNumberHager(Acopy);
             #endif
             KRATOS_WATCH(Cond)
             std::cout << "ComputeConditionNumber completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
@@ -642,6 +652,7 @@ private:
         while(converged != true);
     }
 
+    #ifdef MULTITHREADED_SOLVERS_APP_USE_HSL
     // scaling vector computation using MC29
     int ComputeScalingVector_mc29(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
     {
@@ -671,6 +682,7 @@ private:
 
         return ifail;
     }
+    #endif
 
     /// compute the scaling vector based on the diagonal
     int ComputeScalingVector_diagonal(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
@@ -790,6 +802,7 @@ private:
         return 1.0 / rcond;
     }
 
+    #ifdef MULTITHREADED_SOLVERS_APP_USE_HSL
     /*
      * A routine to compute condition number of a sparse matrix using mc75
      */
@@ -837,6 +850,7 @@ private:
 
         return my_cond;
     }
+    #endif
 
     /*
      * A routine to compute condition number of a matrix using Hager algorithm. Ref: W. W. Hager, Condition Estimates, SIAM

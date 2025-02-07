@@ -23,7 +23,6 @@
 #include "linear_solvers/linear_solver.h"
 #include "linear_solvers/direct_solver.h"
 #include "linear_solvers/iterative_solver.h"
-#include "custom_linear_solvers/superlu_mt_solver.h"
 #include "custom_linear_solvers/gmres_solver.h"
 #include "custom_linear_solvers/bicgstab_solver.h"
 #include "custom_linear_solvers/bicgstab_block_pressure_solver.h"
@@ -43,11 +42,13 @@
 #include "custom_linear_solvers/richardson_solver.h"
 #include "custom_linear_solvers/chebyshev_solver.h"
 #include "custom_preconditioners/solver_preconditioner.h"
+#ifdef MULTITHREADED_SOLVERS_APP_USE_FORTRAN
 #include "custom_preconditioners/ilut_preconditioner.h"
+#include "custom_preconditioners/ilut_lr_preconditioner.h"
+#endif
 #include "custom_preconditioners/iluk_preconditioner.h"
 #include "custom_preconditioners/ilu_lr_preconditioner.h"
 #include "custom_preconditioners/ilu0_lr_preconditioner.h"
-#include "custom_preconditioners/ilut_lr_preconditioner.h"
 #include "custom_preconditioners/block_2phase_schur_preconditioner.h"
 #include "custom_preconditioners/block_pressure_schur_preconditioner.h"
 #include "custom_preconditioners/block_pressure_index_based_schur_preconditioner.h"
@@ -57,6 +58,10 @@
 #include "custom_preconditioners/block_jacobi_nodal_based_pressure_preconditioner.h"
 #include "custom_preconditioners/ssor_preconditioner.h"
 #include "custom_preconditioners/ssor_lr_preconditioner.h"
+
+#ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_SUPERLU_MT
+#include "custom_linear_solvers/superlu_mt_solver.h"
+#endif
 
 #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_UMFPACK
 #include "custom_linear_solvers/umfpack_solver.h"
@@ -145,22 +150,24 @@ namespace Python
         //***************************************************************************
 
         #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_UMFPACK
-	    typedef UmfPackSolver<SparseSpaceType, LocalSpaceType> UmfPackSolverType;
-	    class_<UmfPackSolverType, UmfPackSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
-	    ( "UmfPackSolver", init<>() )
+        typedef UmfPackSolver<SparseSpaceType, LocalSpaceType> UmfPackSolverType;
+        class_<UmfPackSolverType, UmfPackSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
+        ( "UmfPackSolver", init<>() )
         .def(self_ns::str(self))
         ;
         #endif
 
+        #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_SUPERLU_MT
         typedef SuperLUMTSolver<SparseSpaceType, LocalSpaceType> SuperLUMTSolverType;
         class_<SuperLUMTSolverType, SuperLUMTSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
         ( "SuperLUMTSolver", init<>() )
         ;
+        #endif
 
         #ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
         typedef PardisoSolver<SparseSpaceType, LocalSpaceType> PardisoSolverType;
-	    class_<PardisoSolverType, PardisoSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
-	    ( "PardisoSolver", init<>() )
+        class_<PardisoSolverType, PardisoSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
+        ( "PardisoSolver", init<>() )
         .def(init<unsigned int>() )
 //        .def(self_ns::str(self))
         ;
@@ -328,11 +335,13 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
+        #ifdef MULTITHREADED_SOLVERS_APP_USE_FORTRAN
         typedef ILUtPreconditioner<SparseSpaceType, LocalSpaceType> ILUtPreconditionerType;
         class_<ILUtPreconditionerType, ILUtPreconditionerType::Pointer, bases<PreconditionerType> >
         ("ILUtPreconditioner", init<double, double>())
         .def(self_ns::str(self))
         ;
+        #endif
 
         typedef ILUkPreconditioner<SparseSpaceType, LocalSpaceType> ILUkPreconditionerType;
         class_<ILUkPreconditionerType, ILUkPreconditionerType::Pointer, bases<PreconditionerType> >
@@ -352,11 +361,13 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
+        #ifdef MULTITHREADED_SOLVERS_APP_USE_FORTRAN
         typedef ILUt_LR_Preconditioner<SparseSpaceType, LocalSpaceType> ILUt_LR_PreconditionerType;
         class_<ILUt_LR_PreconditionerType, ILUt_LR_PreconditionerType::Pointer, bases<PreconditionerType> >
         ("ILUt_LR_Preconditioner", init<double, double>())
         .def(self_ns::str(self))
         ;
+        #endif
 
         typedef Block2PhaseSchurPreconditioner<SparseSpaceType, LocalSpaceType> Block2PhaseSchurPreconditionerType;
         class_<Block2PhaseSchurPreconditionerType, Block2PhaseSchurPreconditionerType::Pointer, bases<PreconditionerType> >
