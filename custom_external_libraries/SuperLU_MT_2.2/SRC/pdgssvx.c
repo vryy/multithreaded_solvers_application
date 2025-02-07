@@ -552,7 +552,7 @@ pdgssvx(int nprocs, superlumt_options_t *superlumt_options, SuperMatrix *A,
         /* Obtain column etree, the column count (colcnt_h) and supernode
 	   partition (part_super_h) for the Householder matrix. */
 	t0 = SuperLU_timer_();
-	sp_colorder(AA, perm_c, superlumt_options, &AC);
+	dsp_colorder(AA, perm_c, superlumt_options, &AC);
 	utime[ETREE] = SuperLU_timer_() - t0;
 
 #if ( PRNTlevel >= 2 )    

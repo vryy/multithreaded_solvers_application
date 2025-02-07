@@ -1,5 +1,16 @@
 #include "slu_mt_machines.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+extern int     xerbla_(char *, int *);
+
+#ifdef __cplusplus
+}
+#endif
+
 int
 sp_ienv(int ispec)
 {

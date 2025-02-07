@@ -464,6 +464,8 @@ extern void    dCompRow_to_CompCol(int m, int n, int nnz,
                            double *a, int *colind, int *rowptr,
                            double **at, int **rowind, int **colptr);
 
+extern void heap_relax_snode ( const int, superlumt_options_t*, pxgstrf_relax_t*);
+extern void pxgstrf_relax_snode(const int, superlumt_options_t*, pxgstrf_relax_t*);
 
 /* -----------------------
    Routines for debugging

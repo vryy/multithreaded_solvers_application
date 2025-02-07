@@ -122,7 +122,7 @@ pdgstrf_thread_init(SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     }        
     
     /* Initialize mutex variables, task queue, determine panels. */
-    ParallelInit(n, pxgstrf_relax, options, pxgstrf_shared);
+    dParallelInit(n, pxgstrf_relax, options, pxgstrf_shared);
     
     /* Set up memory image in lusup[*]. */
     nzlumax = dPresetMap(n, A, pxgstrf_relax, options, &Glu);

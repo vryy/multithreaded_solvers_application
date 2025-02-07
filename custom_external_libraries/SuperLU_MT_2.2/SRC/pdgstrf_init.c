@@ -136,7 +136,7 @@ pdgstrf_init(int nprocs, fact_t fact, trans_t trans, yes_no_t refact,
     superlumt_options->lwork = lwork;
 
     t = SuperLU_timer_();
-    sp_colorder(A, perm_c, superlumt_options, AC);
+    dsp_colorder(A, perm_c, superlumt_options, AC);
     Gstat->utime[ETREE] = SuperLU_timer_() - t;
 
 #if ( DEBUGlevel==1 )

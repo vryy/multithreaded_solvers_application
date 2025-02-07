@@ -1,7 +1,7 @@
 #include "pdsp_defs.h"
 
 void
-sp_colorder(SuperMatrix *A, int *perm_c, superlumt_options_t *options,
+dsp_colorder(SuperMatrix *A, int *perm_c, superlumt_options_t *options,
 	    SuperMatrix *AC)
 {
 /*

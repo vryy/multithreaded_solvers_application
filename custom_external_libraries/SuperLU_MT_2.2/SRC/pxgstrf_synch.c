@@ -13,7 +13,7 @@
 #define SPLIT_TOP
 
 int
-ParallelInit(int n, pxgstrf_relax_t *pxgstrf_relax, 
+dParallelInit(int n, pxgstrf_relax_t *pxgstrf_relax, 
 	     superlumt_options_t *superlumt_options, 
 	     pxgstrf_shared_t *pxgstrf_shared)
 {
