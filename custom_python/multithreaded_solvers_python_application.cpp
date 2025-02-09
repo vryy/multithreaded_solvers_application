@@ -19,6 +19,7 @@ see multithreaded_solvers_application/LICENSE.txt
 #include "includes/define_python.h"
 #include "multithreaded_solvers_application.h"
 #include "custom_python/add_linear_solvers_to_python.h"
+#include "custom_python/add_cuda_solvers_to_python.h"
 #include "custom_python/add_eigen_solvers_to_python.h"
 #include "custom_python/add_utilities_to_python.h"
 #include "custom_python/add_processes_to_python.h"
@@ -40,6 +41,7 @@ namespace Python
             ;
 
         MultithreadedSolversApplication_AddLinearSolversToPython();
+        MultithreadedSolversApplication_AddCudaSolversToPython();
         MultithreadedSolversApplication_AddEigenSolversToPython();
         MultithreadedSolversApplication_AddUtilitiesToPython();
         MultithreadedSolversApplication_AddProcessesToPython();

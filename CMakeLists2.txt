@@ -17,6 +17,7 @@ option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT "Enable SuperLU_MT fo
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK "Enable Arpack for KratosMultithreadedSolversApplication" OFF)
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST "Enable FEAST for KratosMultithreadedSolversApplication" OFF)
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_HSL "Enable HSL for KratosMultithreadedSolversApplication" OFF)
+option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_CUDA "Enable CUDA support for KratosMultithreadedSolversApplication" OFF)
 
 if("Fortran" IN_LIST ENABLED_LANGUAGES)
     set(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT ON)
@@ -146,6 +147,21 @@ ELSE()
 endif()
 #####################
 
+######## Find and add cuDSS
+if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_CUDA} MATCHES ON)
+    find_package(cudss) # COMPONENTS cudss)
+    if (cudss_cudss_FOUND EQUAL 1)
+        if (WIN32)
+            include_directories(${cudss_INCLUDE_DIR})
+        endif()
+        add_definitions(-DMULTITHREADED_SOLVERS_APP_USE_CUDSS)
+
+        find_package(CUDAToolkit REQUIRED)
+        include_directories(${CUDAToolkit_INCLUDE_DIRS})
+    endif()
+endif()
+#####################
+
 ###############################################################
 
 ## adding sources
@@ -174,6 +190,7 @@ set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
     ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_eigen_solvers_to_python.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_linear_solvers_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_cuda_solvers_to_python.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_preconditioners_to_python.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_utilities_to_python.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_processes_to_python.cpp
@@ -229,6 +246,11 @@ target_link_libraries(KratosMultithreadedSolversApplication ${BLAS_LIBRARIES})
 target_link_libraries(KratosMultithreadedSolversApplication ${LAPACK_LIBRARIES})
 if (${MKLSOLVER_FOUND} MATCHES "YES")
     target_link_libraries(KratosMultithreadedSolversApplication ${MKLSOLVER_LIBRARIES})
+endif()
+if (cudss_cudss_FOUND EQUAL 1)
+    target_link_directories(KratosMultithreadedSolversApplication PRIVATE ${cudss_LIBRARY_DIR} ${CUBLAS_LIB_PATH})
+    target_link_libraries(KratosMultithreadedSolversApplication cudss)
+    target_link_libraries(KratosMultithreadedSolversApplication CUDA::cudart)
 endif()
 # target_link_libraries(KratosMultithreadedSolversApplication gfortran) # TODO check if we need to enable
 set_target_properties(KratosMultithreadedSolversApplication PROPERTIES COMPILE_DEFINITIONS "KRATOS_CORE=IMPORT;MULTITHREADED_SOLVERS_APPLICATION=EXPORT;")
