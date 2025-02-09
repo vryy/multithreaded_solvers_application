@@ -504,7 +504,6 @@ private:
     /// Copy constructor.
     MultithreadedSolversMathUtils(MultithreadedSolversMathUtils const& rOther);
 
-
     ///@}
 
 }; // Class MultithreadedSolversMathUtils
@@ -518,7 +517,6 @@ private:
 ///@}
 ///@name Input and output
 ///@{
-
 
 /// input stream function
 inline std::istream& operator >> (std::istream& rIStream, MultithreadedSolversMathUtils& rThis)
@@ -535,11 +533,11 @@ inline std::ostream& operator << (std::ostream& rOStream, const MultithreadedSol
 
     return rOStream;
 }
+
 ///@}
 
 ///@} addtogroup block
 
 }  // namespace Kratos.
-
 
 #endif // KRATOS_MULTITHREADED_SOLVERS_MATH_UTILITY_H_INCLUDED  defined

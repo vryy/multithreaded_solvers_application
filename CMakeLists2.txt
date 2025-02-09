@@ -11,6 +11,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/external_includes )
 #add_definitions( -DCOMPLEX=std::complex<double> )
 #add_subdirectory(custom_external_libraries/SparseLib++/1.7)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/custom_cmake_modules")
+
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT "Enable SuperLU_MT for KratosMultithreadedSolversApplication" OFF)
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK "Enable Arpack for KratosMultithreadedSolversApplication" OFF)
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST "Enable FEAST for KratosMultithreadedSolversApplication" OFF)
@@ -49,7 +51,6 @@ if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_HSL} MATCHES ON)
     add_subdirectory(custom_external_libraries/HSL)
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/custom_cmake_modules")
 if(UMFPACK_DIR)
     message("UMFPACK_DIR: " "${UMFPACK_DIR}")
     find_package(UMFPACK REQUIRED)
@@ -58,51 +59,13 @@ if(UMFPACK_DIR)
     include_directories( ${UMFPACK_INCLUDE_DIRS} )
     add_definitions(-DMULTITHREADED_SOLVERS_APPLICATION_USE_UMFPACK)
     add_definitions(-DMULTITHREADED_SOLVERS_APPLICATION_USE_AMD)
-endif(UMFPACK_DIR)
+endif()
 
 if(DEFINED MULTITHREADED_SOLVERS_APP_METIS_DIR)
-    INCLUDE_DIRECTORIES(${MULTITHREADED_SOLVERS_APP_METIS_DIR}/include)
-    FIND_LIBRARY(METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP metis "${MULTITHREADED_SOLVERS_APP_METIS_DIR}/lib" NO_DEFAULT_PATH)
+    include_directories(${MULTITHREADED_SOLVERS_APP_METIS_DIR}/include)
+    find_library(METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP metis "${MULTITHREADED_SOLVERS_APP_METIS_DIR}/lib" NO_DEFAULT_PATH)
     add_definitions(-DMULTITHREADED_SOLVERS_APPLICATION_USE_METIS)
     message("METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP: " "${METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP}")
-endif()
-
-## generate variables with the sources
-set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/condition.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/mesh_rcm.cpp
-)
-
-if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST} MATCHES ON)
-    set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-        ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/custom_eigen_solvers/feast_solver.cpp
-    )
-endif()
-
-if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK} MATCHES ON)
-    set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-        ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/custom_eigen_solvers/arpack_solver.cpp
-    )
-endif()
-
-set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-    ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_eigen_solvers_to_python.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_linear_solvers_to_python.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_utilities_to_python.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_processes_to_python.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/multithreaded_solvers_python_application.cpp
-)
-
-if("Fortran" IN_LIST ENABLED_LANGUAGES)
-    set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-        ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/tools.f
-    )
 endif()
 
 #find_library(UMFPACK_LIB NAMES umfpack PATHS /usr/local/lib)
@@ -182,6 +145,47 @@ ELSE()
     message("Spetra is not found. The eigenvalues solver is not available.")
 endif()
 #####################
+
+###############################################################
+
+## adding sources
+set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/condition.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/mesh_rcm.cpp
+)
+
+if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST} MATCHES ON)
+    set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+        ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/custom_eigen_solvers/feast_solver.cpp
+    )
+endif()
+
+if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK} MATCHES ON)
+    set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+        ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/custom_eigen_solvers/arpack_solver.cpp
+    )
+endif()
+
+set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+    ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_eigen_solvers_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_linear_solvers_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_preconditioners_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_utilities_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/add_processes_to_python.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/multithreaded_solvers_python_application.cpp
+)
+
+if("Fortran" IN_LIST ENABLED_LANGUAGES)
+    set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+        ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/tools.f
+    )
+endif()
 
 ###############################################################
 ## define library Kratos which defines the basic python interface

@@ -29,7 +29,9 @@
 #include "includes/ublas_interface.h"
 #include "utilities/openmp_utils.h"
 
-namespace Kratos {
+namespace Kratos
+{
+
 template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
 class UmfPackSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
 {
@@ -164,8 +166,7 @@ private:
      * Copy constructor.
      */
 
-};
-// Class UmfPackSolver
+}; // Class UmfPackSolver
 
 } // namespace Kratos.
 
