@@ -27,8 +27,6 @@ KRATOS_CREATE_VARIABLE(boost::numeric::ublas::vector<int>, SYSTEM_PERMUTATION_VE
 
 void KratosMultithreadedSolversApplication::Register()
 {
-    // calling base class register to register Kratos components
-    KratosApplication::Register();
     std::cout << "Initializing KratosMultithreadedSolversApplication..." << std::endl;
 
     KRATOS_REGISTER_VARIABLE(SYSTEM_SIZE)
