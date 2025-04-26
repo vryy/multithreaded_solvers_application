@@ -109,7 +109,7 @@ public:
     typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
 
     typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
-    
+
     typedef typename TSparseSpaceType::MatrixPointerType SparseMatrixPointerType;
 
     typedef typename TSparseSpaceType::VectorType VectorType;
@@ -117,17 +117,17 @@ public:
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
 
     typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
-    
+
     typedef typename LinearSolverType::Pointer LinearSolverPointerType;
 
     typedef std::size_t  SizeType;
-    
+
     typedef std::size_t  IndexType;
-    
+
     typedef struct SpaFmt {
-        /*--------------------------------------------- 
+        /*---------------------------------------------
         | C-style CSR format - used internally
-        | for all matrices in CSR format 
+        | for all matrices in CSR format
         |---------------------------------------------*/
         int n;
         int *nzcount;  /* length of each row */
@@ -185,7 +185,7 @@ public:
         return *this;
     }
 
-    
+
 
     ///@}
     ///@name Operations
@@ -208,7 +208,7 @@ public:
          * lfil     = integer. The fill-in parameter. Each column of L and
          *            each column of U will have a maximum of lfil elements.
          *            WARNING: THE MEANING OF LFIL HAS CHANGED WITH RESPECT TO
-         *            EARLIER VERSIONS. 
+         *            EARLIER VERSIONS.
          *            lfil must be .ge. 0.
          * tol      = real*8. Sets the threshold for dropping small terms in the
          *            factorization. See below for details on dropping strategy.
@@ -229,7 +229,7 @@ public:
          * ======
          * All the diagonals of the input matrix must not be zero
          *----------------------------------------------------------------------------
-         * Dual drop-off strategy works as follows. 
+         * Dual drop-off strategy works as follows.
          *
          * 1) Theresholding in L and U as set by tol. Any element whose size
          *    is less than some tolerance (relative to the norm of current
@@ -281,7 +281,7 @@ public:
             for(j = 0; j < nzcount; ++j) col_ind[j] = rA.index2_data()[rA.index1_data()[i] + j];
             double* val = (double*) Malloc(nzcount * sizeof(double), "val");
             for(j = 0; j < nzcount; ++j) val[j] = rA.value_data()[rA.index1_data()[i] + j];
-    
+
             // start ilut adapted from ilut.c
             ja = col_ind;          //column indices of row i
             ma = val;              //values of row i
@@ -404,14 +404,14 @@ public:
             if( w[i] == 0.0 ) {
                 fprintf( fp, "zero diagonal encountered.\n" );
                 for( j = i; j < n; ++j ) {
-                    L->ja[j] = NULL; 
+                    L->ja[j] = NULL;
                     L->ma[j] = NULL;
-                    U->ja[j] = NULL; 
+                    U->ja[j] = NULL;
                     U->ma[j] = NULL;
                 }
                 exit(1);
             }
-            /*-----------Update diagonal */    
+            /*-----------Update diagonal */
             D[i] = 1 / w[i];
 
             /* update L-matrix */
@@ -453,11 +453,11 @@ public:
             for( j = 0; j < lenu; ++j ) {
                 iw[j] = -1;
             }
-        
+
             // release data to avoid memory leaking
             delete [] col_ind;
             delete [] val;
-        
+
             ++show_progress;
         }
 
@@ -465,8 +465,8 @@ public:
         free( jbuf );
         free( wn );
     }
-    
-    
+
+
     virtual bool AdditionalPhysicalDataIsNeeded()
     {
         return false;
@@ -606,7 +606,7 @@ public:
     ///@}
     ///@name Friends
     ///@{
-    
+
 
     ///@}
 
@@ -618,7 +618,7 @@ protected:
     ///@}
     ///@name Protected member Variables
     ///@{
-    
+
 
     ///@}
     ///@name Protected Operators
@@ -629,7 +629,7 @@ protected:
     ///@name Protected Operations
     ///@{
 
-    
+
     ///@}
     ///@name Protected  Access
     ///@{
@@ -726,7 +726,7 @@ private:
         amat->n = len;
         amat->nzcount = (int *)Malloc( len*sizeof(int), "setupCS" );
         amat->ja = (int **) Malloc( len*sizeof(int *), "setupCS" );
-        if( job == 1 ) 
+        if( job == 1 )
             amat->ma = (double **) Malloc( len*sizeof(double *), "setupCS" );
         else
             amat->ma = NULL;
@@ -753,7 +753,7 @@ private:
                 if( amat->ma ) free(amat->ma[i]);
                 free(amat->ja[i]);
             }
-        }    
+        }
         if (amat->ma) free(amat->ma);
         free(amat->ja);
         free(amat->nzcount);
