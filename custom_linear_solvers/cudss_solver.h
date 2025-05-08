@@ -62,11 +62,11 @@ class cuDSSSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, ModelP
 {
 public:
     /**
-     * Counted pointer of SuperLUSolver
+     * Counted pointer of cuDSSSolver
      */
     KRATOS_CLASS_POINTER_DEFINITION(cuDSSSolver);
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, ModelPart, TReordererType> BaseType;
 
     typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
