@@ -28,8 +28,9 @@ namespace ublas = boost::numeric::ublas;
 namespace Kratos
 {
 template< class TSparseSpaceType, class TDenseSpaceType,
+          class TModelPartType,
           class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class VariableSolver : public DirectSolver< TSparseSpaceType, TDenseSpaceType, TReordererType>
+class VariableSolver : public DirectSolver< TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType>
 {
 public:
     /**
@@ -37,7 +38,7 @@ public:
      */
     typedef boost::shared_ptr<VariableSolver> Pointer;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> BaseType;
 
     typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
 
@@ -52,14 +53,14 @@ public:
     /**
      * Destructor
      */
-    virtual ~VariableSolver() {}
+    ~VariableSolver() override {}
 
     void AddSolver(typename BaseType::Pointer pSolver)
     {
         mSolverList.push_back(pSolver);
     }
-    
-    virtual bool AdditionalPhysicalDataIsNeeded()
+
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         bool is_needed = false;
         for(unsigned int i = 0; i < mSolverList.size(); ++i)
@@ -67,13 +68,13 @@ public:
         return is_needed;
     }
 
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         if(AdditionalPhysicalDataIsNeeded())
         {
@@ -84,7 +85,7 @@ public:
             }
         }
     }
-    
+
     /**
      * Normal solve method.
      * Solves the linear system Ax=b and puts the result on SystemVector& rX.
@@ -93,17 +94,17 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(mSolverList.size() == 0)
-            KRATOS_THROW_ERROR(std::logic_error, "Error: The variable solver does not contain any solver. Please add a solver for it to work", "")
+            KRATOS_ERROR << "Error: The variable solver does not contain any solver. Please add a solver for it to work";
         else
         {
             int cnt = 0;
             while(cnt < mSolverList.size())
             {
                 bool isSolved = mSolverList[cnt]->Solve(rA, rX, rB);
-                
+
                 if(!isSolved)
                 {
                     std::cout << "The solver " << *(mSolverList[cnt]) << " does not converge, switch to the next solver" << std::endl;
@@ -116,7 +117,7 @@ public:
                 }
             }
             if(cnt == mSolverList.size())
-                KRATOS_THROW_ERROR(std::logic_error, "None of the provided solver converged for the current problem. Consider adding more solvers", "")
+                KRATOS_ERROR << "None of the provided solver converged for the current problem. Consider adding more solvers";
         }
     }
 
@@ -128,22 +129,45 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
+        if(mSolverList.size() == 0)
+            KRATOS_ERROR << "Error: The variable solver does not contain any solver. Please add a solver for it to work";
+        else
+        {
+            int cnt = 0;
+            while(cnt < mSolverList.size())
+            {
+                bool isSolved = mSolverList[cnt]->Solve(rA, rX, rB);
+
+                if(!isSolved)
+                {
+                    std::cout << "The solver " << *(mSolverList[cnt]) << " does not converge, switch to the next solver" << std::endl;
+                    ++cnt;
+                }
+                else
+                {
+                    std::cout << "The solver " << *(mSolverList[cnt]) << " completed" << std::endl;
+                    break;
+                }
+            }
+            if(cnt == mSolverList.size())
+                KRATOS_ERROR << "None of the provided solver converged for the current problem. Consider adding more solvers";
+        }
     }
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Variable solver";
         return buffer.str();
     }
-    
+
     /**
      * Print information about this object.
      */
-    void  PrintInfo(std::ostream& rOStream) const
+    void PrintInfo(std::ostream& rOStream) const override
     {
         rOStream << "Variable solver finished.";
     }
@@ -151,7 +175,7 @@ public:
     /**
      * Print object's data.
      */
-    void  PrintData(std::ostream& rOStream) const
+    void PrintData(std::ostream& rOStream) const override
     {
     }
 
@@ -167,12 +191,10 @@ private:
     /**
      * Copy constructor.
      */
-//    VariableSolver(const ParallelSuperLUSolver& Other);
+//    VariableSolver(const BaseType& Other);
 
 }; // Class VariableSolver
 
 }  // namespace Kratos.
 
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_VARIABLE_SOLVER_H_INCLUDED  defined 
-
-
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_VARIABLE_SOLVER_H_INCLUDED  defined

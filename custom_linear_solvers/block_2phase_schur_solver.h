@@ -67,8 +67,9 @@ Firstly p in (2) is solved approximately by approximating A^(-1) by diag(A)^(-1)
 Then u in (1) is solved exactly
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
+         class TModelPartType,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class Block2PhaseSchurSolver : public LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class Block2PhaseSchurSolver : public LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -77,19 +78,23 @@ public:
     /// Counted pointer of  Block2PhaseSchurSolver
     KRATOS_CLASS_POINTER_DEFINITION( Block2PhaseSchurSolver );
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> BaseType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -139,8 +144,8 @@ public:
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
     ) override
     {
         mpSolverA->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
@@ -211,9 +216,14 @@ public:
         MultithreadedSolversMathUtils::GetPart(rB, mother_indices, ru);
         MultithreadedSolversMathUtils::GetPart(rB, mpressure_indices, rp);
 
+        // KRATOS_WATCH(u.size())
+        // KRATOS_WATCH(p.size())
+        // KRATOS_WATCH(ru.size())
+        // KRATOS_WATCH(rp.size())
 
         // Extract inverse of diagonal of mA
         std::size_t n = mA.size1();
+        // KRATOS_WATCH(n)
         VectorType invDiagBlockA(n);
         for(std::size_t i = 0; i < n; ++i)
             invDiagBlockA[i] = 1.0 / mA(i, i);
@@ -223,12 +233,17 @@ public:
 
         // Solve for p
         VectorType tmp_u = ru;
+        // KRATOS_WATCH(norm_2(tmp_u))
 //        KRATOS_WATCH(tmp_u)
+        // KRATOS_WATCH(norm_2(invDiagBlockA))
         MultithreadedSolversMathUtils::VectorScale(tmp_u, invDiagBlockA);
 //        KRATOS_WATCH(tmp_u)
+        // KRATOS_WATCH(norm_2(tmp_u))
         Vector aux1(mB2.size1());
         TSparseSpaceType::Mult(mB2, tmp_u, aux1);
+        // KRATOS_WATCH(norm_2(aux1))
         VectorType rhs_p = rp - aux1;
+        // KRATOS_WATCH(norm_2(rhs_p))
 //        KRATOS_WATCH(rhs_p.size())
 //        KRATOS_WATCH(rp.size())
 //        KRATOS_WATCH(mB2.size1())
@@ -239,10 +254,15 @@ public:
         #endif
 
         SparseMatrixType tmpS = mB1;
+        // KRATOS_WATCH(__LINE__)
         MultithreadedSolversMathUtils::RowScale(tmpS, invDiagBlockA);
+        // KRATOS_WATCH(__LINE__)
         DenseMatrixType S(mC.size1(), mC.size2());
+        // KRATOS_WATCH(__LINE__)
         MultithreadedSolversMathUtils::MatrixMult(S, mB2, static_cast<DenseMatrixType>(tmpS));
+        // KRATOS_WATCH(__LINE__)
         S *= -1.0;
+        // KRATOS_WATCH(__LINE__)
         noalias(S) += mC;
         #ifdef ENABLE_MORE_OUTPUT
         std::cout << "Compute Schur completed" << std::endl;
@@ -356,8 +376,8 @@ protected:
     std::vector<SizeType> mglobal_to_local_indexing;
     std::vector<int> mis_pressure_block;
 
-    typename ModelPart::DofsArrayType madof_set;
-    typename ModelPart::DofsArrayType msdof_set;
+    typename TModelPartType::DofsArrayType madof_set;
+    typename TModelPartType::DofsArrayType msdof_set;
 
     ///@}
     ///@name Protected Operators

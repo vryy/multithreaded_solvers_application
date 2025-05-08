@@ -63,7 +63,7 @@ namespace Kratos
 template< class TSparseSpaceType, class TDenseSpaceType,
           class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
 class SuperLUMTSolver : public DirectSolver< TSparseSpaceType,
-    TDenseSpaceType, TReordererType>
+    TDenseSpaceType, ModelPart, TReordererType>
 {
 public:
     /**
@@ -71,13 +71,21 @@ public:
      */
     KRATOS_CLASS_POINTER_DEFINITION(SuperLUMTSolver);
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, ModelPart, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     /**
      * Default constructor
@@ -338,7 +346,7 @@ private:
      */
     SuperLUMTSolver(const SuperLUMTSolver& Other);
 
-}; // Class SkylineLUFactorizationSolver
+}; // Class SuperLUMTSolver
 
 }  // namespace Kratos.
 

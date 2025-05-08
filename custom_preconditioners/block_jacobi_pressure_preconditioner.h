@@ -94,8 +94,8 @@ P=[A 0
    0 C]
 where A and C will be preconditioned by normal preconditioner
 */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class BlockJacobiPressurePreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class BlockJacobiPressurePreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -104,19 +104,23 @@ public:
     /// Pointer definition of BlockJacobiPressurePreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (BlockJacobiPressurePreconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
-    
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef std::size_t  SizeType;
-    
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -137,12 +141,10 @@ public:
         mprec_C = Other.mprec_C;
     }
 
-
     /// Destructor.
-    virtual ~BlockJacobiPressurePreconditioner()
+    ~BlockJacobiPressurePreconditioner() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -156,18 +158,17 @@ public:
         return *this;
     }
 
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         std::cout << "Fill blocks begin" << std::endl;
         double start = OpenMPUtils::GetCurrentTime();
-        FillBlockMatrices(rA, mA, mB1, mB2, mC);
+        FillBlockMatrices(rA, mA, mB1, mB2, mC, mu, mp);
         std::cout << "Fill blocks completed..." << OpenMPUtils::GetCurrentTime() - start << " s" << std::endl;
-        
+
         //this is rather slow
 //        KRATOS_WATCH(norm_frobenius(mA))
 //        KRATOS_WATCH(norm_frobenius(mB1))
@@ -184,9 +185,9 @@ public:
 
 //        mprec_C->Initialize(mS, mp, mrp);
         mprec_C->Initialize(mC, mp, rB); //take rB as temporary, but it should not be
-        
+
         std::cout << "Block jacobi preconditioner is initialized" << std::endl;
-        
+
         //debugging: try to rebuild the preconditioner
 //        std::cout.precision(15);
 //        int n = rB.size();
@@ -205,21 +206,19 @@ public:
 //        KRATOS_WATCH(rG)
 //        exit(0);
     }
-    
-    
-    virtual bool AdditionalPhysicalDataIsNeeded()
+
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         //"other_counter[i]" i will contain the position in the global system of the i-th NON-pressure node
         //"pressure_counter[i]" will contain the in the global system of the i-th NON-pressure node
@@ -229,7 +228,7 @@ public:
         unsigned int pressure_counter = 0;
         unsigned int other_counter = 0;
         unsigned int global_pos;
-        for(ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for(auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             global_pos = it->EquationId();
             if(global_pos < system_size)
@@ -263,7 +262,7 @@ public:
     /** calculate preconditioned_u = A^{-1} * mu; preconditioned_p = C^{-1} * mp (for left-preconditioning)
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         GetUPart(rX, mu);
         mprec_A->ApplyLeft(mu);
@@ -279,7 +278,7 @@ public:
     /** calculate preconditioned_u = A^{-1} * mu; preconditioned_p = C^{-1} * mp (for right-preconditioning)
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyRight(VectorType& rX)
+    VectorType& ApplyRight(VectorType& rX) override
     {
         GetUPart(rX, mu);
         mprec_A->ApplyRight(mu);
@@ -292,7 +291,7 @@ public:
         return rX;
     }
 
-    virtual VectorType& ApplyInverseRight(VectorType& rX)
+    VectorType& ApplyInverseRight(VectorType& rX) override
     {
         GetUPart(rX, mu);
         mprec_A->ApplyInverseRight(mu);
@@ -305,7 +304,7 @@ public:
         return rX;
     }
 
-    virtual VectorType& ApplyTransposeLeft(VectorType& rX)
+    VectorType& ApplyTransposeLeft(VectorType& rX) override
     {
         GetUPart(rX, mu);
         mprec_A->ApplyTransposeLeft(mu);
@@ -318,7 +317,7 @@ public:
         return rX;
     }
 
-    virtual VectorType& ApplyTransposeRight(VectorType& rX)
+    VectorType& ApplyTransposeRight(VectorType& rX) override
     {
         GetUPart(rX, mu);
         mprec_A->ApplyTransposeRight(mu);
@@ -330,7 +329,6 @@ public:
 
         return rX;
     }
-
 
     ///@}
     ///@name Access
@@ -347,7 +345,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "BlockJacobiPressurePreconditioner";
@@ -356,18 +354,15 @@ public:
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
 
     ///@}
     ///@name Friends
@@ -384,7 +379,7 @@ protected:
     ///@}
     ///@name Protected member Variables
     ///@{
-    
+
     std::map<unsigned int, unsigned int> mpressure_indices;
     std::map<unsigned int, unsigned int> mother_indices;
     std::map<unsigned int, unsigned int> mglobal_to_local_indexing;
@@ -401,38 +396,58 @@ protected:
 
     //this function extracts from a vector which has the size of the
     //overall r, the part that corresponds to u-dofs
-    void GetUPart (const VectorType& rtot, VectorType& ru)
+    void GetUPart (const VectorType& rtot, VectorType& ru) const
     {
         if (ru.size() != mother_indices.size() )
             ru.resize (mother_indices.size(), false);
         #pragma omp parallel for
-        for (int i = 0; i < static_cast<int>(ru.size()); ++i)
-            ru[i] = rtot[mother_indices[i]];
+        for (unsigned int i = 0; i < static_cast<int>(ru.size()); ++i)
+        {
+            auto it = mother_indices.find(i);
+            if (it == mother_indices.end())
+                KRATOS_ERROR << "Index " << i << " does not exist";
+            ru[i] = rtot[it->second];
+        }
     }
 
     //this function extracts from a vector which has the size of the
     //overall r, the part that corresponds to p-dofs
-    void GetPPart (const VectorType& rtot, VectorType& rp)
+    void GetPPart (const VectorType& rtot, VectorType& rp) const
     {
         if (rp.size() != mpressure_indices.size() )
             rp.resize (mpressure_indices.size(), false);
         #pragma omp parallel for
-        for (int i = 0; i < static_cast<int>(rp.size()); ++i)
-            rp[i] = rtot[mpressure_indices[i]];
+        for (unsigned int i = 0; i < static_cast<int>(rp.size()); ++i)
+        {
+            auto it = mpressure_indices.find(i);
+            if (it == mpressure_indices.end())
+                KRATOS_ERROR << "Index " << i << " does not exist";
+            rp[i] = rtot[it->second];
+        }
     }
 
-    void WriteUPart (VectorType& rtot, const VectorType& ru)
+    void WriteUPart (VectorType& rtot, const VectorType& ru) const
     {
         #pragma omp parallel for
-        for (int i = 0; i < static_cast<int>(ru.size()); ++i)
-            rtot[mother_indices[i]] = ru[i];
+        for (unsigned int i = 0; i < static_cast<int>(ru.size()); ++i)
+        {
+            auto it = mother_indices.find(i);
+            if (it == mother_indices.end())
+                KRATOS_ERROR << "Index " << i << " does not exist";
+            rtot[it->second] = ru[i];
+        }
     }
 
-    void WritePPart (VectorType& rtot, const VectorType& rp)
+    void WritePPart (VectorType& rtot, const VectorType& rp) const
     {
         #pragma omp parallel for
-        for (int i = 0; i < static_cast<int>(rp.size()); ++i)
-            rtot[mpressure_indices[i]] = rp[i];
+        for (unsigned int i = 0; i < static_cast<int>(rp.size()); ++i)
+        {
+            auto it = mpressure_indices.find(i);
+            if (it == mpressure_indices.end())
+                KRATOS_ERROR << "Index " << i << " does not exist";
+            rtot[it->second] = rp[i];
+        }
     }
 
     ///@}
@@ -462,12 +477,12 @@ private:
 
     typename BaseType::Pointer mprec_A;
     typename BaseType::Pointer mprec_C;
-    
+
     SparseMatrixType mA;
     SparseMatrixType mB1;
     SparseMatrixType mB2;
     SparseMatrixType mC;
-    
+
     VectorType mp;
     VectorType mu;
 
@@ -483,10 +498,12 @@ private:
     ///this function generates the subblocks of matrix J
     ///as J = ( A  B1 ) u
     ///       ( B2 C  ) p
-    void FillBlockMatrices (SparseMatrixType& rA, SparseMatrixType& A, SparseMatrixType& B1, SparseMatrixType& B2, SparseMatrixType& C)
+    void FillBlockMatrices (const SparseMatrixType& rA,
+        SparseMatrixType& A, SparseMatrixType& B1, SparseMatrixType& B2, SparseMatrixType& C,
+        VectorType& u, VectorType& p) const
     {
         KRATOS_TRY
-        
+
         //get access to J data
         const SizeType* index1 = rA.index1_data().begin();
         const SizeType* index2 = rA.index2_data().begin();
@@ -502,27 +519,27 @@ private:
         TSparseSpaceType::Resize(B1, mother_indices.size(), mpressure_indices.size());
         TSparseSpaceType::Resize(B2, mpressure_indices.size(), mother_indices.size());
         TSparseSpaceType::Resize(C,  mpressure_indices.size(), mpressure_indices.size());
-	    
-	    TSparseSpaceType::Resize(mp, mpressure_indices.size());
-	    TSparseSpaceType::Set(mp, 0.00);
-	    TSparseSpaceType::Resize(mu, mother_indices.size());
-	    TSparseSpaceType::Set(mu, 0.00);
+
+        TSparseSpaceType::Resize(p, mpressure_indices.size());
+        TSparseSpaceType::Set(p, 0.00);
+        TSparseSpaceType::Resize(u, mother_indices.size());
+        TSparseSpaceType::Set(u, 0.00);
 
         //allocate the blocks by push_back
         for (unsigned int i = 0; i < rA.size1(); ++i)
         {
             unsigned int row_begin = index1[i];
             unsigned int row_end   = index1[i + 1];
-            unsigned int local_row_id = mglobal_to_local_indexing[i];
+            unsigned int local_row_id = mglobal_to_local_indexing.at(i);
 
-            if ( mis_pressure_block[i] == false) //either A or B1
+            if ( mis_pressure_block.at(i) == false) //either A or B1
             {
                 for (unsigned int j = row_begin; j < row_end; ++j)
                 {
                     unsigned int col_index = index2[j];
                     double value = values[j];
-                    unsigned int local_col_id = mglobal_to_local_indexing[col_index];
-                    if (mis_pressure_block[col_index] == false) //A block
+                    unsigned int local_col_id = mglobal_to_local_indexing.at(col_index);
+                    if (mis_pressure_block.at(col_index) == false) //A block
                         A.push_back ( local_row_id, local_col_id, value);
                     else //B1 block
                         B1.push_back ( local_row_id, local_col_id, value);
@@ -534,8 +551,8 @@ private:
                 {
                     unsigned int col_index = index2[j];
                     double value = values[j];
-                    unsigned int local_col_id = mglobal_to_local_indexing[col_index];
-                    if (mis_pressure_block[col_index] == false) //B2 block
+                    unsigned int local_col_id = mglobal_to_local_indexing.at(col_index);
+                    if (mis_pressure_block.at(col_index) == false) //B2 block
                         B2.push_back ( local_row_id, local_col_id, value);
                     else //C block
                         C.push_back ( local_row_id, local_col_id, value);
@@ -545,14 +562,14 @@ private:
 
         KRATOS_CATCH ("")
     }
-    
-    double ComputeFrobeniusNorm(SparseMatrixType& rA)
+
+    double ComputeFrobeniusNorm(const SparseMatrixType& rA)const
     {
         int n = rA.size1();
         const std::size_t* ia = rA.index1_data().begin();
         const std::size_t* ja = rA.index2_data().begin();
-        const double*	   a  = rA.value_data().begin();
-        
+        const double*      a  = rA.value_data().begin();
+
         double norm = 0.0;
 //        KRATOS_WATCH(rA.size1())
 //        KRATOS_WATCH(rA.size2())
@@ -563,9 +580,9 @@ private:
             for(int j = 0; j < nz; ++j)
                 norm += pow(a[ia[i] + j], 2);
         }
-        return sqrt(norm);
+        return std::sqrt(norm);
     }
-    
+
     ///@}
     ///@name Private  Access
     ///@{
@@ -599,32 +616,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  BlockJacobiPressurePreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const BlockJacobiPressurePreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_JACOBI_PRESSURE_PRECONDITIONER_H_INCLUDED  defined 
-
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_JACOBI_PRESSURE_PRECONDITIONER_H_INCLUDED  defined

@@ -92,8 +92,8 @@ namespace Kratos
 /**
 THis is similar to BlockJacobiNodalBasedPreconditioner but introduce pressure to a separate block
 */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class BlockJacobiNodalBasedPressurePreconditioner : public BlockJacobiPreconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class BlockJacobiNodalBasedPressurePreconditioner : public BlockJacobiPreconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -102,21 +102,25 @@ public:
     /// Pointer definition of BlockJacobiNodalBasedPressurePreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (BlockJacobiNodalBasedPressurePreconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef BlockJacobiPreconditioner<TSparseSpaceType, TDenseSpaceType> SuperType;
-    
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef BlockJacobiPreconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> SuperType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef std::size_t  SizeType;
-    
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -129,17 +133,17 @@ public:
     {
         /* extract the nodal indices from python list */
         typedef boost::python::stl_input_iterator<boost::python::list> iterator_value_type;
-        BOOST_FOREACH(const iterator_value_type::value_type& nodes_list, 
+        BOOST_FOREACH(const iterator_value_type::value_type& nodes_list,
                       std::make_pair(iterator_value_type(pyListNodes), // begin
                       iterator_value_type() ) )                        // end
         {
-            std::set<unsigned int> nodal_indices;
+            std::set<IndexType> nodal_indices;
             typedef boost::python::stl_input_iterator<int> sub_iterator_value_type;
-            BOOST_FOREACH(const sub_iterator_value_type::value_type& node_id, 
+            BOOST_FOREACH(const sub_iterator_value_type::value_type& node_id,
                       std::make_pair(sub_iterator_value_type(nodes_list), // begin
                       sub_iterator_value_type() ) )                       // end
             {
-                nodal_indices.insert(node_id);
+                nodal_indices.insert(static_cast<IndexType>(node_id));
             }
             mNodalIndices.push_back(nodal_indices);
         }
@@ -152,10 +156,9 @@ public:
     }
 
     /// Destructor.
-    virtual ~BlockJacobiNodalBasedPressurePreconditioner()
+    ~BlockJacobiNodalBasedPressurePreconditioner() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -168,29 +171,27 @@ public:
         return *this;
     }
 
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         /* build the map from node id to the block index */
         std::map<unsigned int, unsigned int> node_to_block_map;
         for(unsigned int block_id = 0; block_id < mNodalIndices.size(); ++block_id)
-            for(std::set<unsigned int>::iterator it = mNodalIndices[block_id].begin(); it != mNodalIndices[block_id].end(); ++it)
+            for(auto it = mNodalIndices[block_id].begin(); it != mNodalIndices[block_id].end(); ++it)
                 node_to_block_map[*it] = block_id;
 
         /* clear existing data */
@@ -205,12 +206,12 @@ public:
         unsigned int num_blocks = mNodalIndices.size() + 1;
         SuperType::mBlockIndices.resize(num_blocks);
         SuperType::mBlockDofs.resize(num_blocks);
-        
+
         std::vector<unsigned int> local_equation_id(num_blocks);
         for(unsigned int i = 0; i < num_blocks; ++i)
             local_equation_id[i] = 0;
 
-        for(ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for(auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
             if(it->EquationId() < system_size)
             {
                 ++tot_active_dofs;
@@ -221,20 +222,19 @@ public:
                     block_id = node_to_block_map[node_id];
                 SuperType::mBlockIndices[block_id].insert(it->EquationId());
 
-                ModelPart::DofType ident_dof = *it;
+                typename TModelPartType::DofType ident_dof = *it;
                 ident_dof.SetEquationId(local_equation_id[block_id]++);
                 SuperType::mBlockDofs[block_id].push_back(ident_dof);
             }
 
         /* size check */
         if(tot_active_dofs != rA.size1() )
-            KRATOS_THROW_ERROR(std::logic_error, "total system size does not equal total active dofs", "");
+            KRATOS_ERROR << "total system size does not equal total active dofs";
         std::cout << "Build the block indices completed, tot_active_dofs = " << tot_active_dofs << std::endl;
 
         /* provide additional data for each sub-preconditioner */
         SuperType::ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
     }
-
 
     ///@}
     ///@name Access
@@ -253,23 +253,20 @@ public:
     virtual std::string Name() const {return "BlockJacobiNodalBasedPressurePreconditioner";}
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         return SuperType::Info();
     }
 
-
     /// Print information about this object.
-    virtual void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
 
     ///@}
     ///@name Friends
@@ -323,7 +320,7 @@ private:
     ///@name Member Variables
     ///@{
 
-    std::vector<std::set<unsigned int> > mNodalIndices;
+    std::vector<std::set<IndexType> > mNodalIndices;
 
     ///@}
     ///@name Private Operators
@@ -334,7 +331,7 @@ private:
     ///@name Private Operations
     ///@{
 
-    
+
     ///@}
     ///@name Private  Access
     ///@{
@@ -368,32 +365,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  BlockJacobiNodalBasedPressurePreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const BlockJacobiNodalBasedPressurePreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_JACOBI_NODAL_BASED_PRECONDITIONER_H_INCLUDED  defined 
-
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_JACOBI_NODAL_BASED_PRECONDITIONER_H_INCLUDED  defined

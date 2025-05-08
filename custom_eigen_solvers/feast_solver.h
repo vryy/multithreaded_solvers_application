@@ -145,12 +145,7 @@ private:
      */
     FeastSolver& operator=(const FeastSolver& Other);
 
-    /**
-     * Copy constructor.
-     */
-
-};
-// Class FeastSolver
+}; // Class FeastSolver
 
 } // namespace Kratos.
 

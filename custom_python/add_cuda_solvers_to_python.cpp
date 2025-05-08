@@ -10,10 +10,10 @@
 // System includes
 
 // External includes
-#include <boost/python.hpp>
 
 // Project includes
-#include "includes/define.h"
+#include "includes/define_python.h"
+#include "includes/model_part.h"
 #include "spaces/ublas_space.h"
 #include "linear_solvers/direct_solver.h"
 
@@ -34,7 +34,7 @@ namespace Python
         typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
         typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
 
-        typedef DirectSolver<SparseSpaceType,  LocalSpaceType> DirectSolverType;
+        typedef DirectSolver<SparseSpaceType, LocalSpaceType, ModelPart> DirectSolverType;
 
         using namespace boost::python;
 

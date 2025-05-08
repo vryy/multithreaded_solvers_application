@@ -99,8 +99,8 @@ namespace Kratos
 
 /// ITSOLPreconditioner class.
 /**   */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class  ILUkPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class ILUkPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -109,28 +109,30 @@ public:
     /// Pointer definition of  ILUkPreconditioner
     KRATOS_CLASS_POINTER_DEFINITION ( ILUkPreconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
-    
-    typedef typename TSparseSpaceType::MatrixPointerType SparseMatrixPointerType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
-    
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
+
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
+
     typedef typename LinearSolverType::Pointer LinearSolverPointerType;
 
-    typedef std::size_t  SizeType;
-    
-    typedef std::size_t  IndexType;
-    
     typedef struct SpaFmt {
-        /*--------------------------------------------- 
+        /*---------------------------------------------
         | C-style CSR format - used internally
-        | for all matrices in CSR format 
+        | for all matrices in CSR format
         |---------------------------------------------*/
         int n;
         int *nzcount;  /* length of each row */
@@ -157,39 +159,33 @@ public:
         mlu = NULL;
     }
 
-
     /// Copy constructor.
      ILUkPreconditioner(const ILUkPreconditioner& Other)
     {
         mlfil = Other.mlfil;
     }
 
-
     /// Destructor.
-    virtual ~ILUkPreconditioner()
+    ~ILUkPreconditioner() override
     {
     }
-
-
 
     ///@}
     ///@name Operators
     ///@{
 
     /// Assignment operator.
-     ILUkPreconditioner& operator=(const  ILUkPreconditioner& Other)
+    ILUkPreconditioner& operator=(const  ILUkPreconditioner& Other)
     {
         mlfil = Other.mlfil;
         return *this;
     }
 
-    
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         /*----------------------------------------------------------------------------
          * ILUK preconditioner
@@ -322,26 +318,23 @@ public:
             ++show_progress;
         }
     }
-    
-    
-    virtual bool AdditionalPhysicalDataIsNeeded()
+
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return false;
     }
 
-
-    virtual void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY)
+    void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY) override
     {
         TSparseSpaceType::Mult(rA, rX, rY);
         ApplyLeft(rY);
     }
 
-
     /*
      * calculate preconditioned_X = A^{-1} * X;
      @param rX Unknows of preconditioner system
      */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         /*----------------------------------------------------------------------
          *    performs a forward followed by a backward solve
@@ -380,18 +373,18 @@ public:
             }
             x[i] *= D[i];
         }
-        
+
         std::copy(x, x + n, rX.begin());
         delete [] x;
         return rX;
     }
 
-    virtual VectorType& Finalize(VectorType& rX)
+    VectorType& Finalize(VectorType& rX) override
     {
         cleanILU( mlu );
         return rX;
     }
-    
+
     ///@}
     ///@name Access
     ///@{
@@ -407,7 +400,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << " ILUkPreconditioner, ";
@@ -415,25 +408,21 @@ public:
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         OStream << "Level of fill  = " << mlfil;
     }
 
-
-
     ///@}
     ///@name Friends
     ///@{
-    
+
 
     ///@}
 
@@ -445,7 +434,7 @@ protected:
     ///@}
     ///@name Protected member Variables
     ///@{
-    
+
 
     ///@}
     ///@name Protected Operators
@@ -456,7 +445,7 @@ protected:
     ///@name Protected Operations
     ///@{
 
-    
+
     ///@}
     ///@name Protected  Access
     ///@{
@@ -532,9 +521,9 @@ private:
          *------------------------------------------------------------------*/
         int i, j, k, col, ip, it, jpiv;
         int incl, incu, jmin, kmin, nzcount;
-      
+
         levls  = (int*) Malloc( n*sizeof(int), "lofC: levls" );
-        jbuf = (int*) Malloc( n*sizeof(int), "lofC: jbuf" ); 
+        jbuf = (int*) Malloc( n*sizeof(int), "lofC: jbuf" );
         ulvl = (int**) Malloc( n*sizeof(int *), "lofC: ulvl" );
 
         /* initilize iw */
@@ -548,85 +537,85 @@ private:
                 col = rA.index2_data()[rA.index1_data()[i] + j]; //csmat->ja[i][j];
                 if( col < i ) {
         /*-------------------- L-part  */
-	                jbuf[incl] = col;
-	                levls[incl] = 0;
-	                iw[col] = incl++;
-                } 
-                else if (col > i) { 
+                    jbuf[incl] = col;
+                    levls[incl] = 0;
+                    iw[col] = incl++;
+                }
+                else if (col > i) {
         /*-------------------- U-part  */
-	                jbuf[incu] = col;
-	                levls[incu] = 0;
-	                iw[col] = incu++;
-                } 
+                    jbuf[incu] = col;
+                    levls[incu] = 0;
+                    iw[col] = incu++;
+                }
             }
-        /*-------------------- symbolic k,i,j Gaussian elimination  */ 
-            jpiv = -1; 
+        /*-------------------- symbolic k,i,j Gaussian elimination  */
+            jpiv = -1;
             while (++jpiv < incl) {
-                k = jbuf[jpiv] ; 
+                k = jbuf[jpiv] ;
         /*-------------------- select leftmost pivot */
                 kmin = k;
-                jmin = jpiv; 
+                jmin = jpiv;
                 for( j = jpiv + 1; j< incl; ++j) {
-	                if( jbuf[j] < kmin ) {
-	                    kmin = jbuf[j];
-	                    jmin = j;
-	                }
+                    if( jbuf[j] < kmin ) {
+                        kmin = jbuf[j];
+                        jmin = j;
+                    }
                 }
-        /*-------------------- swap  */  
+        /*-------------------- swap  */
                 if( jmin != jpiv ) {
-	                jbuf[jpiv] = kmin; 
-	                jbuf[jmin] = k; 
-	                iw[kmin] = jpiv;
-	                iw[k] = jmin; 
-	                j = levls[jpiv] ;
-	                levls[jpiv] = levls[jmin];
-	                levls[jmin] = j;
-	                k = kmin; 
+                    jbuf[jpiv] = kmin;
+                    jbuf[jmin] = k;
+                    iw[kmin] = jpiv;
+                    iw[k] = jmin;
+                    j = levls[jpiv] ;
+                    levls[jpiv] = levls[jmin];
+                    levls[jmin] = j;
+                    k = kmin;
                 }
         /*-------------------- symbolic linear combinaiton of rows  */
                 for( j = 0; j < U->nzcount[k]; ++j ) {
-	                col = U->ja[k][j];
-	                it = ulvl[k][j]+levls[jpiv]+1 ; 
-	                if( it > lofM ) continue; 
-	                ip = iw[col];
-	                if( ip == -1 ) {
-	                    if( col < i) {
-	                        jbuf[incl] = col;
-	                        levls[incl] = it;
-	                        iw[col] = incl++;
+                    col = U->ja[k][j];
+                    it = ulvl[k][j]+levls[jpiv]+1 ;
+                    if( it > lofM ) continue;
+                    ip = iw[col];
+                    if( ip == -1 ) {
+                        if( col < i) {
+                            jbuf[incl] = col;
+                            levls[incl] = it;
+                            iw[col] = incl++;
                         }
-	                    else if( col > i ) {
-	                        jbuf[incu] = col;
-	                        levls[incu] = it;
-	                        iw[col] = incu++;
-	                    } 
+                        else if( col > i ) {
+                            jbuf[incu] = col;
+                            levls[incu] = it;
+                            iw[col] = incu++;
+                        }
                     }
                     else
-	                    levls[ip] = min(levls[ip], it); 
+                        levls[ip] = min(levls[ip], it);
                 }
             }   /* end - while loop */
         /*-------------------- reset iw */
             for( j = 0; j < incl; ++j ) iw[jbuf[j]] = -1;
             for( j = i; j < incu; ++j ) iw[jbuf[j]] = -1;
-        /*-------------------- copy L-part */ 
+        /*-------------------- copy L-part */
             L->nzcount[i] = incl;
             if(incl > 0 ) {
                 L->ja[i] = (int*) Malloc( incl*sizeof(int), "lofC: L->ja[i]" );
                 memcpy( L->ja[i], jbuf, sizeof(int)*incl);
             }
-        /*-------------------- copy U - part        */ 
-            k = incu-i; 
-            U->nzcount[i] = k; 
+        /*-------------------- copy U - part        */
+            k = incu-i;
+            U->nzcount[i] = k;
             if( k > 0 ) {
                 U->ja[i] = (int*) Malloc( sizeof(int)*k, "lofC: U->ja[i]" );
                 memcpy( U->ja[i], jbuf+i, sizeof(int)*k );
         /*-------------------- update matrix of levels */
-                ulvl[i] = (int*) Malloc( k*sizeof(int), "lofC: ulvl[i]" ); 
+                ulvl[i] = (int*) Malloc( k*sizeof(int), "lofC: ulvl[i]" );
                 memcpy( ulvl[i], levls+i, k*sizeof(int) );
             }
             ++progress;
         }
-      
+
         /*-------------------- free temp space and leave --*/
         free(levls);
         free(jbuf);
@@ -726,7 +715,7 @@ private:
         amat->n = len;
         amat->nzcount = (int *)Malloc( len*sizeof(int), "setupCS" );
         amat->ja = (int **) Malloc( len*sizeof(int *), "setupCS" );
-        if( job == 1 ) 
+        if( job == 1 )
             amat->ma = (double **) Malloc( len*sizeof(double *), "setupCS" );
         else
             amat->ma = NULL;
@@ -753,7 +742,7 @@ private:
                 if( amat->ma ) free(amat->ma[i]);
                 free(amat->ja[i]);
             }
-        }    
+        }
         if (amat->ma) free(amat->ma);
         free(amat->ja);
         free(amat->nzcount);
@@ -857,25 +846,7 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,  ILUkPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream, const  ILUkPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
@@ -883,4 +854,3 @@ inline std::ostream& operator << (std::ostream& OStream, const  ILUkPrecondition
 #undef max
 
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ILUK_PRECONDITIONER_H_INCLUDED defined
-

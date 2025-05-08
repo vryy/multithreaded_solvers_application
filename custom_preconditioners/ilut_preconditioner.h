@@ -96,8 +96,8 @@ namespace Kratos
 
 /// ITSOLPreconditioner class.
 /**   */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class ILUtPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class ILUtPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -106,28 +106,30 @@ public:
     /// Pointer definition of ILUtPreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (ILUtPreconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
-    
-    typedef typename TSparseSpaceType::MatrixPointerType SparseMatrixPointerType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
-    
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
+
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
+
     typedef typename LinearSolverType::Pointer LinearSolverPointerType;
 
-    typedef std::size_t  SizeType;
-    
-    typedef std::size_t  IndexType;
-    
     typedef struct SpaFmt {
-        /*--------------------------------------------- 
+        /*---------------------------------------------
         | C-style CSR format - used internally
-        | for all matrices in CSR format 
+        | for all matrices in CSR format
         |---------------------------------------------*/
         int n;
         int *nzcount;  /* length of each row */
@@ -148,10 +150,10 @@ public:
     ///@{
 
     /// Default constructor.
-    ILUtPreconditioner(double lfil, double droptol)
+    ILUtPreconditioner(ValueType lfil, ValueType droptol)
     {
         if(lfil < 0.0 || lfil > 1.0)
-            KRATOS_THROW_ERROR(std::logic_error, "level of fill must be in [0.0 1.0]", __FUNCTION__)
+            KRATOS_ERROR << "level of fill must be in [0.0 1.0]";
         mlfil = lfil;
         mdroptol = droptol;
         mlu = NULL;
@@ -165,13 +167,10 @@ public:
         mdroptol = Other.mdroptol;
     }
 
-
     /// Destructor.
-    virtual ~ILUtPreconditioner()
+    ~ILUtPreconditioner() override
     {
     }
-
-
 
     ///@}
     ///@name Operators
@@ -185,13 +184,11 @@ public:
         return *this;
     }
 
-    
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         /*----------------------------------------------------------------------------
          * ILUT preconditioner
@@ -205,7 +202,7 @@ public:
          * lfil     = integer. The fill-in parameter. Each column of L and
          *            each column of U will have a maximum of lfil elements.
          *            WARNING: THE MEANING OF LFIL HAS CHANGED WITH RESPECT TO
-         *            EARLIER VERSIONS. 
+         *            EARLIER VERSIONS.
          *            lfil must be .ge. 0.
          * tol      = real*8. Sets the threshold for dropping small terms in the
          *            factorization. See below for details on dropping strategy.
@@ -226,7 +223,7 @@ public:
          * ======
          * All the diagonals of the input matrix must not be zero
          *----------------------------------------------------------------------------
-         * Dual drop-off strategy works as follows. 
+         * Dual drop-off strategy works as follows.
          *
          * 1) Theresholding in L and U as set by tol. Any element whose size
          *    is less than some tolerance (relative to the norm of current
@@ -278,7 +275,7 @@ public:
             for(j = 0; j < nzcount; ++j) col_ind[j] = rA.index2_data()[rA.index1_data()[i] + j];
             double* val = (double*) Malloc(nzcount * sizeof(double), "val");
             for(j = 0; j < nzcount; ++j) val[j] = rA.value_data()[rA.index1_data()[i] + j];
-    
+
             // start ilut adapted from ilut.c
             ja = col_ind;          //column indices of row i
             ma = val;              //values of row i
@@ -401,14 +398,14 @@ public:
             if( w[i] == 0.0 ) {
                 fprintf( fp, "zero diagonal encountered.\n" );
                 for( j = i; j < n; ++j ) {
-                    L->ja[j] = NULL; 
+                    L->ja[j] = NULL;
                     L->ma[j] = NULL;
-                    U->ja[j] = NULL; 
+                    U->ja[j] = NULL;
                     U->ma[j] = NULL;
                 }
                 exit(1);
             }
-            /*-----------Update diagonal */    
+            /*-----------Update diagonal */
             D[i] = 1 / w[i];
 
             /* update L-matrix */
@@ -450,11 +447,11 @@ public:
             for( j = 0; j < lenu; ++j ) {
                 iw[j] = -1;
             }
-        
+
             // release data to avoid memory leaking
             delete [] col_ind;
             delete [] val;
-        
+
             ++show_progress;
         }
 
@@ -462,26 +459,23 @@ public:
         free( jbuf );
         free( wn );
     }
-    
-    
-    virtual bool AdditionalPhysicalDataIsNeeded()
+
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return false;
     }
 
-
-    virtual void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY)
+    void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY) override
     {
         TSparseSpaceType::Mult(rA, rX, rY);
         ApplyLeft(rY);
     }
 
-
     /*
      * calculate preconditioned_X = A^{-1} * X;
      @param rX Unknows of preconditioner system
      */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         /*----------------------------------------------------------------------
          *    performs a forward followed by a backward solve
@@ -520,18 +514,18 @@ public:
             }
             x[i] *= D[i];
         }
-        
+
         std::copy(x, x + n, rX.begin());
         delete [] x;
         return rX;
     }
 
-    virtual VectorType& Finalize(VectorType& rX)
+    VectorType& Finalize(VectorType& rX) override
     {
         cleanILU( mlu );
         return rX;
     }
-    
+
     ///@}
     ///@name Access
     ///@{
@@ -547,7 +541,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "ILUtPreconditioner, ";
@@ -555,26 +549,22 @@ public:
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         OStream << "Level of fill  = " << mlfil;
         OStream << ", Drop tolerance = " << mdroptol;
     }
 
-
-
     ///@}
     ///@name Friends
     ///@{
-    
+
 
     ///@}
 
@@ -586,7 +576,7 @@ protected:
     ///@}
     ///@name Protected member Variables
     ///@{
-    
+
 
     ///@}
     ///@name Protected Operators
@@ -597,7 +587,7 @@ protected:
     ///@name Protected Operations
     ///@{
 
-    
+
     ///@}
     ///@name Protected  Access
     ///@{
@@ -625,7 +615,7 @@ private:
     ///@{
     iluptr mlu;    /* ilu preconditioner structure */
     double mlfil;
-    double mdroptol;
+    ValueType mdroptol;
 
     ///@}
     ///@name Private Operators
@@ -694,7 +684,7 @@ private:
         amat->n = len;
         amat->nzcount = (int *)Malloc( len*sizeof(int), "setupCS" );
         amat->ja = (int **) Malloc( len*sizeof(int *), "setupCS" );
-        if( job == 1 ) 
+        if( job == 1 )
             amat->ma = (double **) Malloc( len*sizeof(double *), "setupCS" );
         else
             amat->ma = NULL;
@@ -721,7 +711,7 @@ private:
                 if( amat->ma ) free(amat->ma[i]);
                 free(amat->ja[i]);
             }
-        }    
+        }
         if (amat->ma) free(amat->ma);
         free(amat->ja);
         free(amat->nzcount);
@@ -824,29 +814,9 @@ private:
 ///@name Input and output
 ///@{
 
-
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream, ILUtPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream, const ILUtPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-    return OStream;
-}
 ///@}
 
 
 }  // namespace Kratos.
 
-
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ILUT_PRECONDITIONER_H_INCLUDED defined
-

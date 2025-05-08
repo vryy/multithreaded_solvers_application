@@ -69,8 +69,8 @@ namespace Kratos
 /**
 REF: White, Borja
 */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class Block2PhaseSchurPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class Block2PhaseSchurPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -79,21 +79,25 @@ public:
     /// Pointer definition of Block2PhaseSchurPreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (Block2PhaseSchurPreconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
+
+    typedef typename BaseType::VectorType VectorType;
+
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     typedef boost::shared_ptr<SparseMatrixType> SparseMatrixPointerType;
-
-    typedef typename TSparseSpaceType::VectorType VectorType;
-
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
-
-    typedef std::size_t  SizeType;
-
-    typedef std::size_t  IndexType;
 
     ///@}
     ///@name Life Cycle
@@ -161,12 +165,10 @@ public:
         mInverseOption = Other.mInverseOption;
     }
 
-
     /// Destructor.
-    virtual ~Block2PhaseSchurPreconditioner()
+    ~Block2PhaseSchurPreconditioner() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -193,7 +195,7 @@ public:
         mSchurComputeMode = "SCHUR_GIVEN";
     }
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         std::cout << "Fill blocks begin" << std::endl;
         double start = OpenMPUtils::GetCurrentTime();
@@ -273,33 +275,30 @@ public:
 //        exit(0);
     }
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return false;
     }
 
-
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {}
 
-
-    virtual void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY)
+    void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY) override
     {
         TSparseSpaceType::Mult(rA, rX, rY);
         ApplyLeft(rY);
     }
 
-
     /** calculate preconditioned_u = A^{-1} * mu; preconditioned_p = S^{-1} * (mp - B2*preconditioned_u)
         @param rX  Unknowns of preconditioner suystem
     */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         MultithreadedSolversMathUtils::GetPart(rX, mother_indices, mu);
         MultithreadedSolversMathUtils::GetPart(rX, mpressure_indices, mp);
@@ -350,7 +349,7 @@ public:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Unknown option", mInverseOption)
+            KRATOS_ERROR << "Unknown option " << mInverseOption;
         }
 
         MultithreadedSolversMathUtils::WritePart(rX, mother_indices, mu);
@@ -358,8 +357,6 @@ public:
 
         return rX;
     }
-
-
 
     ///@}
     ///@name Access
@@ -382,7 +379,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Block2PhaseSchurPreconditioner";
@@ -393,18 +390,15 @@ public:
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
 
     ///@}
     ///@name Friends
@@ -445,7 +439,7 @@ protected:
         SparseMatrixType& A,
         SparseMatrixType& B1,
         SparseMatrixType& B2,
-        SparseMatrixType& C)
+        SparseMatrixType& C) const
     {
         KRATOS_TRY
 
@@ -485,7 +479,7 @@ protected:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Unknown Schur compute mode: ", mSchurComputeMode);
+            KRATOS_ERROR << "Unknown Schur compute mode " << mSchurComputeMode;
         }
 
         KRATOS_CATCH ("")
@@ -645,20 +639,20 @@ private:
 
         //KRATOS_WATCH(896)
         //add stabilization matrix L
-        /*				const SizeType* L_index1 = rL.index1_data().begin();
-        				const SizeType* L_index2 = rL.index2_data().begin();
-        				const double*	   L_values = rL.value_data().begin();
-        				for (unsigned int i=0; i<rL.size1(); i++)
-        				{
-        					unsigned int row_begin = L_index1[i];
-        					unsigned int row_end   = L_index1[i+1];
-        					diagA[i] = 0.0;
-        					for (unsigned int j=row_begin; j<row_end; j++)
-        					{
-        						unsigned int col = L_index2[j];
-        						rS(i,col) += L_values[j];
-        					}
-        				}*/
+        /*              const SizeType* L_index1 = rL.index1_data().begin();
+                        const SizeType* L_index2 = rL.index2_data().begin();
+                        const double*      L_values = rL.value_data().begin();
+                        for (unsigned int i=0; i<rL.size1(); i++)
+                        {
+                            unsigned int row_begin = L_index1[i];
+                            unsigned int row_end   = L_index1[i+1];
+                            diagA[i] = 0.0;
+                            for (unsigned int j=row_begin; j<row_end; j++)
+                            {
+                                unsigned int col = L_index2[j];
+                                rS(i,col) += L_values[j];
+                            }
+                        }*/
     }
 
     /**
@@ -858,14 +852,14 @@ private:
         }
     }
 
-    void ComputeDiagonalByLumping (SparseMatrixType& A, VectorType& diagA) const
+    void ComputeDiagonalByLumping (const SparseMatrixType& A, VectorType& diagA) const
     {
         if (diagA.size() != A.size1() )
             TSparseSpaceType::Resize(diagA, A.size1());
         //get access to A data
         const SizeType* index1 = A.index1_data().begin();
 //        const SizeType* index2 = A.index2_data().begin();
-        const double*	   values = A.value_data().begin();
+        const double*   values = A.value_data().begin();
 
         #pragma omp parallel for
         for (SizeType i = 0; i < A.size1(); ++i)
@@ -880,14 +874,14 @@ private:
         }
     }
 
-    void ComputeDiagonalByExtracting (SparseMatrixType& A, VectorType& diagA) const
+    void ComputeDiagonalByExtracting (const SparseMatrixType& A, VectorType& diagA) const
     {
         if (diagA.size() != A.size1() )
             TSparseSpaceType::Resize(diagA, A.size1());
         //get access to A data
         const SizeType* index1 = A.index1_data().begin();
         const SizeType* index2 = A.index2_data().begin();
-        const double*	   values = A.value_data().begin();
+        const double*      values = A.value_data().begin();
 
         #pragma omp parallel for
         for (SizeType i = 0; i < A.size1(); ++i)
@@ -963,29 +957,7 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 

@@ -95,8 +95,8 @@ namespace Kratos
 /**
 REF: White, Borja
 */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class BlockPressureIndexBasedSchurPreconditioner : public Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class BlockPressureIndexBasedSchurPreconditioner : public Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -105,21 +105,25 @@ public:
     /// Pointer definition of BlockPressureIndexBasedSchurPreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (BlockPressureIndexBasedSchurPreconditioner);
 
-    typedef Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> PreconditionerType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> PreconditionerType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -130,8 +134,8 @@ public:
         typename PreconditionerType::Pointer prec_A,
         typename PreconditionerType::Pointer prec_S,
         const std::string& SchurComputeMode,
-        const std::size_t& block_size1,
-        const std::size_t& block_size2)
+        const SizeType block_size1,
+        const SizeType block_size2)
     : BaseType(prec_A, prec_S, SchurComputeMode)
     , mblock_size1(block_size1), mblock_size2(block_size2)
     {}
@@ -141,8 +145,8 @@ public:
         typename PreconditionerType::Pointer prec_S,
         const std::string& SchurComputeMode,
         const std::string& InverseOption,
-        const std::size_t& block_size1,
-        const std::size_t& block_size2)
+        const SizeType block_size1,
+        const SizeType block_size2)
     : BaseType(prec_A, prec_S, SchurComputeMode, InverseOption)
     , mblock_size1(block_size1), mblock_size2(block_size2)
     {}
@@ -152,8 +156,8 @@ public:
         typename PreconditionerType::Pointer prec_S,
         const std::string& SchurComputeMode,
         typename LinearSolverType::Pointer solver_S,
-        const std::size_t& block_size1,
-        const std::size_t& block_size2)
+        const SizeType block_size1,
+        const SizeType block_size2)
     : BaseType(prec_A, prec_S, SchurComputeMode, solver_S)
     , mblock_size1(block_size1), mblock_size2(block_size2)
     {}
@@ -164,8 +168,8 @@ public:
         const std::string& SchurComputeMode,
         typename LinearSolverType::Pointer solver_S,
         const std::string& InverseOption,
-        const std::size_t& block_size1,
-        const std::size_t& block_size2)
+        const SizeType block_size1,
+        const SizeType block_size2)
     : BaseType(prec_A, prec_S, SchurComputeMode, solver_S, InverseOption)
     , mblock_size1(block_size1), mblock_size2(block_size2)
     {}
@@ -175,12 +179,10 @@ public:
     : BaseType(Other), mblock_size1(Other.mblock_size1), mblock_size2(Other.mblock_size2)
     {}
 
-
     /// Destructor.
-    virtual ~BlockPressureIndexBasedSchurPreconditioner()
+    ~BlockPressureIndexBasedSchurPreconditioner() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -195,12 +197,11 @@ public:
         return *this;
     }
 
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         //count pressure dofs
         unsigned int n_nodes = rA.size1() / (mblock_size1 + mblock_size2);
@@ -208,8 +209,8 @@ public:
         unsigned int tot_active_dofs = rA.size1();
         unsigned int system_size = TSparseSpaceType::Size(rB);
 
-        KRATOS_WATCH(tot_active_dofs)
-        KRATOS_WATCH(n_pressure_dofs)
+        // KRATOS_WATCH(tot_active_dofs)
+        // KRATOS_WATCH(n_pressure_dofs)
 
         //resize arrays as needed
         unsigned int other_dof_size = tot_active_dofs - n_pressure_dofs;
@@ -262,25 +263,22 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << BaseType::Info() << " for displacement-pressure system";
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
 
     ///@}
     ///@name Friends
@@ -334,8 +332,8 @@ private:
     ///@name Member Variables
     ///@{
 
-    std::size_t mblock_size1;
-    std::size_t mblock_size2;
+    SizeType mblock_size1;
+    SizeType mblock_size2;
 
     ///@}
     ///@name Private Operators
@@ -380,32 +378,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  BlockPressureIndexBasedSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const BlockPressureIndexBasedSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_INDEX_BASED_SCHUR_PRECONDITIONER_H_INCLUDED  defined
-

@@ -123,10 +123,10 @@ namespace Python
         typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
         typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
 
-        typedef LinearSolver<SparseSpaceType,  LocalSpaceType> LinearSolverType;
-        typedef DirectSolver<SparseSpaceType,  LocalSpaceType> DirectSolverType;
-        typedef IterativeSolver<SparseSpaceType, LocalSpaceType> IterativeSolverType;
-        typedef Preconditioner<SparseSpaceType,  LocalSpaceType> PreconditionerType;
+        typedef LinearSolver<SparseSpaceType, LocalSpaceType, ModelPart> LinearSolverType;
+        typedef DirectSolver<SparseSpaceType, LocalSpaceType, ModelPart> DirectSolverType;
+        typedef IterativeSolver<SparseSpaceType, LocalSpaceType, ModelPart> IterativeSolverType;
+        typedef Preconditioner<SparseSpaceType, LocalSpaceType, ModelPart> PreconditionerType;
 
         using namespace boost::python;
 
@@ -154,24 +154,24 @@ namespace Python
         class_<PardisoSolverType, PardisoSolverType::Pointer, bases<DirectSolverType>, boost::noncopyable >
         ( "PardisoSolver", init<>() )
         .def(init<unsigned int>() )
-//        .def(self_ns::str(self))
+        .def(self_ns::str(self))
         ;
         #endif
 
-        typedef GmresSolver<SparseSpaceType, LocalSpaceType> GmresSolverType;
+        typedef GmresSolver<SparseSpaceType, LocalSpaceType, ModelPart> GmresSolverType;
         class_<GmresSolverType, GmresSolverType::Pointer, bases<IterativeSolverType> >
         ("GmresSolver", init<double, unsigned int, unsigned int, PreconditionerType::Pointer>())
         .def(self_ns::str(self))
         ;
 
-        typedef BicgstabSolver<SparseSpaceType, LocalSpaceType> BicgstabSolverType;
+        typedef BicgstabSolver<SparseSpaceType, LocalSpaceType, ModelPart> BicgstabSolverType;
         class_<BicgstabSolverType, BicgstabSolverType::Pointer, bases<IterativeSolverType> >
         ("BicgstabSolver", init<double, unsigned int, PreconditionerType::Pointer>())
         .def(init<double, unsigned int, std::string, PreconditionerType::Pointer>())
         .def(self_ns::str(self))
         ;
 
-        typedef BicgstabBlockPressureSolver<SparseSpaceType, LocalSpaceType> BicgstabBlockPressureSolverType;
+        typedef BicgstabBlockPressureSolver<SparseSpaceType, LocalSpaceType, ModelPart> BicgstabBlockPressureSolverType;
         class_<BicgstabBlockPressureSolverType, BicgstabBlockPressureSolverType::Pointer, bases<LinearSolverType> >
         ("BicgstabBlockPressureSolver", init<double, unsigned int, PreconditionerType::Pointer, double, double, double, double>())
         .def(self_ns::str(self))
@@ -181,7 +181,7 @@ namespace Python
 
         #ifdef MULTITHREADED_SOLVERS_APP_USE_MKL
         // TODO: to be removed (superseded by ScalingSolver2)
-        typedef BicgstabScalingSolver<SparseSpaceType, LocalSpaceType> BicgstabScalingSolverType;
+        typedef BicgstabScalingSolver<SparseSpaceType, LocalSpaceType, ModelPart> BicgstabScalingSolverType;
         class_<BicgstabScalingSolverType, BicgstabScalingSolverType::Pointer, bases<LinearSolverType> >
         ("BicgstabScalingSolver", init<double, unsigned int, PreconditionerType::Pointer>())
         .def(init<double, unsigned int, PreconditionerType::Pointer, int>())
@@ -192,10 +192,11 @@ namespace Python
         .def("EnableCheckConditionNumber", &BicgstabScalingSolverType::EnableCheckConditionNumber)
         ;
 
-        typedef ScalingSolver2<SparseSpaceType, LocalSpaceType> ScalingSolver2Type;
+        typedef ScalingSolver2<SparseSpaceType, LocalSpaceType, ModelPart> ScalingSolver2Type;
         class_<ScalingSolver2Type, ScalingSolver2Type::Pointer, bases<LinearSolverType> >
         ("ScalingSolver2", init<LinearSolverType::Pointer>())
         .def(init<LinearSolverType::Pointer, int>())
+        .def(self_ns::str(self))
         .def("AdditionalPhysicalDataIsNeeded", &ScalingSolver2Type::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &ScalingSolver2Type::ProvideAdditionalData)
         .def("DisableCheckConditionNumber", &ScalingSolver2Type::DisableCheckConditionNumber)
@@ -203,7 +204,7 @@ namespace Python
         ;
         #endif
 
-        typedef BlockPressureStaggeredSolver<SparseSpaceType, LocalSpaceType> BlockPressureStaggeredSolverType;
+        typedef BlockPressureStaggeredSolver<SparseSpaceType, LocalSpaceType, ModelPart> BlockPressureStaggeredSolverType;
         class_<BlockPressureStaggeredSolverType, BlockPressureStaggeredSolverType::Pointer, bases<LinearSolverType> >
         ("BlockPressureStaggeredSolver", init<LinearSolverType::Pointer, LinearSolverType::Pointer>())
         .def(self_ns::str(self))
@@ -211,7 +212,7 @@ namespace Python
         .def("ProvideAdditionalData", &BlockPressureStaggeredSolverType::ProvideAdditionalData)
         ;
 
-        typedef Block2PhaseSchurSolver<SparseSpaceType, LocalSpaceType> Block2PhaseSchurSolverType;
+        typedef Block2PhaseSchurSolver<SparseSpaceType, LocalSpaceType, ModelPart> Block2PhaseSchurSolverType;
         class_<Block2PhaseSchurSolverType, Block2PhaseSchurSolverType::Pointer, bases<LinearSolverType> >
         ("Block2PhaseSchurSolver", init<LinearSolverType::Pointer>())
         .def("AdditionalPhysicalDataIsNeeded", &Block2PhaseSchurSolverType::AdditionalPhysicalDataIsNeeded)
@@ -219,7 +220,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef BlockPressureSchurSolver<SparseSpaceType, LocalSpaceType> BlockPressureSchurSolverType;
+        typedef BlockPressureSchurSolver<SparseSpaceType, LocalSpaceType, ModelPart> BlockPressureSchurSolverType;
         class_<BlockPressureSchurSolverType, BlockPressureSchurSolverType::Pointer, bases<Block2PhaseSchurSolverType> >
         ("BlockPressureSchurSolver", init<LinearSolverType::Pointer>())
         .def(self_ns::str(self))
@@ -227,7 +228,7 @@ namespace Python
         .def("ProvideAdditionalData", &BlockPressureSchurSolverType::ProvideAdditionalData)
         ;
 
-        typedef Block2PhaseIndexBasedSchurSolver<SparseSpaceType, LocalSpaceType> Block2PhaseIndexBasedSchurSolverType;
+        typedef Block2PhaseIndexBasedSchurSolver<SparseSpaceType, LocalSpaceType, ModelPart> Block2PhaseIndexBasedSchurSolverType;
         class_<Block2PhaseIndexBasedSchurSolverType, Block2PhaseIndexBasedSchurSolverType::Pointer, bases<Block2PhaseSchurSolverType> >
         ("Block2PhaseIndexBasedSchurSolver", init<LinearSolverType::Pointer>())
         .def(init<LinearSolverType::Pointer, const unsigned int&, const unsigned int&>())
@@ -236,7 +237,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef DrainedSolver<SparseSpaceType, LocalSpaceType> DrainedSolverType;
+        typedef DrainedSolver<SparseSpaceType, LocalSpaceType, ModelPart> DrainedSolverType;
         class_<DrainedSolverType, DrainedSolverType::Pointer, bases<LinearSolverType> >
         ("DrainedSolver", init<LinearSolverType::Pointer>())
         .def("AdditionalPhysicalDataIsNeeded", &DrainedSolverType::AdditionalPhysicalDataIsNeeded)
@@ -244,23 +245,25 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef VariableSolver<SparseSpaceType, LocalSpaceType> VariableSolverType;
+        typedef VariableSolver<SparseSpaceType, LocalSpaceType, ModelPart> VariableSolverType;
         class_<VariableSolverType, VariableSolverType::Pointer, bases<LinearSolverType> >
         ("VariableSolver", init<>())
         .def("AddSolver", &VariableSolverType::AddSolver)
         .def("AdditionalPhysicalDataIsNeeded", &VariableSolverType::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &VariableSolverType::ProvideAdditionalData)
+        .def(self_ns::str(self))
         ;
 
-        typedef DiagonalFitSolver<SparseSpaceType, LocalSpaceType> DiagonalFitSolverType;
+        typedef DiagonalFitSolver<SparseSpaceType, LocalSpaceType, ModelPart> DiagonalFitSolverType;
         class_<DiagonalFitSolverType, DiagonalFitSolverType::Pointer, bases<LinearSolverType> >
         ("DiagonalFitSolver", init<LinearSolverType::Pointer>())
-        .def(init<LinearSolverType::Pointer, const double&>())
+        .def(init<LinearSolverType::Pointer, const double>())
         .def("AdditionalPhysicalDataIsNeeded", &DiagonalFitSolverType::AdditionalPhysicalDataIsNeeded)
         .def("ProvideAdditionalData", &DiagonalFitSolverType::ProvideAdditionalData)
+        .def(self_ns::str(self))
         ;
 
-        typedef DeflatedCGSolver2<SparseSpaceType, LocalSpaceType> DeflatedCGSolver2Type;
+        typedef DeflatedCGSolver2<SparseSpaceType, LocalSpaceType, ModelPart> DeflatedCGSolver2Type;
         class_<DeflatedCGSolver2Type, DeflatedCGSolver2Type::Pointer, bases<LinearSolverType> >
         ("DeflatedCGSolver2", init<double, unsigned int, PreconditionerType::Pointer>())
         .def(self_ns::str(self))
@@ -268,7 +271,7 @@ namespace Python
         .def("ProvideAdditionalData", &DeflatedCGSolver2Type::ProvideAdditionalData)
         ;
 
-        typedef DeflatedSubdomainNodalBasedCGSolver<SparseSpaceType, LocalSpaceType> DeflatedSubdomainNodalBasedCGSolverType;
+        typedef DeflatedSubdomainNodalBasedCGSolver<SparseSpaceType, LocalSpaceType, ModelPart> DeflatedSubdomainNodalBasedCGSolverType;
         class_<DeflatedSubdomainNodalBasedCGSolverType, DeflatedSubdomainNodalBasedCGSolverType::Pointer, bases<LinearSolverType> >
         ("DeflatedSubdomainNodalBasedCGSolver", init<double, unsigned int, PreconditionerType::Pointer, boost::python::list&>())
         .def(self_ns::str(self))
@@ -276,7 +279,7 @@ namespace Python
         .def("ProvideAdditionalData", &DeflatedSubdomainNodalBasedCGSolverType::ProvideAdditionalData)
         ;
 
-        typedef RichardsonSolver<SparseSpaceType, LocalSpaceType> RichardsonSolverType;
+        typedef RichardsonSolver<SparseSpaceType, LocalSpaceType, ModelPart> RichardsonSolverType;
         class_<RichardsonSolverType, RichardsonSolverType::Pointer, bases<IterativeSolverType> >
         ("RichardsonSolver", init<double, double, unsigned int, PreconditionerType::Pointer>())
         .def(init<double>())
@@ -285,7 +288,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef ChebyshevSolver<SparseSpaceType, LocalSpaceType> ChebyshevSolverType;
+        typedef ChebyshevSolver<SparseSpaceType, LocalSpaceType, ModelPart> ChebyshevSolverType;
         class_<ChebyshevSolverType, ChebyshevSolverType::Pointer, bases<IterativeSolverType> >
         ("ChebyshevSolver", init<>())
         .def(init<double, unsigned int>())

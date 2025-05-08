@@ -33,7 +33,7 @@ namespace Kratos
 {
 
 template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class UmfPackSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class UmfPackSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, ModelPart, TReordererType>
 {
 public:
     /**
@@ -41,13 +41,15 @@ public:
      */
     KRATOS_CLASS_POINTER_DEFINITION(UmfPackSolver);
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, ModelPart, TReordererType> BaseType;
 
     typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
 
     typedef typename TSparseSpaceType::VectorType VectorType;
 
     typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+
+    typedef typename BaseType::DataType DataType;
 
     /**
      * @param niter number of iterative refinements allowed
@@ -77,7 +79,7 @@ public:
         assert(n == rX.size());
 
         /* nonzeros in rA */
-        double* a = rA.value_data().begin();
+        DataType* a = rA.value_data().begin();
 
         /* manual index vector generation */
         std::vector<int> index1_vector(rA.index1_data().size());

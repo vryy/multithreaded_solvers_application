@@ -55,7 +55,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 // External includes
-#include <boost/smart_ptr.hpp>
 
 
 // Project includes
@@ -90,9 +89,10 @@ namespace Kratos
 /** Detail class definition.
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,
+         class TModelPartType,
+         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class GmresSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType>
+class GmresSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -101,13 +101,21 @@ public:
     /// Counted pointer of GmresSolver
     KRATOS_CLASS_POINTER_DEFINITION(GmresSolver);
 
-    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType> BaseType;
+    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -116,7 +124,8 @@ public:
     /// Default constructor.
     GmresSolver() {}
 
-    GmresSolver(double NewTolerance, unsigned int NewMaxIterationsNumber, unsigned int NewRestart, typename TPreconditionerType::Pointer pNewPreconditioner) : BaseType(NewTolerance, NewMaxIterationsNumber, pNewPreconditioner)
+    GmresSolver(ValueType NewTolerance, unsigned int NewMaxIterationsNumber, unsigned int NewRestart, typename TPreconditionerType::Pointer pNewPreconditioner)
+    : BaseType(NewTolerance, NewMaxIterationsNumber, pNewPreconditioner)
     {
         mRestart = NewRestart;
     }
@@ -128,8 +137,7 @@ public:
     }
 
     /// Destructor.
-    virtual ~GmresSolver() {}
-
+    ~GmresSolver() override {}
 
     ///@}
     ///@name Operators
@@ -155,7 +163,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;
@@ -163,7 +171,7 @@ public:
         //GetTimeTable()->Start(Info());
 
         BaseType::GetPreconditioner()->Initialize(rA, rX, rB);
-        
+
 //        BaseType::GetPreconditioner()->ApplyInverseRight(rX);
 
 //        BaseType::GetPreconditioner()->ApplyLeft(rB);
@@ -185,7 +193,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
         //GetTimeTable()->Start(Info());
 
@@ -227,7 +235,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Generalized minimal residual iterative solver with " << BaseType::GetPreconditioner()->Info();
@@ -235,18 +243,17 @@ public:
     }
 
     /// Print information about this object.
-    void  PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << "Generalized minimal residual iterative solver with ";
         BaseType::GetPreconditioner()->PrintInfo(OStream);
     }
 
     /// Print object's data.
-    void  PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -313,132 +320,132 @@ private:
     ///@{
 
     void Update(VectorType& x, const int k, const DenseMatrixType h, const VectorType s, const std::vector<VectorType> v) {
-	    VectorType y(s);
+        VectorType y(s);
 
-	    // Backsolve:
-	    for (int i = k; i >= 0; i--) {
-		    y(i) /= h(i, i);
-		    for (int j = i - 1; j >= 0; j--)
-			    y(j) -= h(j, i) * y(i);
-	    }
+        // Backsolve:
+        for (int i = k; i >= 0; i--) {
+            y(i) /= h(i, i);
+            for (int j = i - 1; j >= 0; j--)
+                y(j) -= h(j, i) * y(i);
+        }
 
-	    for (int j = 0; j <= k; j++)
-    	    TSparseSpaceType::UnaliasedAdd(x, y(j), v[j]);
+        for (int j = 0; j <= k; j++)
+            TSparseSpaceType::UnaliasedAdd(x, y(j), v[j]);
     }
 
     inline void GeneratePlaneRotation(const double dx, const double dy, double& cs, double& sn) {
-	    if (dy == 0.0) {
-		    cs = 1.0;
-		    sn = 0.0;
-	    } else if (fabs(dy) > fabs(dx)) {
-		    double temp = dx / dy;
-		    sn = 1.0 / sqrt(1.0 + temp * temp);
-		    cs = temp * sn;
-	    } else {
-		    double temp = dy / dx;
-		    cs = 1.0 / sqrt(1.0 + temp * temp);
-		    sn = temp * cs;
-	    }
+        if (dy == 0.0) {
+            cs = 1.0;
+            sn = 0.0;
+        } else if (std::abs(dy) > std::abs(dx)) {
+            double temp = dx / dy;
+            sn = 1.0 / sqrt(1.0 + temp * temp);
+            cs = temp * sn;
+        } else {
+            double temp = dy / dx;
+            cs = 1.0 / sqrt(1.0 + temp * temp);
+            sn = temp * cs;
+        }
     }
 
     inline void ApplyPlaneRotation(double& dx, double& dy, const double cs, const double sn) {
-	    double temp = cs * dx + sn * dy;
-	    dy = -sn * dx + cs * dy;
-	    dx = temp;
+        double temp = cs * dx + sn * dy;
+        dy = -sn * dx + cs * dy;
+        dx = temp;
     }
 
     bool IterativeSolve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
     {
-        double resid, tol = this->GetTolerance();
+        ValueType resid, tol = this->GetTolerance();
         unsigned int max_iter = this->GetMaxIterationsNumber();
-	    int i, j = 1, k, m = mRestart, size = rX.size();
-	    VectorType s(m + 1), cs(m + 1), sn(m + 1), w(size);
-	    VectorType r(rB);
-	    DenseMatrixType H(m+1,m);
+        int i, j = 1, k, m = mRestart, size = rX.size();
+        VectorType s(m + 1), cs(m + 1), sn(m + 1), w(size);
+        VectorType r(rB);
+        DenseMatrixType H(m+1,m);
 
         this->GetPreconditioner()->ApplyLeft(r); //r=P^-1*x
-	    double normb = TSparseSpaceType::TwoNorm(r);
-	    TSparseSpaceType::Mult(rA, rX, r); //r=A*x
-	    TSparseSpaceType::ScaleAndAdd(1.0, rB, -1.0, r); //r=b-A*x
-	    this->GetPreconditioner()->ApplyLeft(r); //r=P^-1*(b-A*x)
-	    double beta = TSparseSpaceType::TwoNorm(r);
+        DataType normb = TSparseSpaceType::TwoNorm(r);
+        TSparseSpaceType::Mult(rA, rX, r); //r=A*x
+        TSparseSpaceType::ScaleAndAdd(1.0, rB, -1.0, r); //r=b-A*x
+        this->GetPreconditioner()->ApplyLeft(r); //r=P^-1*(b-A*x)
+        DataType beta = TSparseSpaceType::TwoNorm(r);
 
-	    if (normb == 0.0)
-		    normb = 1.0;
+        if (normb == 0.0)
+            normb = 1.0;
 
-	    if ((resid = beta / normb) <= tol) {
-		    tol = resid;
-		    max_iter = 0;
-		    this->SetIterationsNumber(max_iter);
-		    BaseType::mBNorm = normb;
-		    this->SetResidualNorm(resid);
-		    return true;
-	    }
-
-	    std::vector<VectorType> v;
-	    for(i = 0; i < m + 1; ++i)
-	    {
-	        VectorType tmpv(size);
-	        v.push_back(tmpv);
+        if ((resid = beta / normb) <= tol) {
+            tol = resid;
+            max_iter = 0;
+            this->SetIterationsNumber(max_iter);
+            BaseType::mBNorm = normb;
+            this->SetResidualNorm(resid);
+            return true;
         }
-        
+
+        std::vector<VectorType> v;
+        for(i = 0; i < m + 1; ++i)
+        {
+            VectorType tmpv(size);
+            v.push_back(tmpv);
+        }
+
         Kratos::progress_display show_progress( max_iter );
-	    while (j <= max_iter) {
-		    TSparseSpaceType::Assign(v[0], 1.0 / beta, r);
-		    
-		    TSparseSpaceType::Set(s, 0.0);
-		    s(0) = beta;
+        while (j <= max_iter) {
+            TSparseSpaceType::Assign(v[0], 1.0 / beta, r);
 
-		    for (i = 0; i < m && j <= max_iter; i++, j++) {
-		        TSparseSpaceType::Mult(rA, v[i], w);
-			    this->GetPreconditioner()->ApplyLeft(w);
-			    for (k = 0; k <= i; k++) {
-				    H(k, i) = TSparseSpaceType::Dot(w, v[k]);
-				    TSparseSpaceType::UnaliasedAdd(w, -H(k, i), v[k]);
-			    }
-			    H(i + 1, i) = TSparseSpaceType::TwoNorm(w);
-			    TSparseSpaceType::Assign(v[i + 1], 1.0 / H(i + 1, i), w);
-			    
-			    for (k = 0; k < i; k++)
-				    ApplyPlaneRotation(H(k, i), H(k + 1, i), cs(k), sn(k));
+            TSparseSpaceType::Set(s, 0.0);
+            s(0) = beta;
 
-			    GeneratePlaneRotation(H(i, i), H(i + 1, i), cs(i), sn(i));
-			    ApplyPlaneRotation(H(i, i), H(i + 1, i), cs(i), sn(i));
-			    ApplyPlaneRotation(s(i), s(i + 1), cs(i), sn(i));
+            for (i = 0; i < m && j <= max_iter; i++, j++) {
+                TSparseSpaceType::Mult(rA, v[i], w);
+                this->GetPreconditioner()->ApplyLeft(w);
+                for (k = 0; k <= i; k++) {
+                    H(k, i) = TSparseSpaceType::Dot(w, v[k]);
+                    TSparseSpaceType::UnaliasedAdd(w, -H(k, i), v[k]);
+                }
+                H(i + 1, i) = TSparseSpaceType::TwoNorm(w);
+                TSparseSpaceType::Assign(v[i + 1], 1.0 / H(i + 1, i), w);
 
-			    if ((resid = fabs(s(i + 1)) / normb) < tol) {
-				    Update(rX, i, H, s, v);
-				    tol = resid;
-				    max_iter = j;
-				    this->SetIterationsNumber(max_iter);
-				    BaseType::mBNorm = normb;
-		            this->SetResidualNorm(resid);
-				    return true;
-			    }
-		    }
-		    
-		    Update(rX, m - 1, H, s, v);
-		    
-		    TSparseSpaceType::Mult(rA, rX, r);
-    	    TSparseSpaceType::ScaleAndAdd(1.0, rB, -1.0, r);
-    	    this->GetPreconditioner()->ApplyLeft(r);
-		    beta = TSparseSpaceType::TwoNorm(r);
-		    if ((resid = beta / normb) < tol) {
-			    tol = resid;
-			    max_iter = j;
-			    this->SetIterationsNumber(max_iter);
-			    BaseType::mBNorm = normb;
-		        this->SetResidualNorm(resid);
-			    return true;
-		    }
-		    ++show_progress;
-	    }
+                for (k = 0; k < i; k++)
+                    ApplyPlaneRotation(H(k, i), H(k + 1, i), cs(k), sn(k));
 
-	    tol = resid;
-	    this->SetIterationsNumber(max_iter);
-	    BaseType::mBNorm = normb;
-		this->SetResidualNorm(resid);
-	    return false;
+                GeneratePlaneRotation(H(i, i), H(i + 1, i), cs(i), sn(i));
+                ApplyPlaneRotation(H(i, i), H(i + 1, i), cs(i), sn(i));
+                ApplyPlaneRotation(s(i), s(i + 1), cs(i), sn(i));
+
+                if ((resid = std::abs(s(i + 1)) / normb) < tol) {
+                    Update(rX, i, H, s, v);
+                    tol = resid;
+                    max_iter = j;
+                    this->SetIterationsNumber(max_iter);
+                    BaseType::mBNorm = normb;
+                    this->SetResidualNorm(resid);
+                    return true;
+                }
+            }
+
+            Update(rX, m - 1, H, s, v);
+
+            TSparseSpaceType::Mult(rA, rX, r);
+            TSparseSpaceType::ScaleAndAdd(1.0, rB, -1.0, r);
+            this->GetPreconditioner()->ApplyLeft(r);
+            beta = TSparseSpaceType::TwoNorm(r);
+            if ((resid = beta / normb) < tol) {
+                tol = resid;
+                max_iter = j;
+                this->SetIterationsNumber(max_iter);
+                BaseType::mBNorm = normb;
+                this->SetResidualNorm(resid);
+                return true;
+            }
+            ++show_progress;
+        }
+
+        tol = resid;
+        this->SetIterationsNumber(max_iter);
+        BaseType::mBNorm = normb;
+        this->SetResidualNorm(resid);
+        return false;
     }
 
     ///@}
@@ -471,36 +478,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  GmresSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const GmresSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_GMRES_SOLVER_H_INCLUDED  defined 
-
-
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_GMRES_SOLVER_H_INCLUDED  defined

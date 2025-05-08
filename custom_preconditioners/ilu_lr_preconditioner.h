@@ -85,8 +85,8 @@ namespace Kratos
 
 /// ILU_LR_Preconditioner class.
 /**   */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class ILU_LR_Preconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class ILU_LR_Preconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -95,15 +95,21 @@ public:
     /// Counted pointer of ILU_LR_Preconditioner
     typedef boost::shared_ptr<ILU_LR_Preconditioner> Pointer;
 
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -120,13 +126,11 @@ public:
         jU = NULL;
     }
 
-
     /// Copy constructor.
     ILU_LR_Preconditioner(const ILU_LR_Preconditioner& Other) {}
 
-
     /// Destructor.
-    virtual ~ILU_LR_Preconditioner()
+    ~ILU_LR_Preconditioner() override
     {
         if ( L!=NULL) delete[]  L;
         if (iL!=NULL) delete[] iL;
@@ -142,8 +146,6 @@ public:
         iU = NULL;
         jU = NULL;
     }
-
-
 
     ///@}
     ///@name Operators
@@ -169,22 +171,17 @@ public:
         std::copy(Other.iU, Other.iU+mILUSize+1, iU);
         std::copy(Other.jU, Other.jU+size, jU);
 
-
         return *this;
     }
-
-
 
     ///@}
     ///@name Operations
     ///@{
 
-
-
     /** multiply rX by L^-1
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         const int size = TSparseSpaceType::Size(rX);
         double sum;
@@ -204,7 +201,7 @@ public:
     /** multiply rX by U^-1
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyRight(VectorType& rX)
+    VectorType& ApplyRight(VectorType& rX) override
     {
         const int size = TSparseSpaceType::Size(rX);
         double sum;
@@ -225,7 +222,7 @@ public:
         @param rX  Unknows of preconditioner suystem
         REMARKS: To be debugged
     */
-    virtual VectorType& ApplyInverseRight(VectorType& rX)
+    VectorType& ApplyInverseRight(VectorType& rX) override
     {
         const int size = TSparseSpaceType::Size(rX);
         VectorType temp(size);
@@ -246,7 +243,7 @@ public:
     /** Multiply rX by U^-T
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyTransposeLeft(VectorType& rX)
+    VectorType& ApplyTransposeLeft(VectorType& rX) override
     {
         const int size = TSparseSpaceType::Size(rX);
         int i, indexj;
@@ -266,7 +263,7 @@ public:
     /** Multiply rX by L^-T
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyTransposeRight(VectorType& rX)
+    VectorType& ApplyTransposeRight(VectorType& rX) override
     {
         const int size = TSparseSpaceType::Size(rX);
         int i, indexj;
@@ -282,9 +279,6 @@ public:
         return rX;
     }
 
-
-
-
     ///@}
     ///@name Access
     ///@{
@@ -298,7 +292,7 @@ public:
     {
         return jL;
     }
-    
+
     const double* GetPointer_L()
     {
         return L;
@@ -313,7 +307,7 @@ public:
     {
         return jU;
     }
-    
+
     const double* GetPointer_U()
     {
         return U;
@@ -321,20 +315,20 @@ public:
 
     const int GetNZL()
     {
-	    //return mILUSize;
-	    return iL[mILUSize];
+        //return mILUSize;
+        return iL[mILUSize];
     }
-    
+
     const int GetNZU()
     {
-	    //return mILUSize;
-	    return iU[mILUSize];
+        //return mILUSize;
+        return iU[mILUSize];
     }
-    
+
     const int GetSize()
     {
-	    //return mILUSize;
-	    return mILUSize;
+        //return mILUSize;
+        return mILUSize;
     }
 
     ///@}
@@ -347,24 +341,20 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         return "ILU_LR_Preconditioner";
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << "ILU_LR_Preconditioner";
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
-
 
     ///@}
     ///@name Friends
@@ -385,7 +375,6 @@ protected:
     unsigned int mILUSize;
     int *iL, *jL, *iU, *jU;
     double *L, *U;
-
 
     ///@}
     ///@name Protected Operators
@@ -466,32 +455,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  ILU_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const ILU_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
-#endif // KRATOS_ILU_PRECONDITIONER_H_INCLUDED  defined 
-
+#endif // KRATOS_ILU_PRECONDITIONER_H_INCLUDED  defined

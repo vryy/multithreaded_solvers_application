@@ -88,21 +88,29 @@ namespace Kratos
 {
 template< class TSparseSpaceType, class TDenseSpaceType,
           class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class PardisoSolver : public DirectSolver< TSparseSpaceType, TDenseSpaceType, TReordererType>
+class PardisoSolver : public DirectSolver< TSparseSpaceType, TDenseSpaceType, ModelPart, TReordererType>
 {
 public:
     /**
      * Counted pointer of SuperLUSolver
      */
-    typedef boost::shared_ptr<PardisoSolver> Pointer;
+    KRATOS_CLASS_POINTER_DEFINITION(PardisoSolver);
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, ModelPart, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     /**
      * @param niter number of iterative refinements allowed
@@ -124,7 +132,7 @@ public:
     /**
      * Destructor
      */
-    virtual ~PardisoSolver() {}
+    ~PardisoSolver() override {}
 
     void SetReusePermutation(bool value)
     {
@@ -145,7 +153,7 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         double start_solver = OpenMPUtils::GetCurrentTime();
         typedef boost::numeric::bindings::traits::sparse_matrix_traits<SparseMatrixType> matraits;
@@ -164,10 +172,10 @@ public:
 //        double *x = mbtraits::storage(rX);
 
         /* nonzeros in rA */
-        double *a = rA.value_data().begin();
+        DataType *a = rA.value_data().begin();
         /* RHS and solution vectors */
-        double *b = &rB[0];
-        double *x = &rX[0];
+        DataType *b = &rB[0];
+        DataType *x = &rX[0];
 
         /* manual index vector generation */
         int *index1_vector = new (std::nothrow) int[rA.index1_data().size()];
@@ -426,14 +434,14 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
-        //TODO
+        KRATOS_ERROR << "Multisolve is not yet supported";
         return false;
     }
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "PARDISO solver";
@@ -443,7 +451,7 @@ public:
     /**
      * Print information about this object.
      */
-    void  PrintInfo(std::ostream& rOStream) const
+    void PrintInfo(std::ostream& rOStream) const override
     {
         rOStream << "PARDISO solver finished.";
     }
@@ -451,7 +459,7 @@ public:
     /**
      * Print object's data.
      */
-    void  PrintData(std::ostream& rOStream) const
+    void PrintData(std::ostream& rOStream) const override
     {
     }
 
@@ -475,35 +483,6 @@ private:
 
 }; // Class PardisoSolver
 
-
-///**
-// * input stream function
-// */
-//template<class TSparseSpaceType, class TDenseSpaceType,class TReordererType>
-//inline std::istream& operator >> (std::istream& rIStream, PardisoSolver< TSparseSpaceType,
-//                                  TDenseSpaceType, TReordererType>& rThis)
-//{
-//    return rIStream;
-//}
-
-///**
-// * output stream function
-// */
-//template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-//inline std::ostream& operator << (std::ostream& rOStream,
-//                                  const PardisoSolver<TSparseSpaceType,
-//                                  TDenseSpaceType, TReordererType>& rThis)
-//{
-//    rThis.PrintInfo(rOStream);
-//    rOStream << std::endl;
-//    rThis.PrintData(rOStream);
-
-//    return rOStream;
-//}
-
-
 }  // namespace Kratos.
 
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_PARDISO_SOLVER_H_INCLUDED  defined
-
-

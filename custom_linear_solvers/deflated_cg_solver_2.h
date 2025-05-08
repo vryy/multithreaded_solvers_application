@@ -60,9 +60,10 @@ namespace Kratos
 /** Detail class definition.
  */
 template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,
+         class TModelPartType,
+         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class DeflatedCGSolver2 : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType>
+class DeflatedCGSolver2 : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -71,15 +72,23 @@ public:
     /// Pointer definition of DeflatedCGSolver2
     KRATOS_CLASS_POINTER_DEFINITION(DeflatedCGSolver2);
 
-    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType> BaseType;
+    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType> BaseType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     typedef DeflationUtils<SparseMatrixType, VectorType> DeflationUtilsType;
 
@@ -88,23 +97,20 @@ public:
     ///@{
 
     /// Default constructor.
-    DeflatedCGSolver2(double NewMaxTolerance, unsigned int NewMaxIterationsNumber, typename TPreconditionerType::Pointer pNewPreconditioner)
+    DeflatedCGSolver2(ValueType NewMaxTolerance, unsigned int NewMaxIterationsNumber, typename TPreconditionerType::Pointer pNewPreconditioner)
     : BaseType(NewMaxTolerance, NewMaxIterationsNumber, pNewPreconditioner)
     {
     }
 
     /// Copy constructor.
-
     DeflatedCGSolver2(const DeflatedCGSolver2& Other) : BaseType(Other)
     {
     }
 
-
     /// Destructor.
-    virtual ~DeflatedCGSolver2()
+    ~DeflatedCGSolver2() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -122,19 +128,18 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return this->GetPreconditioner()->AdditionalPhysicalDataIsNeeded();
     }
 
-
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         this->GetPreconditioner()->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
     }
@@ -148,7 +153,7 @@ public:
         guess for iterative linear solvers.
         @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if (this->IsNotConsistent(rA, rX, rB))
             return false;
@@ -160,7 +165,7 @@ public:
         BaseType::GetPreconditioner()->ApplyLeft(rB);
 
         bool is_solved = IterativeSolve(rA, rX, rB);
-        
+
         if(!is_solved)
             std::cout << "Warning: the iterative solver is not successful" << std::endl;
 
@@ -179,9 +184,9 @@ public:
         guess for iterative linear solvers.
         @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
-        std::cout << "************ DeflatedCGSolver2::Solve(SparseMatrixType&, DenseMatrixType&, DenseMatrixType&) not defined! ************" << std::endl;
+        KRATOS_ERROR << "************ DeflatedCGSolver2::Solve(SparseMatrixType&, DenseMatrixType&, DenseMatrixType&) not defined! ************" << std::endl;
         return false;
     }
 
@@ -200,8 +205,7 @@ public:
     ///@{
 
     /// Turn back information as a string.
-
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Deflated Conjugate gradient linear solver (v2) with " << BaseType::GetPreconditioner()->Info();
@@ -209,19 +213,16 @@ public:
     }
 
     /// Print information about this object.
-
-    virtual void PrintInfo(std::ostream& rOStream) const
+    void PrintInfo(std::ostream& rOStream) const override
     {
         rOStream << Info();
     }
 
     /// Print object's data.
-
-    virtual void PrintData(std::ostream& rOStream) const
+    void PrintData(std::ostream& rOStream) const override
     {
         BaseType::PrintData(rOStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -423,9 +424,9 @@ private:
             TSparseSpaceType::ScaleAndAdd(1.0, y, beta, p);
 
             eps = TSparseSpaceType::TwoNorm(rh) / normrh0;
-            
+
             std::cout << "iter " << BaseType::mIterationsNumber << ": eps = " << eps << std::endl;
-            
+
             ++show_progress;
         }
         while(++BaseType::mIterationsNumber < this->GetMaxIterationsNumber() && eps > this->GetTolerance());
@@ -436,7 +437,6 @@ private:
 
         return true;
     }
-
 
     ///@}
     ///@name Private  Access

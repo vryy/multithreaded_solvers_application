@@ -13,7 +13,8 @@
 #include <boost/python.hpp>
 
 // Project includes
-#include "includes/define.h"
+#include "includes/define_python.h"
+#include "includes/model_part.h"
 #include "spaces/ublas_space.h"
 #include "linear_solvers/preconditioner.h"
 
@@ -51,64 +52,64 @@ namespace Python
         typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
         typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
 
-        typedef LinearSolver<SparseSpaceType,  LocalSpaceType> LinearSolverType;
-        typedef Preconditioner<SparseSpaceType,  LocalSpaceType> PreconditionerType;
+        typedef LinearSolver<SparseSpaceType, LocalSpaceType, ModelPart> LinearSolverType;
+        typedef Preconditioner<SparseSpaceType, LocalSpaceType, ModelPart> PreconditionerType;
 
         using namespace boost::python;
 
-        typedef SolverPreconditioner<SparseSpaceType, LocalSpaceType> SolverPreconditionerType;
+        typedef SolverPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> SolverPreconditionerType;
         class_<SolverPreconditionerType, SolverPreconditionerType::Pointer, bases<PreconditionerType> >
         ("SolverPreconditioner", init<LinearSolverType::Pointer>())
         .def(self_ns::str(self))
         ;
 
-        typedef SSORPreconditioner<SparseSpaceType, LocalSpaceType> SSORPreconditionerType;
+        typedef SSORPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> SSORPreconditionerType;
         class_<SSORPreconditionerType, SSORPreconditionerType::Pointer, bases<PreconditionerType> >
         ("SSORPreconditioner", init<double>())
         .def(self_ns::str(self))
         ;
 
-        typedef SSOR_LR_Preconditioner<SparseSpaceType, LocalSpaceType> SSOR_LR_PreconditionerType;
+        typedef SSOR_LR_Preconditioner<SparseSpaceType, LocalSpaceType, ModelPart> SSOR_LR_PreconditionerType;
         class_<SSOR_LR_PreconditionerType, SSOR_LR_PreconditionerType::Pointer, bases<PreconditionerType> >
         ("SSOR_LR_Preconditioner", init<double>())
         .def(self_ns::str(self))
         ;
 
         #ifdef MULTITHREADED_SOLVERS_APP_USE_FORTRAN
-        typedef ILUtPreconditioner<SparseSpaceType, LocalSpaceType> ILUtPreconditionerType;
+        typedef ILUtPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> ILUtPreconditionerType;
         class_<ILUtPreconditionerType, ILUtPreconditionerType::Pointer, bases<PreconditionerType> >
         ("ILUtPreconditioner", init<double, double>())
         .def(self_ns::str(self))
         ;
         #endif
 
-        typedef ILUkPreconditioner<SparseSpaceType, LocalSpaceType> ILUkPreconditionerType;
+        typedef ILUkPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> ILUkPreconditionerType;
         class_<ILUkPreconditionerType, ILUkPreconditionerType::Pointer, bases<PreconditionerType> >
         ("ILUkPreconditioner", init<int>())
         .def(self_ns::str(self))
         ;
 
-//        typedef ILU_LR_Preconditioner<SparseSpaceType, LocalSpaceType> ILU_LR_PreconditionerType;
+//        typedef ILU_LR_Preconditioner<SparseSpaceType, LocalSpaceType, ModelPart> ILU_LR_PreconditionerType;
 //        class_<ILU_LR_PreconditionerType, ILU_LR_PreconditionerType::Pointer, bases<PreconditionerType> >
 //        ("ILU_LR_Preconditioner", init<>())
 //        .def(self_ns::str(self))
 //        ;
 
-        typedef ILU0_LR_Preconditioner<SparseSpaceType, LocalSpaceType> ILU0_LR_PreconditionerType;
+        typedef ILU0_LR_Preconditioner<SparseSpaceType, LocalSpaceType, ModelPart> ILU0_LR_PreconditionerType;
         class_<ILU0_LR_PreconditionerType, ILU0_LR_PreconditionerType::Pointer, bases<PreconditionerType> >
         ("ILU0_LR_Preconditioner", init<>())
         .def(self_ns::str(self))
         ;
 
         #ifdef MULTITHREADED_SOLVERS_APP_USE_FORTRAN
-        typedef ILUt_LR_Preconditioner<SparseSpaceType, LocalSpaceType> ILUt_LR_PreconditionerType;
+        typedef ILUt_LR_Preconditioner<SparseSpaceType, LocalSpaceType, ModelPart> ILUt_LR_PreconditionerType;
         class_<ILUt_LR_PreconditionerType, ILUt_LR_PreconditionerType::Pointer, bases<PreconditionerType> >
         ("ILUt_LR_Preconditioner", init<double, double>())
         .def(self_ns::str(self))
         ;
         #endif
 
-        typedef Block2PhaseSchurPreconditioner<SparseSpaceType, LocalSpaceType> Block2PhaseSchurPreconditionerType;
+        typedef Block2PhaseSchurPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> Block2PhaseSchurPreconditionerType;
         class_<Block2PhaseSchurPreconditionerType, Block2PhaseSchurPreconditionerType::Pointer, bases<PreconditionerType> >
         ("Block2PhaseSchurPreconditionerType", init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&>())
         .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer>())
@@ -116,7 +117,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef BlockPressureSchurPreconditioner<SparseSpaceType, LocalSpaceType> BlockPressureSchurPreconditionerType;
+        typedef BlockPressureSchurPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> BlockPressureSchurPreconditionerType;
         class_<BlockPressureSchurPreconditionerType, BlockPressureSchurPreconditionerType::Pointer, bases<Block2PhaseSchurPreconditionerType> >
         ("BlockPressureSchurPreconditioner", init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&>())
         .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, const std::string&>())
@@ -125,7 +126,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef BlockPressureIndexBasedSchurPreconditioner<SparseSpaceType, LocalSpaceType> BlockPressureIndexBasedSchurPreconditionerType;
+        typedef BlockPressureIndexBasedSchurPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> BlockPressureIndexBasedSchurPreconditionerType;
         class_<BlockPressureIndexBasedSchurPreconditionerType, BlockPressureIndexBasedSchurPreconditionerType::Pointer, bases<Block2PhaseSchurPreconditionerType> >
         ("BlockPressureIndexBasedSchurPreconditioner", init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, const std::size_t&, const std::size_t&>())
         .def(init<PreconditionerType::Pointer, PreconditionerType::Pointer, const std::string&, LinearSolverType::Pointer, const std::size_t&, const std::size_t&>())
@@ -134,13 +135,13 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef BlockJacobiPressurePreconditioner<SparseSpaceType, LocalSpaceType> BlockJacobiPressurePreconditionerType;
+        typedef BlockJacobiPressurePreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> BlockJacobiPressurePreconditionerType;
         class_<BlockJacobiPressurePreconditionerType, BlockJacobiPressurePreconditionerType::Pointer, bases<PreconditionerType> >
         ("BlockJacobiPressurePreconditioner", init<PreconditionerType::Pointer, PreconditionerType::Pointer>())
         .def(self_ns::str(self))
         ;
 
-        typedef BlockJacobiPreconditioner<SparseSpaceType, LocalSpaceType> BlockJacobiPreconditionerType;
+        typedef BlockJacobiPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> BlockJacobiPreconditionerType;
         class_<BlockJacobiPreconditionerType, BlockJacobiPreconditionerType::Pointer, bases<PreconditionerType> >
         ("BlockJacobiPreconditioner", init<>())
         .def("AddPreconditioner", &BlockJacobiPreconditionerType::AddPreconditioner)
@@ -148,7 +149,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef BlockJacobiNodalBasedPreconditioner<SparseSpaceType, LocalSpaceType> BlockJacobiNodalBasedPreconditionerType;
+        typedef BlockJacobiNodalBasedPreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> BlockJacobiNodalBasedPreconditionerType;
         class_<BlockJacobiNodalBasedPreconditionerType, BlockJacobiNodalBasedPreconditionerType::Pointer, bases<PreconditionerType> >
         ("BlockJacobiNodalBasedPreconditioner", init<boost::python::list&>())
         .def("AddPreconditioner", &BlockJacobiNodalBasedPreconditionerType::AddPreconditioner)
@@ -156,7 +157,7 @@ namespace Python
         .def(self_ns::str(self))
         ;
 
-        typedef BlockJacobiNodalBasedPressurePreconditioner<SparseSpaceType, LocalSpaceType> BlockJacobiNodalBasedPressurePreconditionerType;
+        typedef BlockJacobiNodalBasedPressurePreconditioner<SparseSpaceType, LocalSpaceType, ModelPart> BlockJacobiNodalBasedPressurePreconditionerType;
         class_<BlockJacobiNodalBasedPressurePreconditionerType, BlockJacobiNodalBasedPressurePreconditionerType::Pointer, bases<PreconditionerType> >
         ("BlockJacobiNodalBasedPressurePreconditioner", init<boost::python::list&>())
         .def("AddPreconditioner", &BlockJacobiNodalBasedPressurePreconditionerType::AddPreconditioner)

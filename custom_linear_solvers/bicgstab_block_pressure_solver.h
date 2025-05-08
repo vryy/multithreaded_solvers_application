@@ -1,39 +1,5 @@
 /*
-==============================================================================
-Kratos
-A General Purpose Software for Multi-Physics Finite Element Analysis
-Version 1.0 (Released on march 05, 2007).
-
-Copyright 2007
-Pooyan Dadvand, Riccardo Rossi
-pooyan@cimne.upc.edu
-rrossi@cimne.upc.edu
-CIMNE (International Center for Numerical Methods in Engineering),
-Gran Capita' s/n, 08034 Barcelona, Spain
-
-Permission is hereby granted, free  of charge, to any person obtaining
-a  copy  of this  software  and  associated  documentation files  (the
-"Software"), to  deal in  the Software without  restriction, including
-without limitation  the rights to  use, copy, modify,  merge, publish,
-distribute,  sublicense and/or  sell copies  of the  Software,  and to
-permit persons to whom the Software  is furnished to do so, subject to
-the following condition:
-
-Distribution of this code for  any  commercial purpose  is permissible
-ONLY BY DIRECT ARRANGEMENT WITH THE COPYRIGHT OWNER.
-
-The  above  copyright  notice  and  this permission  notice  shall  be
-included in all copies or substantial portions of the Software.
-
-THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
-EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT  SHALL THE AUTHORS OR COPYRIGHT HOLDERS  BE LIABLE FOR ANY
-CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER IN AN  ACTION OF CONTRACT,
-TORT  OR OTHERWISE, ARISING  FROM, OUT  OF OR  IN CONNECTION  WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-==============================================================================
+see multithreaded_solvers_application/LICENSE.txt
 */
 
 //
@@ -54,11 +20,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 // External includes
-#include "boost/smart_ptr.hpp"
 
 
 // Project includes
-#include "includes/define.h"
+#include "includes/variables.h"
 #include "linear_solvers/iterative_solver.h"
 
 #ifdef MULTITHREADED_SOLVERS_APP_USE_FEAST
@@ -101,9 +66,10 @@ namespace Kratos
 /** Detail class definition.
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,
+         class TModelPartType,
+         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class  BicgstabBlockPressureSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType>
+class BicgstabBlockPressureSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -112,17 +78,23 @@ public:
     /// Counted pointer of  BicgstabBlockPressureSolver
     KRATOS_CLASS_POINTER_DEFINITION( BicgstabBlockPressureSolver);
 
-    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType> BaseType;
+    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
+
+    #ifdef CHECK_EIGENVALUES
 
     #if defined(MULTITHREADED_SOLVERS_APP_USE_FEAST) && defined(CHECK_EIGENVALUES_USING_FEAST)
     typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
@@ -130,6 +102,8 @@ public:
 
     #if defined(MULTITHREADED_SOLVERS_APP_USE_ARPACK) && defined(CHECK_EIGENVALUES_USING_ARPACK)
     typedef ArpackSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
+
     #endif
 
     ///@}
@@ -140,13 +114,13 @@ public:
     BicgstabBlockPressureSolver() {}
 
     BicgstabBlockPressureSolver(
-        double NewTolerance,
+        ValueType NewTolerance,
         unsigned int NewMaxIterationsNumber,
         typename TPreconditionerType::Pointer pNewPreconditioner,
-        double a1,
-        double a2,
-        double b1,
-        double b2
+        DataType a1,
+        DataType a2,
+        DataType b1,
+        DataType b2
     ) : BaseType(NewTolerance, NewMaxIterationsNumber, pNewPreconditioner)
     {
         ma1 = a1;
@@ -159,15 +133,14 @@ public:
      BicgstabBlockPressureSolver(const  BicgstabBlockPressureSolver& Other) : BaseType(Other) {}
 
     /// Destructor.
-    virtual ~ BicgstabBlockPressureSolver() {}
-
+    ~BicgstabBlockPressureSolver() override {}
 
     ///@}
     ///@name Operators
     ///@{
 
     /// Assignment operator.
-     BicgstabBlockPressureSolver& operator=(const  BicgstabBlockPressureSolver& Other)
+    BicgstabBlockPressureSolver& operator=(const  BicgstabBlockPressureSolver& Other)
     {
         BaseType::operator=(Other);
         return *this;
@@ -177,25 +150,24 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         //count pressure dofs
         unsigned int n_pressure_dofs = 0;
         unsigned int tot_active_dofs = 0;
         unsigned int system_size = TSparseSpaceType::Size(rB);
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
             if (it->EquationId() < system_size)
             {
                 ++tot_active_dofs;
@@ -203,10 +175,10 @@ public:
                     ++n_pressure_dofs;
             }
         if (tot_active_dofs != rA.size1() )
-            KRATOS_THROW_ERROR (std::logic_error,"total system size does not coincide with the free dof map","");
+            KRATOS_ERROR << "total system size does not coincide with the free dof map";
 
-        KRATOS_WATCH(tot_active_dofs)
-        KRATOS_WATCH(n_pressure_dofs)
+        // KRATOS_WATCH(tot_active_dofs)
+        // KRATOS_WATCH(n_pressure_dofs)
 
         //resize arrays as needed
         unsigned int other_dof_size = tot_active_dofs - n_pressure_dofs;
@@ -222,7 +194,7 @@ public:
         unsigned int pressure_counter = 0;
         unsigned int other_counter = 0;
         unsigned int global_pos;
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             global_pos = it->EquationId();
             if (global_pos < system_size)
@@ -326,7 +298,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
         //GetTimeTable()->Start(Info());
 
@@ -371,7 +343,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Biconjugate-gradient stabilized iterative solver with pressure scaling strategy, preconditioner = " << BaseType::GetPreconditioner()->Info();
@@ -379,18 +351,17 @@ public:
     }
 
     /// Print information about this object.
-    void  PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << "Biconjugate-gradient stabilized iterative solver with pressure scaling strategy, preconditioner = ";
         BaseType::GetPreconditioner()->PrintInfo(OStream);
     }
 
     /// Print object's data.
-    void  PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -450,7 +421,7 @@ private:
     ///@{
 
     // scaling factors
-    double ma1, ma2, mb1, mb2;
+    DataType ma1, ma2, mb1, mb2;
 
     ///@}
     ///@name Private Operators
@@ -464,111 +435,111 @@ private:
     int IterativeSolve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
     {
         std::cout.precision(15);
-        double resid, tol = this->GetTolerance();
+        ValueType resid, tol = this->GetTolerance();
         unsigned int max_iter = this->GetMaxIterationsNumber();
-	    int i, j = 1, k, size = rX.size();
-	    double rho_1, rho_2, alpha, beta, omega, norms, normr, normb;
-	    VectorType p(size), phat(size), s(size), shat(size), t(size), v(size), r(size), rtilde(size);
+        int i, j = 1, k, size = rX.size();
+        DataType rho_1, rho_2, alpha, beta, omega, norms, normr, normb;
+        VectorType p(size), phat(size), s(size), shat(size), t(size), v(size), r(size), rtilde(size);
 
-	    normb = TSparseSpaceType::TwoNorm(rB);
-	    TSparseSpaceType::Mult(rA, rX, r); //r=A*x
-	    TSparseSpaceType::ScaleAndAdd(1.0, rB, -1.0, r); //r=b-A*x
-	    TSparseSpaceType::Assign(rtilde, 1.0, r);
+        normb = TSparseSpaceType::TwoNorm(rB);
+        TSparseSpaceType::Mult(rA, rX, r); //r=A*x
+        TSparseSpaceType::ScaleAndAdd(1.0, rB, -1.0, r); //r=b-A*x
+        TSparseSpaceType::Assign(rtilde, 1.0, r);
 
-	    if (fabs(normb) < DBL_MIN)
-		    normb = 1.0;
+        if (fabs(normb) < DBL_MIN)
+            normb = 1.0;
 
         normr = TSparseSpaceType::TwoNorm(r);
-	    if ((resid = normr / normb) < tol) {
-		    tol = resid;
-		    max_iter = 0;
-		    this->SetIterationsNumber(max_iter);
-		    BaseType::mBNorm = normb;
-		    this->SetResidualNorm(resid);
-		    return 0;
-	    }
+        if ((resid = normr / normb) < tol) {
+            tol = resid;
+            max_iter = 0;
+            this->SetIterationsNumber(max_iter);
+            BaseType::mBNorm = normb;
+            this->SetResidualNorm(resid);
+            return 0;
+        }
 
         Kratos::progress_display show_progress( max_iter );
-	    for (int i = 1; i <= max_iter; ++i) {
-	        rho_1 = TSparseSpaceType::Dot(rtilde, r);
-//	        KRATOS_WATCH(normr)
-//	        KRATOS_WATCH(rho_1)
-//	        KRATOS_WATCH(rho_2)
-	        if(fabs(rho_1) < DBL_MIN) {
-	            KRATOS_WATCH(TSparseSpaceType::TwoNorm(rtilde))
-	            KRATOS_WATCH(TSparseSpaceType::TwoNorm(r))
-	            tol = normr / normb;
-	            max_iter = i;
-	            this->SetIterationsNumber(max_iter);
-		        BaseType::mBNorm = normb;
-		        this->SetResidualNorm(resid);
-	            return 2;
-	        }
-	        if(i == 1)
-	            TSparseSpaceType::Assign(p, 1.0, r);
-	        else {
-	            beta = (rho_1 / rho_2) * (alpha / omega);
-	            TSparseSpaceType::UnaliasedAdd(p, -omega, v); //p = p - omega * v
-	            TSparseSpaceType::ScaleAndAdd(1.0, r, beta, p); // p = r + beta * p
-	        }
-	        TSparseSpaceType::Assign(phat, 1.0, p);
-	        this->GetPreconditioner()->ApplyLeft(phat);
-	        TSparseSpaceType::Mult(rA, phat, v);
-	        alpha = rho_1 / TSparseSpaceType::Dot(rtilde, v);
-	        TSparseSpaceType::ScaleAndAdd(1.0, r, -alpha, v, s);
-	        norms = TSparseSpaceType::TwoNorm(s);
-//	        KRATOS_WATCH(norms)
-	        if((resid = norms / normb) < tol) {
-	            TSparseSpaceType::UnaliasedAdd(rX, alpha, phat);
-	            tol = resid;
-	            max_iter = i;
-	            this->SetIterationsNumber(max_iter);
-		        BaseType::mBNorm = normb;
-		        this->SetResidualNorm(resid);
-	            return 0;
-	        }
-	        TSparseSpaceType::Assign(shat, 1.0, s);
-//	        KRATOS_WATCH(norm_2(shat))
-	        this->GetPreconditioner()->ApplyLeft(shat);
-//	        KRATOS_WATCH(norm_2(shat))
-//	        KRATOS_WATCH(norm_frobenius(rA))
-	        TSparseSpaceType::Mult(rA, shat, t);
-//	        KRATOS_WATCH(norm_2(t))
-//	        KRATOS_WATCH(norm_2(s))
-	        omega = TSparseSpaceType::Dot(t, s) / TSparseSpaceType::Dot(t, t);
-	        TSparseSpaceType::UnaliasedAdd(rX, alpha, phat);
-	        TSparseSpaceType::UnaliasedAdd(rX, omega, shat);
-	        TSparseSpaceType::ScaleAndAdd(1.0, s, -omega, t, r);
+        for (int i = 1; i <= max_iter; ++i) {
+            rho_1 = TSparseSpaceType::Dot(rtilde, r);
+//          KRATOS_WATCH(normr)
+//          KRATOS_WATCH(rho_1)
+//          KRATOS_WATCH(rho_2)
+            if(fabs(rho_1) < DBL_MIN) {
+                KRATOS_WATCH(TSparseSpaceType::TwoNorm(rtilde))
+                KRATOS_WATCH(TSparseSpaceType::TwoNorm(r))
+                tol = normr / normb;
+                max_iter = i;
+                this->SetIterationsNumber(max_iter);
+                BaseType::mBNorm = normb;
+                this->SetResidualNorm(resid);
+                return 2;
+            }
+            if(i == 1)
+                TSparseSpaceType::Assign(p, 1.0, r);
+            else {
+                beta = (rho_1 / rho_2) * (alpha / omega);
+                TSparseSpaceType::UnaliasedAdd(p, -omega, v); //p = p - omega * v
+                TSparseSpaceType::ScaleAndAdd(1.0, r, beta, p); // p = r + beta * p
+            }
+            TSparseSpaceType::Assign(phat, 1.0, p);
+            this->GetPreconditioner()->ApplyLeft(phat);
+            TSparseSpaceType::Mult(rA, phat, v);
+            alpha = rho_1 / TSparseSpaceType::Dot(rtilde, v);
+            TSparseSpaceType::ScaleAndAdd(1.0, r, -alpha, v, s);
+            norms = TSparseSpaceType::TwoNorm(s);
+//          KRATOS_WATCH(norms)
+            if((resid = norms / normb) < tol) {
+                TSparseSpaceType::UnaliasedAdd(rX, alpha, phat);
+                tol = resid;
+                max_iter = i;
+                this->SetIterationsNumber(max_iter);
+                BaseType::mBNorm = normb;
+                this->SetResidualNorm(resid);
+                return 0;
+            }
+            TSparseSpaceType::Assign(shat, 1.0, s);
+//          KRATOS_WATCH(norm_2(shat))
+            this->GetPreconditioner()->ApplyLeft(shat);
+//          KRATOS_WATCH(norm_2(shat))
+//          KRATOS_WATCH(norm_frobenius(rA))
+            TSparseSpaceType::Mult(rA, shat, t);
+//          KRATOS_WATCH(norm_2(t))
+//          KRATOS_WATCH(norm_2(s))
+            omega = TSparseSpaceType::Dot(t, s) / TSparseSpaceType::Dot(t, t);
+            TSparseSpaceType::UnaliasedAdd(rX, alpha, phat);
+            TSparseSpaceType::UnaliasedAdd(rX, omega, shat);
+            TSparseSpaceType::ScaleAndAdd(1.0, s, -omega, t, r);
 
-	        rho_2 = rho_1;
-	        normr = TSparseSpaceType::TwoNorm(r);
-//	        KRATOS_WATCH(alpha)
-//	        KRATOS_WATCH(omega)
-	        if((resid = normr / normb) < tol) {
-	            tol = resid;
-	            max_iter = i;
-	            this->SetIterationsNumber(max_iter);
-		        BaseType::mBNorm = normb;
-		        this->SetResidualNorm(resid);
-	            return 0;
-	        }
-	        if(fabs(omega) < DBL_MIN) {
-	            tol = normr / normb;
-	            max_iter = i;
-	            this->SetIterationsNumber(max_iter);
-		        BaseType::mBNorm = normb;
-		        this->SetResidualNorm(resid);
-	            return 3;
-	        }
+            rho_2 = rho_1;
+            normr = TSparseSpaceType::TwoNorm(r);
+//          KRATOS_WATCH(alpha)
+//          KRATOS_WATCH(omega)
+            if((resid = normr / normb) < tol) {
+                tol = resid;
+                max_iter = i;
+                this->SetIterationsNumber(max_iter);
+                BaseType::mBNorm = normb;
+                this->SetResidualNorm(resid);
+                return 0;
+            }
+            if(fabs(omega) < DBL_MIN) {
+                tol = normr / normb;
+                max_iter = i;
+                this->SetIterationsNumber(max_iter);
+                BaseType::mBNorm = normb;
+                this->SetResidualNorm(resid);
+                return 3;
+            }
 
-	        ++show_progress;
-	    }
+            ++show_progress;
+        }
 
-	    tol = resid;
-	    this->SetIterationsNumber(max_iter);
-	    BaseType::mBNorm = normb;
-		this->SetResidualNorm(resid);
-	    return 1;
+        tol = resid;
+        this->SetIterationsNumber(max_iter);
+        BaseType::mBNorm = normb;
+        this->SetResidualNorm(resid);
+        return 1;
     }
 
     void RowScale(SparseMatrixType& rA)
@@ -658,34 +629,7 @@ private:
 ///@name Input and output
 ///@{
 
-
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::istream& operator >> (std::istream& IStream,
-                                   BicgstabBlockPressureSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const  BicgstabBlockPressureSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
@@ -695,4 +639,3 @@ inline std::ostream& operator << (std::ostream& OStream,
 #undef DBL_MIN
 
 #endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined
-

@@ -89,8 +89,9 @@ namespace Kratos
 THis solver solve the linear system from drained analysis by only solve the u-part and leave the p-part untouched
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
+         class TModelPartType,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class DrainedSolver : public LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class DrainedSolver : public LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -99,19 +100,23 @@ public:
     /// Counted pointer of  DrainedSolver
     KRATOS_CLASS_POINTER_DEFINITION( DrainedSolver );
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> BaseType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -129,8 +134,7 @@ public:
     : BaseType(Other) {}
 
     /// Destructor.
-    virtual ~DrainedSolver() {}
-
+    ~DrainedSolver() override {}
 
     ///@}
     ///@name Operators
@@ -147,24 +151,24 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         //count pressure dofs
         unsigned int n_pressure_dofs = 0;
         unsigned int tot_active_dofs = 0;
         unsigned int system_size = TSparseSpaceType::Size(rB);
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
             if (it->EquationId() < system_size)
             {
                 ++tot_active_dofs;
@@ -174,8 +178,8 @@ public:
         if (tot_active_dofs != rA.size1() )
             KRATOS_THROW_ERROR (std::logic_error,"total system size does not coincide with the free dof map","");
 
-        KRATOS_WATCH(tot_active_dofs)
-        KRATOS_WATCH(n_pressure_dofs)
+        // KRATOS_WATCH(tot_active_dofs)
+        // KRATOS_WATCH(n_pressure_dofs)
 
         //resize arrays as needed
         unsigned int other_dof_size = tot_active_dofs - n_pressure_dofs;
@@ -192,7 +196,7 @@ public:
         unsigned int other_counter = 0;
         unsigned int global_pos;
         madof_set.clear();
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             global_pos = it->EquationId();
             if (global_pos < system_size)
@@ -229,7 +233,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;
@@ -295,9 +299,9 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
-        KRATOS_THROW_ERROR(std::logic_error, "Multisolve is not yet supported for", typeid(*this).name())
+        KRATOS_ERROR << "Multisolve is not yet supported";
     }
 
     ///@}
@@ -315,7 +319,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Linear solver for drained analysis (solid solver: " << mpSolver->Info() << ")";
@@ -323,17 +327,16 @@ public:
     }
 
     /// Print information about this object.
-    void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
     /// Print object's data.
-    void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -358,7 +361,7 @@ protected:
     std::vector<SizeType> mglobal_to_local_indexing;
     std::vector<int> mis_pressure_block;
 
-    typename ModelPart::DofsArrayType madof_set;
+    typename TModelPartType::DofsArrayType madof_set;
 
     ///@}
     ///@name Protected Operators
@@ -437,29 +440,10 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >> (std::istream& IStream, DrainedSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream, const  DrainedSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
 #undef CHECK_DIAGONAL_DOMINANCE
 
 #endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_DRAINED_SOLVER_H_INCLUDED  defined
-

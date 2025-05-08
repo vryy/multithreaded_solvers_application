@@ -60,6 +60,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 // Project includes
 #include "includes/define.h"
+#include "includes/variables.h"
 #include "utilities/openmp_utils.h"
 #include "linear_solvers/linear_solver.h"
 #include "custom_preconditioners/block_2phase_schur_preconditioner.h"
@@ -95,8 +96,8 @@ namespace Kratos
 /**
 REF: White, Borja
 */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class BlockPressureSchurPreconditioner : public Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class BlockPressureSchurPreconditioner : public Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -105,21 +106,25 @@ public:
     /// Pointer definition of BlockPressureSchurPreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (BlockPressureSchurPreconditioner);
 
-    typedef Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Block2PhaseSchurPreconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> PreconditionerType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> PreconditionerType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -163,12 +168,10 @@ public:
     : BaseType(Other)
     {}
 
-
     /// Destructor.
-    virtual ~BlockPressureSchurPreconditioner()
+    ~BlockPressureSchurPreconditioner() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -181,30 +184,28 @@ public:
         return *this;
     }
 
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         //count pressure dofs
         unsigned int n_pressure_dofs = 0;
         unsigned int tot_active_dofs = 0;
         unsigned int system_size = TSparseSpaceType::Size(rB);
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             if (it->EquationId() < system_size)
             {
@@ -234,7 +235,7 @@ public:
         unsigned int pressure_counter = 0;
         unsigned int other_counter = 0;
         unsigned int global_pos;
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             global_pos = it->EquationId();
             if (global_pos < system_size)
@@ -278,25 +279,22 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << BaseType::Info() << " for displacement-pressure system";
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
 
     ///@}
     ///@name Friends
@@ -394,32 +392,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  BlockPressureSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const BlockPressureSchurPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_PRESSURE_SCHUR_PRECONDITIONER_H_INCLUDED  defined
-

@@ -93,9 +93,10 @@ namespace Kratos
 /** Detail class definition.
  */
 template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,
+         class TModelPartType,
+         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class DeflatedSubdomainNodalBasedCGSolver : public DeflatedCGSolver2<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType>
+class DeflatedSubdomainNodalBasedCGSolver : public DeflatedCGSolver2<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -104,54 +105,59 @@ public:
     /// Pointer definition of DeflatedSubdomainNodalBasedCGSolver
     KRATOS_CLASS_POINTER_DEFINITION(DeflatedSubdomainNodalBasedCGSolver);
 
-    typedef DeflatedCGSolver2<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType> BaseType;
+    typedef DeflatedCGSolver2<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType> BaseType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
     ///@{
 
     /// Default constructor.
-    DeflatedSubdomainNodalBasedCGSolver(double NewMaxTolerance, unsigned int NewMaxIterationsNumber, typename TPreconditionerType::Pointer pNewPreconditioner, boost::python::list& pyListNodes)
+    DeflatedSubdomainNodalBasedCGSolver(ValueType NewMaxTolerance, unsigned int NewMaxIterationsNumber, typename TPreconditionerType::Pointer pNewPreconditioner, boost::python::list& pyListNodes)
     : BaseType(NewMaxTolerance, NewMaxIterationsNumber, pNewPreconditioner)
     {
         /* extract the nodal indices from python list */
         typedef boost::python::stl_input_iterator<boost::python::list> iterator_value_type;
-        BOOST_FOREACH(const iterator_value_type::value_type& nodes_list, 
+        BOOST_FOREACH(const iterator_value_type::value_type& nodes_list,
                       std::make_pair(iterator_value_type(pyListNodes), // begin
                       iterator_value_type() ) )                        // end
         {
-            std::set<unsigned int> nodal_indices;
+            std::set<IndexType> nodal_indices;
             typedef boost::python::stl_input_iterator<int> sub_iterator_value_type;
-            BOOST_FOREACH(const sub_iterator_value_type::value_type& node_id, 
+            BOOST_FOREACH(const sub_iterator_value_type::value_type& node_id,
                       std::make_pair(sub_iterator_value_type(nodes_list), // begin
                       sub_iterator_value_type() ) )                       // end
             {
-                nodal_indices.insert(node_id);
+                nodal_indices.insert(static_cast<IndexType>(node_id));
             }
             mNodalIndices.push_back(nodal_indices);
         }
     }
 
     /// Copy constructor.
-
     DeflatedSubdomainNodalBasedCGSolver(const DeflatedSubdomainNodalBasedCGSolver& Other) : BaseType(Other)
     {
     }
 
-
     /// Destructor.
-    virtual ~DeflatedSubdomainNodalBasedCGSolver()
+    ~DeflatedSubdomainNodalBasedCGSolver() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -169,19 +175,18 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         /* clear the internal data */
         mw.clear();
@@ -189,7 +194,7 @@ public:
         /* build the map from node id to the block index */
         std::map<unsigned int, unsigned int> node_to_block_map;
         for(unsigned int block_id = 0; block_id < mNodalIndices.size(); ++block_id)
-            for(std::set<unsigned int>::iterator it = mNodalIndices[block_id].begin(); it != mNodalIndices[block_id].end(); ++it)
+            for(auto it = mNodalIndices[block_id].begin(); it != mNodalIndices[block_id].end(); ++it)
                 node_to_block_map[*it] = block_id;
 
         /* populate the deflation space */
@@ -197,7 +202,7 @@ public:
         mw.resize(system_size, 0);
         unsigned int tot_active_dofs = 0;
         unsigned int node_id, block_id;
-        for(ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for(auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
             if(it->EquationId() < system_size)
             {
                 ++tot_active_dofs;
@@ -229,8 +234,7 @@ public:
     ///@{
 
     /// Turn back information as a string.
-
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Deflated subdomain nodal-based Conjugate gradient linear solver with " << BaseType::GetPreconditioner()->Info();
@@ -238,19 +242,16 @@ public:
     }
 
     /// Print information about this object.
-
-    virtual void PrintInfo(std::ostream& rOStream) const
+    void PrintInfo(std::ostream& rOStream) const override
     {
         rOStream << Info();
     }
 
     /// Print object's data.
-
-    virtual void PrintData(std::ostream& rOStream) const
+    void PrintData(std::ostream& rOStream) const override
     {
         BaseType::PrintData(rOStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -278,22 +279,22 @@ protected:
     ///@name Protected Operations
     ///@{
 
-    virtual void ConstructW(SparseMatrixType& rA, std::vector<int>& w, SparseMatrixType& deflatedA) const
+    void ConstructW(SparseMatrixType& rA, std::vector<int>& w, SparseMatrixType& deflatedA) const override
     {
         /* export the deflation space */
         w.resize(mw.size());
         std::copy(mw.begin(), mw.end(), w.begin());
 
-        unsigned int full_size = rA.size1();
-        std::size_t reduced_size = mNodalIndices.size();
+        SizeType full_size = rA.size1();
+        SizeType reduced_size = mNodalIndices.size();
 
         /* construct non-zero structure of deflation matrix */
         // Non-zero structure of deflatedA
-        std::vector<std::set<std::size_t> > deflatedANZ(reduced_size);
+        std::vector<std::set<SizeType> > deflatedANZ(reduced_size);
 
         // Loop over non-zero structure of A and build non-zero structure of deflatedA
         typename SparseMatrixType::iterator1 a_iterator = rA.begin1();
-        for(std::size_t i = 0; i < full_size; ++i)
+        for(IndexType i = 0; i < full_size; ++i)
         {
             #ifndef BOOST_UBLAS_NO_NESTED_CLASS_RELATION
             for(typename SparseMatrixType::iterator2 row_iterator = a_iterator.begin() ;
@@ -311,17 +312,17 @@ protected:
         }
 
         // Count the number of non-zeros in deflatedA
-        std::size_t NZ = 0;
-        for (std::size_t i = 0; i < reduced_size; ++i)
+        SizeType NZ = 0;
+        for (IndexType i = 0; i < reduced_size; ++i)
             NZ += deflatedANZ[i].size();
 
         // Resize as needed the deflatedA
         deflatedA.resize(reduced_size, reduced_size, NZ);
 
         // Insert the non-zero structure into deflatedA
-        for(std::size_t i = 0 ; i < reduced_size ; ++i)
+        for(IndexType i = 0 ; i < reduced_size ; ++i)
         {
-            for(std::set<std::size_t>::iterator j = deflatedANZ[i].begin() ; j != deflatedANZ[i].end() ; ++j)
+            for(auto j = deflatedANZ[i].begin() ; j != deflatedANZ[i].end() ; ++j)
             {
                 deflatedA.push_back(i, *j, 0.00);
             }
@@ -356,7 +357,7 @@ private:
     ///@name Member Variables
     ///@{
 
-    std::vector<std::set<unsigned int> > mNodalIndices;
+    std::vector<std::set<IndexType> > mNodalIndices;
     std::vector<int> mw;
 
     ///@}
@@ -399,38 +400,8 @@ private:
 ///@{
 
 
-/// input stream function
-
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::istream & operator >>(std::istream& IStream,
-                                  DeflatedSubdomainNodalBasedCGSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::ostream & operator <<(std::ostream& OStream,
-                                  const DeflatedSubdomainNodalBasedCGSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 } // namespace Kratos.
 
-#endif // MULTITHREADED_SOLVERS_APP_DEFLATED_SUBDOMAIN_NODAL_BASED_CG_SOLVER_H_INCLUDED  defined 
-
-
+#endif // MULTITHREADED_SOLVERS_APP_DEFLATED_SUBDOMAIN_NODAL_BASED_CG_SOLVER_H_INCLUDED  defined

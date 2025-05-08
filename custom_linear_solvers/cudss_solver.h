@@ -18,6 +18,7 @@
 
 // Project includes
 #include "includes/define.h"
+#include "includes/model_part.h"
 #include "includes/ublas_interface.h"
 #include "utilities/openmp_utils.h"
 
@@ -57,7 +58,7 @@ namespace Kratos
 {
 
 template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class cuDSSSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class cuDSSSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, ModelPart, TReordererType>
 {
 public:
     /**
@@ -67,11 +68,11 @@ public:
 
     typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
     /**
      * @param niter number of iterative refinements allowed

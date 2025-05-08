@@ -94,8 +94,8 @@ namespace Kratos
 
 /// SolverPreconditioner class.
 /**   */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class SolverPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class SolverPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -104,21 +104,25 @@ public:
     /// Pointer definition of SolverPreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (SolverPreconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::MatrixPointerType SparseMatrixPointerType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
+
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
     typedef typename LinearSolverType::Pointer LinearSolverPointerType;
-
-    typedef std::size_t  SizeType;
 
     ///@}
     ///@name Life Cycle
@@ -130,20 +134,16 @@ public:
         mpSolver = pSolver;
     }
 
-
     /// Copy constructor.
     SolverPreconditioner(const SolverPreconditioner& Other)
     {
         mpSolver = Other.mpSolver;
     }
 
-
     /// Destructor.
-    virtual ~SolverPreconditioner()
+    ~SolverPreconditioner() override
     {
     }
-
-
 
     ///@}
     ///@name Operators
@@ -156,37 +156,31 @@ public:
         return *this;
     }
 
-
-
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         mpSolver->Initialize(rA, rX, rB);
         mA = rA;
     }
 
-
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return false;
     }
 
-
-    virtual void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY)
+    void Mult(SparseMatrixType& rA, VectorType& rX, VectorType& rY) override
     {
         TSparseSpaceType::Mult(rA, rX, rY);
         ApplyLeft(rY);
     }
 
-
     /** calculate preconditioned_X = A^{-1} * X;
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         SizeType size = TSparseSpaceType::Size(rX);
 
@@ -203,8 +197,6 @@ public:
         return rX;
     }
 
-
-
     ///@}
     ///@name Access
     ///@{
@@ -220,7 +212,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "SolverPreconditioner using ";
@@ -228,19 +220,15 @@ public:
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
-
 
     ///@}
     ///@name Friends
@@ -341,28 +329,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream, SolverPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream, const SolverPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
 #endif // KRATOS_SOLVER_PRECONDITIONER_H_INCLUDED  defined
-

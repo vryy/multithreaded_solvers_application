@@ -67,8 +67,9 @@ Firstly p in (2) is solved approximately by approximating A^(-1) by diag(A)^(-1)
 Then u in (1) is solved exactly
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
+         class TModelPartType,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class BlockPressureSchurSolver : public Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class BlockPressureSchurSolver : public Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -77,19 +78,23 @@ public:
     /// Counted pointer of  BlockPressureSchurSolver
     KRATOS_CLASS_POINTER_DEFINITION( BlockPressureSchurSolver );
 
-    typedef Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> BaseType;
 
     typedef typename BaseType::LinearSolverType LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -112,15 +117,14 @@ public:
      : BaseType(Other) {}
 
     /// Destructor.
-    virtual ~ BlockPressureSchurSolver() {}
-
+    ~BlockPressureSchurSolver() override {}
 
     ///@}
     ///@name Operators
     ///@{
 
     /// Assignment operator.
-     BlockPressureSchurSolver& operator=(const  BlockPressureSchurSolver& Other)
+    BlockPressureSchurSolver& operator=(const  BlockPressureSchurSolver& Other)
     {
         BaseType::operator=(Other);
         return *this;
@@ -130,24 +134,24 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         //count pressure dofs
         unsigned int n_pressure_dofs = 0;
         unsigned int tot_active_dofs = 0;
         unsigned int system_size = TSparseSpaceType::Size(rB);
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
             if (it->EquationId() < system_size)
             {
                 ++tot_active_dofs;
@@ -157,8 +161,8 @@ public:
         if (tot_active_dofs != rA.size1() )
             KRATOS_THROW_ERROR (std::logic_error,"total system size does not coincide with the free dof map","");
 
-        KRATOS_WATCH(tot_active_dofs)
-        KRATOS_WATCH(n_pressure_dofs)
+        // KRATOS_WATCH(tot_active_dofs)
+        // KRATOS_WATCH(n_pressure_dofs)
 
         //resize arrays as needed
         unsigned int other_dof_size = tot_active_dofs - n_pressure_dofs;
@@ -176,7 +180,7 @@ public:
         unsigned int global_pos;
         BaseType::madof_set.clear();
         BaseType::msdof_set.clear();
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             global_pos = it->EquationId();
             if (global_pos < system_size)
@@ -221,7 +225,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Linear solver using Schur complement reduction scheme for displacement-pressure" << std::endl;
@@ -230,17 +234,16 @@ public:
     }
 
     /// Print information about this object.
-    void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
     /// Print object's data.
-    void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends

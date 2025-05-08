@@ -74,9 +74,10 @@ namespace Kratos
 /** Detail class definition.
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,
+         class TModelPartType,
+         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class BicgstabScalingSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType>
+class BicgstabScalingSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -85,17 +86,23 @@ public:
     /// Counted pointer of  BicgstabScalingSolver
     KRATOS_CLASS_POINTER_DEFINITION( BicgstabScalingSolver);
 
-    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType> BaseType;
+    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
+
+    #ifdef CHECK_EIGENVALUES
 
     #if defined(MULTITHREADED_SOLVERS_APP_USE_FEAST) && defined(CHECK_EIGENVALUES_USING_FEAST)
     typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
@@ -103,6 +110,8 @@ public:
 
     #if defined(MULTITHREADED_SOLVERS_APP_USE_ARPACK) && defined(CHECK_EIGENVALUES_USING_ARPACK)
     typedef ArpackSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
+    #endif
+
     #endif
 
     ///@}
@@ -178,13 +187,13 @@ public:
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
     ) override
     {
         int n = rA.size1();
-        std::size_t* ia = rA.index1_data().begin();
-        std::size_t* ja = rA.index2_data().begin();
+        IndexType* ia = rA.index1_data().begin();
+        IndexType* ja = rA.index2_data().begin();
 
         if(mall_indices_column_pos.size() != 0)
             for(unsigned int i = 0; i < mall_indices_column_pos.size(); ++i)
@@ -471,7 +480,6 @@ public:
         BaseType::PrintData(OStream);
     }
 
-
     ///@}
     ///@name Friends
     ///@{
@@ -545,10 +553,10 @@ private:
     int IterativeSolve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
     {
         std::cout.precision(15);
-        double resid, tol = this->GetTolerance();
+        ValueType resid, tol = this->GetTolerance();
         unsigned int max_iter = this->GetMaxIterationsNumber();
         int i, j = 1, k, size = rX.size();
-        double rho_1, rho_2, alpha, beta, omega, norms, normr, normb;
+        DataType rho_1, rho_2, alpha, beta, omega, norms, normr, normb;
         VectorType p(size), phat(size), s(size), shat(size), t(size), v(size), r(size), rtilde(size);
 
         normb = TSparseSpaceType::TwoNorm(rB);
@@ -1014,33 +1022,7 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::istream& operator >> (std::istream& IStream,
-                                   BicgstabScalingSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const  BicgstabScalingSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
@@ -1051,4 +1033,3 @@ inline std::ostream& operator << (std::ostream& OStream,
 #undef DBL_MIN
 
 #endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BICGSTAB_SOLVER_H_INCLUDED  defined
-

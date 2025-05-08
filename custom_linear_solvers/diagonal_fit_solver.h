@@ -35,8 +35,8 @@ namespace Kratos {
 This solver tries to change the diagonal before solving. If a row is zero, then the diagonal is set by the average value and the rhs is set to zero, regardless the previous value. It is essential to remove the singularity of the linear system. Especially when it's arised from methods like immersed boundary method.
 Additionally, it also change the sign of the row if the negative diagonal is detected.
 */
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class DiagonalFitSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType, class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
+class DiagonalFitSolver: public DirectSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType>
 {
 public:
     /**
@@ -44,13 +44,21 @@ public:
      */
     KRATOS_CLASS_POINTER_DEFINITION(DiagonalFitSolver);
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     /**
      * Default Constructor
@@ -62,14 +70,14 @@ public:
     /**
      * Extended Constructor
      */
-    DiagonalFitSolver(typename BaseType::Pointer pLinearSolver, const double& Tol)
+    DiagonalFitSolver(typename BaseType::Pointer pLinearSolver, const ValueType Tol)
     : mpLinearSolver(pLinearSolver), mTol(Tol)
     {}
 
     /**
      * Destructor
      */
-    virtual ~DiagonalFitSolver() {}
+    ~DiagonalFitSolver() override {}
 
     /** Some solvers may require a minimum degree of knowledge of the structure of the matrix. To make an example
      * when solving a mixed u-p problem, it is important to identify the row associated to v and p.
@@ -77,7 +85,7 @@ public:
      * which require knowledge on the spatial position of the nodes associated to a given dof.
      * This function tells if the solver requires such data
      */
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         #ifdef CHECK_INCOMPATIBLE_ROWS
         return true;
@@ -92,13 +100,13 @@ public:
      * which require knowledge on the spatial position of the nodes associated to a given dof.
      * This function is the place to eventually provide such data
      */
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         mpLinearSolver->ProvideAdditionalData(rA, rX, rB, rdof_set, r_model_part);
 
@@ -107,19 +115,19 @@ public:
         std::set<std::size_t> incompatible_rows;
         std::set<std::size_t> incompatible_nodes;
 
-        for(std::set<std::size_t>::iterator it = zero_rows.begin(); it != zero_rows.end(); ++it)
+        for(auto it = zero_rows.begin(); it != zero_rows.end(); ++it)
             if(rB(*it) != 0.0)
                 incompatible_rows.insert(*it);
 
         std::cout << "incompatible_rows (at tol = " << mTol << "):";
-        for(std::set<std::size_t>::iterator it = incompatible_rows.begin(); it != incompatible_rows.end(); ++it)
+        for(auto it = incompatible_rows.begin(); it != incompatible_rows.end(); ++it)
             std::cout << " " << *it;
         std::cout << std::endl;
 
 //        std::cout << "dof set according to incompatible_rows:" << std::endl;
-        for(std::set<std::size_t>::iterator it = incompatible_rows.begin(); it != incompatible_rows.end(); ++it)
+        for(auto it = incompatible_rows.begin(); it != incompatible_rows.end(); ++it)
         {
-            for(typename ModelPart::DofsArrayType::iterator it2 = rdof_set.begin(); it2 != rdof_set.end(); ++it2)
+            for(auto it2 = rdof_set.begin(); it2 != rdof_set.end(); ++it2)
             {
                 if(it2->EquationId() == *it)
                 {
@@ -137,7 +145,7 @@ public:
         #endif
 
 //        std::vector<std::size_t> sample_rows = {294, 295, 296, 300, 301, 302, 306, 307, 308, 312, 313, 314, 315, 316, 317, 318, 319, 320};
-//        for(typename ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+//        for(auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
 //        {
 //            std::vector<std::size_t>::iterator it2 = std::find(sample_rows.begin(), sample_rows.end(), it->EquationId());
 //            if(it2 != sample_rows.end())
@@ -148,7 +156,7 @@ public:
 
 //        std::vector<std::size_t> sample_nodes = {76450, 67455};
 //        std::vector<std::size_t> sample_nodes = {1000, 7399, 4285};
-//        for(typename ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+//        for(auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
 //        {
 //            std::vector<std::size_t>::iterator it2 = std::find(sample_nodes.begin(), sample_nodes.end(), it->Id());
 //            if(it2 != sample_nodes.end())
@@ -166,7 +174,7 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         std::size_t n = rA.size1();
         double diagonal_ave = 0.0;
@@ -228,14 +236,14 @@ public:
      * @param rX. Solution vector.
      * @param rB. Right hand side vector.
      */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
         KRATOS_THROW_ERROR(std::logic_error, "ERROR: This solver can be used for single RHS only", "");
         return false;
     }
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "DiagonalFitSolver";
@@ -245,7 +253,7 @@ public:
     /**
      * Print information about this object.
      */
-    void PrintInfo(std::ostream& rOStream) const
+    void PrintInfo(std::ostream& rOStream) const override
     {
         rOStream << "DiagonalFitSolver finished.";
     }
@@ -253,23 +261,23 @@ public:
     /**
      * Print object's data.
      */
-    void PrintData(std::ostream& rOStream) const
+    void PrintData(std::ostream& rOStream) const override
     {
     }
 
 private:
 
     typename BaseType::Pointer mpLinearSolver;
-    double mTol;
+    ValueType mTol;
 
     template<typename TMatrixType>
-    std::set<std::size_t> GetZeroRows(const TMatrixType& rA, const double& tol)
+    std::set<std::size_t> GetZeroRows(const TMatrixType& rA, const ValueType tol) const
     {
-        std::set<std::size_t> zero_rows;
+        std::set<IndexType> zero_rows;
 
-        for(std::size_t i = 0; i < rA.size1(); ++i)
+        for(IndexType i = 0; i < rA.size1(); ++i)
         {
-            if( fabs(rA(i, i)) < tol )
+            if( std::abs(rA(i, i)) < tol )
             {
                 if( norm_2( row(rA, i) ) < tol )
                     zero_rows.insert(i);
@@ -288,32 +296,7 @@ private:
      * Copy constructor.
      */
 
-};
-// Class DiagonalFitSolver
-
-/**
- * input stream function
- */
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >>(
-        std::istream& rIStream,
-        DiagonalFitSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis) {
-    return rIStream;
-}
-
-/**
- * output stream function
- */
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator <<(
-        std::ostream& rOStream,
-        const DiagonalFitSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis) {
-    rThis.PrintInfo(rOStream);
-    rOStream << std::endl;
-    rThis.PrintData(rOStream);
-
-    return rOStream;
-}
+}; // Class DiagonalFitSolver
 
 } // namespace Kratos.
 

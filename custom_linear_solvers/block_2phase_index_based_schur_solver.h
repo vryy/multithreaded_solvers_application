@@ -101,8 +101,9 @@ Firstly p in (2) is solved approximately by approximating A^(-1) by diag(A)^(-1)
 Then u in (1) is solved exactly
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
+         class TModelPartType,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class Block2PhaseIndexBasedSchurSolver : public Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class Block2PhaseIndexBasedSchurSolver : public Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -111,19 +112,23 @@ public:
     /// Counted pointer of  Block2PhaseIndexBasedSchurSolver
     KRATOS_CLASS_POINTER_DEFINITION( Block2PhaseIndexBasedSchurSolver );
 
-    typedef Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef Block2PhaseSchurSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> BaseType;
 
     typedef typename BaseType::LinearSolverType LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -148,15 +153,14 @@ public:
      Block2PhaseIndexBasedSchurSolver(const  Block2PhaseIndexBasedSchurSolver& Other) : BaseType(Other) {}
 
     /// Destructor.
-    virtual ~ Block2PhaseIndexBasedSchurSolver() {}
-
+    ~Block2PhaseIndexBasedSchurSolver() override {}
 
     ///@}
     ///@name Operators
     ///@{
 
     /// Assignment operator.
-     Block2PhaseIndexBasedSchurSolver& operator=(const  Block2PhaseIndexBasedSchurSolver& Other)
+    Block2PhaseIndexBasedSchurSolver& operator=(const  Block2PhaseIndexBasedSchurSolver& Other)
     {
         BaseType::operator=(Other);
         return *this;
@@ -166,7 +170,7 @@ public:
     ///@name Operations
     ///@{
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         //count pressure dofs
         unsigned int n_nodes = rA.size1() / (mblock_size1 + mblock_size2);
@@ -174,8 +178,8 @@ public:
         unsigned int tot_active_dofs = rA.size1();
         unsigned int system_size = TSparseSpaceType::Size(rB);
 
-        KRATOS_WATCH(tot_active_dofs)
-        KRATOS_WATCH(n_pressure_dofs)
+        // KRATOS_WATCH(tot_active_dofs)
+        // KRATOS_WATCH(n_pressure_dofs)
 
         //resize arrays as needed
         unsigned int other_dof_size = tot_active_dofs - n_pressure_dofs;
@@ -228,7 +232,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Linear solver using Schur complement reduction scheme for displacement-pressure" << std::endl;
@@ -237,17 +241,16 @@ public:
     }
 
     /// Print information about this object.
-    void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
     /// Print object's data.
-    void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -335,25 +338,7 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >> (std::istream& IStream, Block2PhaseIndexBasedSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream, const  Block2PhaseIndexBasedSchurSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
@@ -361,4 +346,3 @@ inline std::ostream& operator << (std::ostream& OStream, const  Block2PhaseIndex
 #undef STRINGIFY
 
 #endif //  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_2_PHASE_INDEX_BASED_SCHUR_SOLVER_H_INCLUDED  defined
-

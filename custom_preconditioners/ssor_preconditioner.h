@@ -89,8 +89,8 @@ namespace Kratos
 /** SSORPreconditioner for linesr system solvers.
 REFERENCE: http://www.netlib.org/linalg/html_templates/node58.html
  */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class SSORPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class SSORPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -98,23 +98,31 @@ public:
 
     KRATOS_CLASS_POINTER_DEFINITION(SSORPreconditioner);
 
-    typedef  Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
     ///@{
 
     /// Default constructor.
-    SSORPreconditioner(double Omega) : mOmega(Omega)
+    SSORPreconditioner(ValueType Omega) : mOmega(Omega)
     {
         if(mOmega >= 2.0 || mOmega <= 0.0)
-            KRATOS_THROW_ERROR(std::logic_error, "The Omega for SSOR must be in [0.0 2.0]", "")
+            KRATOS_ERROR << "The Omega for SSOR must be in [0.0 2.0]";
     }
 
     /// Copy constructor.
@@ -122,8 +130,7 @@ public:
     : BaseType(Other), mD(Other.mD) {}
 
     /// Destructor.
-    virtual ~SSORPreconditioner() {}
-
+    ~SSORPreconditioner() override {}
 
     ///@}
     ///@name Operators
@@ -137,7 +144,6 @@ public:
         return *this;
     }
 
-
     ///@}
     ///@name Operations
     ///@{
@@ -149,13 +155,13 @@ public:
     @param rX Unknows vector
     @param rB Right side linear system of equations
     */
-    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         // clear data
         TSparseSpaceType::ClearData(mD);
         TSparseSpaceType::ClearData(mL);
         TSparseSpaceType::ClearData(mU);
-    
+
         // fill the diagonal
         unsigned int n = TSparseSpaceType::Size1(rA);
         mD.resize(n);
@@ -196,12 +202,12 @@ public:
         mL.complete_index1_data();
     }
 
-    void Initialize(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    void Initialize(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
         BaseType::Initialize(rA, rX, rB);
     }
 
-    VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         std::size_t j, n = TSparseSpaceType::Size(rX);
 
@@ -237,22 +243,22 @@ public:
         return rX;
     }
 
-    VectorType& ApplyRight(VectorType& rX)
+    VectorType& ApplyRight(VectorType& rX) override
     {
         return rX;
     }
 
-    VectorType& ApplyTransposeLeft(VectorType& rX)
+    VectorType& ApplyTransposeLeft(VectorType& rX) override
     {
         return rX;
     }
 
-    VectorType& ApplyTransposeRight(VectorType& rX)
+    VectorType& ApplyTransposeRight(VectorType& rX) override
     {
         return rX;
     }
 
-    VectorType& ApplyInverseRight(VectorType& rX)
+    VectorType& ApplyInverseRight(VectorType& rX) override
     {
         return rX;
     }
@@ -272,7 +278,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream ss;
         ss << "SSOR preconditioner with omega = " << mOmega;
@@ -280,11 +286,10 @@ public:
     }
 
     /// Print information about this object.
-    virtual void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
-
 
     ///@}
     ///@name Friends
@@ -339,7 +344,7 @@ private:
     ///@name Member Variables
     ///@{
 
-    double mOmega;
+    ValueType mOmega;
 
     VectorType mD;
 
@@ -389,29 +394,9 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  SSORPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const SSORPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
 
 
 }  // namespace Kratos.
 
-#endif // KRATOS_SSOR_PRECONDITIONER_H_INCLUDED  defined 
-
+#endif // KRATOS_SSOR_PRECONDITIONER_H_INCLUDED  defined

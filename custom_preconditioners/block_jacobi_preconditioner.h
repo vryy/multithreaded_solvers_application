@@ -93,8 +93,8 @@ namespace Kratos
 
 /// BlockJacobiPreconditioner class.
 /**   */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class BlockJacobiPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class BlockJacobiPreconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -103,19 +103,23 @@ public:
     /// Pointer definition of BlockJacobiPreconditioner
     KRATOS_CLASS_POINTER_DEFINITION (BlockJacobiPreconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -136,10 +140,9 @@ public:
     }
 
     /// Destructor.
-    virtual ~BlockJacobiPreconditioner()
+    ~BlockJacobiPreconditioner() override
     {
     }
-
 
     ///@}
     ///@name Operators
@@ -154,7 +157,6 @@ public:
 //        rOther.mBlockVecs = mBlockVecs;
         return *this;
     }
-
 
     ///@}
     ///@name Operations
@@ -180,7 +182,7 @@ public:
         return mpPrecs[i];
     }
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         /* check if the preconditioner has been set */
         unsigned int num_blocks = mBlockIndices.size();
@@ -194,18 +196,18 @@ public:
         }
     }
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         /* check if the preconditioner has been set */
         unsigned int num_blocks = mBlockIndices.size();
@@ -364,7 +366,7 @@ protected:
 
     std::vector<std::set<SizeType> > mBlockIndices;
 
-    std::vector<ModelPart::DofsArrayType> mBlockDofs;
+    std::vector<typename TModelPartType::DofsArrayType> mBlockDofs;
 
     ///@}
     ///@name Protected Operators
@@ -379,7 +381,7 @@ protected:
     void ExtractVector(const std::set<SizeType>& rIndices, const VectorType& rX, VectorType& rU) const
     {
         unsigned int i = 0;
-        for(std::set<SizeType>::iterator it = rIndices.begin(); it != rIndices.end(); ++it)
+        for(auto it = rIndices.begin(); it != rIndices.end(); ++it)
             rU[i++] = rX[*it];
     }
 
@@ -387,7 +389,7 @@ protected:
     void AssignVector(const std::set<SizeType>& rIndices, VectorType& rX, const VectorType& rU) const
     {
         unsigned int i = 0;
-        for(std::set<SizeType>::iterator it = rIndices.begin(); it != rIndices.end(); ++it)
+        for(auto it = rIndices.begin(); it != rIndices.end(); ++it)
             rX[*it] = rU[i++];
     }
 
@@ -507,18 +509,18 @@ private:
             rBlockVecs[i].resize(rBlockIndices[i].size());
             // fill the vector
             unsigned int j = 0;
-            for(std::set<SizeType>::const_iterator it = rBlockIndices[i].begin(); it != rBlockIndices[i].end(); ++it)
+            for(auto it = rBlockIndices[i].begin(); it != rBlockIndices[i].end(); ++it)
                 rBlockVecs[i][j++] = rV[*it];
         }
     }
 
     /// fast function to compute the Frobenius norm of the sparse matrix
-    double ComputeFrobeniusNorm(SparseMatrixType& rA)
+    double ComputeFrobeniusNorm(const SparseMatrixType& rA) const
     {
         int n = rA.size1();
         const std::size_t* ia = rA.index1_data().begin();
         const std::size_t* ja = rA.index2_data().begin();
-        const double*	   a  = rA.value_data().begin();
+        const double*      a  = rA.value_data().begin();
 
         double norm = 0.0;
         for(int i = 0; i < n; ++i)
@@ -532,7 +534,7 @@ private:
     }
 
     /// compute the largest diagonal entry of matrix A
-    double ExtractLargestDiagonalEntry(SparseMatrixType& rA)
+    double ExtractLargestDiagonalEntry(const SparseMatrixType& rA) const
     {
         int n = rA.size1();
         double max = -static_cast<double>(INT_MAX);
@@ -543,7 +545,7 @@ private:
     }
 
     /// compute the smallest diagonal entry of matrix A
-    double ExtractSmallestDiagonalEntry(SparseMatrixType& rA)
+    double ExtractSmallestDiagonalEntry(const SparseMatrixType& rA) const
     {
         int n = rA.size1();
         double min = static_cast<double>(INT_MAX);
@@ -554,7 +556,7 @@ private:
     }
 
     /// compute the average value (abs) of the diagonal
-    double ComputeAverageAbsDiagonal(SparseMatrixType& rA)
+    double ComputeAverageAbsDiagonal(const SparseMatrixType& rA) const
     {
         int n = rA.size1();
         double sum = 0.0;
@@ -562,7 +564,7 @@ private:
             sum += fabs(rA(i, i));
         return sum / n;
     }
-    
+
     ///@}
     ///@name Private  Access
     ///@{
@@ -596,33 +598,10 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  BlockJacobiPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const BlockJacobiPreconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
 #undef PROBE_BLOCK_PROPERTIES
 
-#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_JACOBI_PRESSURE_PRECONDITIONER_H_INCLUDED  defined 
-
+#endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_BLOCK_JACOBI_PRESSURE_PRECONDITIONER_H_INCLUDED  defined

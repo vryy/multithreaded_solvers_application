@@ -65,14 +65,6 @@ public:
     /// Pointer definition of MultithreadedSolversMathUtils
     KRATOS_CLASS_POINTER_DEFINITION(MultithreadedSolversMathUtils);
 
-    typedef typename Element::GeometryType GeometryType;
-
-    typedef typename GeometryType::PointType NodeType;
-
-    typedef typename NodeType::PointType PointType;
-
-    typedef typename NodeType::CoordinatesArrayType CoordinatesArrayType;
-
     ///@}
     ///@name Life Cycle
     ///@{
@@ -349,28 +341,29 @@ public:
     }
 
     template<typename TSparseMatrixType, typename TIndexType = std::size_t, typename TValueType = double>
-    static void EstimateMinMaxEigenvaluesByGershgorin(const TSparseMatrixType& rA, double& lambda_min, double& lambda_max)
+    static void EstimateMinMaxEigenvaluesByGershgorin(const TSparseMatrixType& rA, TValueType& lambda_min, TValueType& lambda_max)
     {
         const TIndexType n = rA.size1();
         const TIndexType* ia = rA.index1_data().begin();
         const TIndexType* ja = rA.index2_data().begin();
         const TValueType* a  = rA.value_data().begin();
 
-        int nz;
-        double diag, off_diag_abs_sum;
+        TIndexType nz;
+        TValueType diag, off_diag_abs_sum;
         lambda_min = 1.0e99;
         lambda_max = -1.0e99;
         for(TIndexType i = 0; i < n; ++i)
         {
+            assert(ia[i+1] >= ia[i]);
             nz = ia[i + 1] - ia[i];
             diag = 0.0;
             off_diag_abs_sum = 0.0;
-            for(int j = 0; j < nz; ++j)
+            for(TIndexType j = 0; j < nz; ++j)
             {
                 if(ja[ia[i] + j] == i)
                     diag = a[ia[i] + j];
                 else
-                    off_diag_abs_sum += fabs(a[ia[i] + j]);
+                    off_diag_abs_sum += std::abs(a[ia[i] + j]);
             }
 
             if (lambda_min > diag - off_diag_abs_sum) lambda_min = diag - off_diag_abs_sum;
@@ -392,7 +385,8 @@ public:
     ///@name Input and output
     ///@{
 
-    void Print(GeometryType::Pointer pGeometry) const
+    template<typename TGeometryType>
+    void Print(typename TGeometryType::Pointer pGeometry) const
     {
         for(std::size_t i = 0; i < pGeometry->size(); ++i)
             std::cout << " (" << (*pGeometry)[i].X()

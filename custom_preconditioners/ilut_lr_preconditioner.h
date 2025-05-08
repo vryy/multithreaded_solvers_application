@@ -96,8 +96,8 @@ namespace Kratos
 
 /// ITSOLPreconditioner class.
 /**   */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class ILUt_LR_Preconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class ILUt_LR_Preconditioner : public Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -106,23 +106,25 @@ public:
     /// Pointer definition of ILUt_LR_Preconditioner
     KRATOS_CLASS_POINTER_DEFINITION (ILUt_LR_Preconditioner);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::MatrixPointerType SparseMatrixPointerType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
 
     typedef typename LinearSolverType::Pointer LinearSolverPointerType;
-
-    typedef std::size_t  SizeType;
-
-    typedef std::size_t  IndexType;
 
     typedef struct SpaFmt {
         /*---------------------------------------------
@@ -148,7 +150,7 @@ public:
     ///@{
 
     /// Default constructor.
-    ILUt_LR_Preconditioner(double lfil, double droptol)
+    ILUt_LR_Preconditioner(ValueType lfil, ValueType droptol)
     {
         if(lfil < 0.0 || lfil > 1.0)
             KRATOS_THROW_ERROR(std::logic_error, "level of fill must be in [0.0 1.0]", __FUNCTION__)
@@ -157,7 +159,6 @@ public:
         mlu = NULL;
     }
 
-
     /// Copy constructor.
     ILUt_LR_Preconditioner(const ILUt_LR_Preconditioner& Other)
     {
@@ -165,15 +166,11 @@ public:
         mdroptol = Other.mdroptol;
     }
 
-
     /// Destructor.
-    virtual ~ILUt_LR_Preconditioner()
+    ~ILUt_LR_Preconditioner() override
     {
     }
 
-
-
-    ///@}
     ///@name Operators
     ///@{
 
@@ -185,13 +182,11 @@ public:
         return *this;
     }
 
-
-
     ///@}
     ///@name Operations
     ///@{
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         /* first make a clean */
         cleanILU( mlu );
@@ -466,18 +461,16 @@ public:
         free( wn );
     }
 
-
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return false;
     }
-
 
     /*
      * calculate preconditioned_X = A^{-1} * X;
      @param rX Unknows of preconditioner system
      */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         /*----------------------------------------------------------------------
          *    performs a forward  solve
@@ -510,7 +503,7 @@ public:
      * calculate preconditioned_X = A^{-1} * X;
      @param rX Unknows of preconditioner system
      */
-    virtual VectorType& ApplyRight(VectorType& rX)
+    VectorType& ApplyRight(VectorType& rX) override
     {
         /*----------------------------------------------------------------------
          *    performs a backward  solve
@@ -540,7 +533,7 @@ public:
         return rX;
     }
 
-    virtual VectorType& ApplyInverseRight(VectorType& rX)
+    VectorType& ApplyInverseRight(VectorType& rX) override
     {
         int n = mlu->n, i, j, nzcount, *ja;
         double *D, *ma;
@@ -579,7 +572,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "ILUt_LR_Preconditioner, ";
@@ -587,21 +580,17 @@ public:
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         OStream << "Level of fill  = " << mlfil;
         OStream << ", Drop tolerance = " << mdroptol;
     }
-
-
 
     ///@}
     ///@name Friends
@@ -655,9 +644,10 @@ private:
     ///@}
     ///@name Member Variables
     ///@{
+
     iluptr mlu;    /* ilu preconditioner structure */
-    double mlfil;
-    double mdroptol;
+    ValueType mlfil;
+    ValueType mdroptol;
 
     ///@}
     ///@name Private Operators
@@ -857,28 +847,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream, ILUt_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream, const ILUt_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ILUT_PRECONDITIONER_H_INCLUDED defined
-

@@ -97,8 +97,8 @@ namespace Kratos
 
 /// ILU0_LR_Preconditioner class.
 /**   */
-template<class TSparseSpaceType, class TDenseSpaceType>
-class ILU0_LR_Preconditioner : public ILU_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType>
+template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType>
+class ILU0_LR_Preconditioner : public ILU_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>
 {
 public:
     ///@name Type Definitions
@@ -107,16 +107,13 @@ public:
     /// Counted pointer of ILU0_LR_Preconditioner
     typedef boost::shared_ptr<ILU0_LR_Preconditioner> Pointer;
 
+    typedef ILU_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType> BaseType;
 
-    typedef ILU_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType> BaseType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
-
-    typedef typename TSparseSpaceType::VectorType VectorType;
-
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
-
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
     ///@}
     ///@name Life Cycle
@@ -129,13 +126,11 @@ public:
         BaseType::iL = BaseType::jL = BaseType::iU = BaseType::jU = NULL;
     }
 
-
     /// Copy constructor.
-// 		ILU0_LR_Preconditioner(const ILU0_LR_Preconditioner& Other){}
-
+    // ILU0_LR_Preconditioner(const ILU0_LR_Preconditioner& Other){}
 
     /// Destructor.
-    virtual ~ILU0_LR_Preconditioner()
+    ~ILU0_LR_Preconditioner() override
     {
         if ( BaseType::L!=NULL) delete[]  BaseType::L;
         if (BaseType::iL!=NULL) delete[] BaseType::iL;
@@ -152,20 +147,16 @@ public:
         BaseType::jU = NULL;
     }
 
-
-
     ///@}
     ///@name Operators
     ///@{
 
     /// Assignment operator.
-// 		ILU0_LR_Preconditioner& operator=(const ILU0_LR_Preconditioner& Other)
-// 		{
-// 			BaseType::operator=(Other);
-// 			return *this;
-// 		}
-
-
+//      ILU0_LR_Preconditioner& operator=(const ILU0_LR_Preconditioner& Other)
+//      {
+//          BaseType::operator=(Other);
+//          return *this;
+//      }
 
     ///@}
     ///@name Operations
@@ -177,7 +168,7 @@ public:
     @param rX Unknows vector
     @param rB Right side linear system of equations.
     */
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         // ILU(0) preconditioner
         // Incomplete LU factorization with same sparcity pattern as original matrix.
@@ -206,7 +197,6 @@ public:
         BaseType::U = NULL;
         BaseType::iU = NULL;
         BaseType::jU = NULL;
-
 
         // Create copy of matrix split in its BaseType::L and BaseType::U parts
         // Traverse matrix to count elements in rows of BaseType::L, BaseType::U
@@ -308,7 +298,6 @@ public:
         //    end do
         // end do
 
-
         for (i=1; i<n; i++)
         {
             for (indexk=BaseType::iL[i]; indexk<BaseType::iL[i+1]; indexk++)
@@ -407,16 +396,11 @@ public:
         /*              } */
         /*      } */
 
-
-
         for (i=0; i<n; i++) if (BaseType::U[BaseType::iU[i]]==0.00)
             {
-                KRATOS_THROW_ERROR(std::runtime_error, "Zero in BaseType::U diagonal found!!", "")
+                KRATOS_ERROR << "Zero in BaseType::U diagonal found!!";
             }
     }
-
-
-
 
     ///@}
     ///@name Access
@@ -433,24 +417,20 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         return "ILU0_LR_Preconditioner";
     }
 
-
     /// Print information about this object.
-    virtual void  PrintInfo(std::ostream& OStream) const
+    void  PrintInfo(std::ostream& OStream) const override
     {
         OStream << "ILU0_LR_Preconditioner";
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
-
 
     ///@}
     ///@name Friends
@@ -549,32 +529,8 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  ILU0_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    return IStream;
-}
-
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const ILU0_LR_Preconditioner<TSparseSpaceType, TDenseSpaceType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 
-
-#endif // KRATOS_ILU0_PRECONDITIONER_H_INCLUDED  defined 
-
+#endif // KRATOS_ILU0_PRECONDITIONER_H_INCLUDED  defined

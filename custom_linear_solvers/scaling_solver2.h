@@ -71,8 +71,9 @@ namespace Kratos
 /** Detail class definition.
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
+         class TModelPartType,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class ScalingSolver2 : public LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType>
+class ScalingSolver2 : public LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -81,17 +82,21 @@ public:
     /// Counted pointer of  ScalingSolver2
     KRATOS_CLASS_POINTER_DEFINITION( ScalingSolver2);
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TReordererType> BaseType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     #if defined(MULTITHREADED_SOLVERS_APP_USE_FEAST) && defined(CHECK_EIGENVALUES_USING_FEAST)
     typedef FeastSolver<TSparseSpaceType, TDenseSpaceType> EigenSolverType;
@@ -131,8 +136,7 @@ public:
     {}
 
     /// Destructor.
-    virtual ~ScalingSolver2() {}
-
+    ~ScalingSolver2() override {}
 
     ///@}
     ///@name Operators
@@ -159,31 +163,32 @@ public:
         mCheckConditionNunber = false;
     }
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
-        int n = rA.size1();
-        std::size_t* ia = rA.index1_data().begin();
-        std::size_t* ja = rA.index2_data().begin();
+        SizeType n = rA.size1();
+        IndexType* ia = rA.index1_data().begin();
+        IndexType* ja = rA.index2_data().begin();
 
         if(mall_indices_column_pos.size() != 0)
             for(unsigned int i = 0; i < mall_indices_column_pos.size(); ++i)
                 mall_indices_column_pos[i].clear();
         mall_indices_column_pos.clear();
         mall_indices_column_pos.resize(n);
-        for(int i = 0; i < n; ++i)
+        for(IndexType i = 0; i < n; ++i)
         {
-            int nz = ia[i + 1] - ia[i];
+            assert(ia[i + 1] >= ia[i]);
+            SizeType nz = ia[i + 1] - ia[i];
             for(int j = 0; j < nz; ++j)
                 mall_indices_column_pos[ja[ia[i] + j]].push_back(ia[i] + j);
         }
@@ -191,10 +196,11 @@ public:
         if(mScalingType == 2 || mScalingType == 3)
         {
             // for MC29 & MC77
-            int NZ = 0;
-            for(int i = 0; i < n; ++i)
+            SizeType NZ = 0;
+            for(IndexType i = 0; i < n; ++i)
             {
-                int nz = ia[i + 1] - ia[i];
+                assert(ia[i + 1] >= ia[i]);
+                SizeType nz = ia[i + 1] - ia[i];
                 NZ += nz;
                 for(int j = 0; j < nz; ++j)
                 {
@@ -220,7 +226,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;
@@ -374,9 +380,9 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
-        KRATOS_THROW_ERROR(std::logic_error, "Multisolve is not yet implemented for", typeid(*this).name())
+        KRATOS_ERROR << "Multisolve is not yet implemented";
     }
 
     ///@}
@@ -394,7 +400,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Scaling solver with ";
@@ -418,17 +424,16 @@ public:
     }
 
     /// Print information about this object.
-    void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
     /// Print object's data.
-    void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -500,7 +505,7 @@ private:
     ///@name Private Operations
     ///@{
 
-    void RowScale(SparseMatrixType& rA, VectorType& rDL)
+    void RowScale(SparseMatrixType& rA, VectorType& rDL) const
     {
         int n = rA.size1();
         std::size_t*   ia = rA.index1_data().begin();
@@ -516,7 +521,7 @@ private:
         }
     }
 
-    void ColumnScale(SparseMatrixType& rA, VectorType& rDR)
+    void ColumnScale(SparseMatrixType& rA, VectorType& rDR) const
     {
         int n = rA.size1();
         std::size_t*   ia = rA.index1_data().begin();
@@ -532,7 +537,7 @@ private:
         }
     }
 
-    void VectorScale(VectorType& rX, VectorType& rD)
+    void VectorScale(VectorType& rX, VectorType& rD) const
     {
         int n = rX.size();
 
@@ -542,7 +547,7 @@ private:
     }
 
     // scaling vector computation using Ruiz algorithm
-    void ComputeScalingVector(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
+    void ComputeScalingVector(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR) const
     {
         // Create a clone of matrix A
         SparseMatrixType rAc = rA;
@@ -626,30 +631,26 @@ private:
 //        std::size_t*   ja = rA.index2_data().begin();
         double*         a = rA.value_data().begin();
 
-        double* r = new double[n];
-        double* c = new double[n];
-        double* w = new double[5 * n];
+        std::vector<double> r(n);
+        std::vector<double> c(n);
+        std::vector<double> w(5 * n);
         int lp = 0, ifail;
-        mc29ad(&n, &n, &ne, a, &mcrow[0], &mccol[0], r, c, w, &lp, &ifail);
+        mc29ad(&n, &n, &ne, a, mcrow.data(), mccol.data(), r.data(), c.data(), w.data(), &lp, &ifail);
 
         rDL.resize(n, false);
         rDR.resize(n, false);
         for(unsigned int i = 0; i < n; ++i)
         {
-            rDL(i) = exp(r[i]);
-            rDR(i) = exp(c[i]);
+            rDL(i) = std::exp(r[i]);
+            rDR(i) = std::exp(c[i]);
         }
-
-        delete [] r;
-        delete [] c;
-        delete [] w;
 
         return ifail;
     }
     #endif
 
     /// compute the scaling vector based on the diagonal
-    int ComputeScalingVector_diagonal(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR)
+    int ComputeScalingVector_diagonal(SparseMatrixType& rA, VectorType& rDL, VectorType& rDR) const
     {
         int n = rA.size1();
         rDL.resize(n, false);
@@ -665,7 +666,7 @@ private:
     /*
      * A routine to compute condition number of a matrix using svd decomposition (MKL required). It is very expensive so usage with big matrix is warning.
      */
-    double ComputeConditionNumberDGESVD(SparseMatrixType& rA)
+    double ComputeConditionNumberDGESVD(SparseMatrixType& rA) const
     {
         int n = rA.size1();
         MKL_INT lda = n, ldu = n, ldvt = n, info;
@@ -711,7 +712,7 @@ private:
     /*
      * A routine to compute condition number of a matrix using svd decomposition (MKL required). It is very expensive so usage with big matrix is warning.
      */
-    double ComputeConditionNumberDGECON(SparseMatrixType& rA)
+    double ComputeConditionNumberDGECON(SparseMatrixType& rA) const
     {
         int n = rA.size1();
         MKL_INT lda = n, info;
@@ -770,7 +771,7 @@ private:
     /*
      * A routine to compute condition number of a sparse matrix using mc75
      */
-    double ComputeConditionNumberMC75(SparseMatrixType& rA)
+    double ComputeConditionNumberMC75(SparseMatrixType& rA) const
     {
         int n = rA.size1();
         int ne = mcrow.size();
@@ -790,8 +791,8 @@ private:
         int* icntl = new int[5];
         int* info = new int[5];
 
-        std::copy(&mcrow[0], &mcrow[0] + ne, ir);
-        std::copy(&mccol[0], &mccol[0] + ne, ic);
+        std::copy(mcrow.data(), mcrow.data() + ne, ir);
+        std::copy(mccol.data(), mccol.data() + ne, ic);
         std::copy(a, a + ne, a_);
 
         icntl[0] = 6;
@@ -819,7 +820,7 @@ private:
     /*
      * A routine to compute condition number of a matrix using Hager algorithm. Ref: W. W. Hager, Condition Estimates, SIAM
      */
-    double ComputeConditionNumberHager(SparseMatrixType& rA)
+    double ComputeConditionNumberHager(SparseMatrixType& rA) const
     {
         int n = rA.size1();
         /* Local arrays */
@@ -876,25 +877,7 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::istream& operator >> (std::istream& IStream, ScalingSolver2<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType, class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream, const  ScalingSolver2<TSparseSpaceType, TDenseSpaceType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 

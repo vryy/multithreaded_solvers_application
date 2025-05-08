@@ -30,6 +30,7 @@
 
 // Project includes
 #include "includes/define.h"
+#include "includes/model_part.h"
 #include "includes/ublas_interface.h"
 #include "spaces/ublas_space.h"
 #include "linear_solvers/linear_solver.h"
@@ -93,7 +94,7 @@ struct CompressedMatrixInversedSpectraOp
 {
     typedef UblasSpace<double, CompressedMatrix, Vector> SpaceType;
     typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
-    typedef LinearSolver<SpaceType,  LocalSpaceType> LinearSolverType;
+    typedef LinearSolver<SpaceType, LocalSpaceType, ModelPart> LinearSolverType;
 
     CompressedMatrixInversedSpectraOp(LinearSolverType::Pointer pLinearSolver, CompressedMatrix& rA)
     : mpLinearSystemSolver(pLinearSolver), mA(rA), msigma(0.0)
@@ -143,7 +144,7 @@ public:
 
     typedef UblasSpace<double, CompressedMatrix, Vector> SpaceType;
     typedef UblasSpace<double, Matrix, Vector> LocalSpaceType;
-    typedef LinearSolver<SpaceType,  LocalSpaceType> LinearSolverType;
+    typedef LinearSolver<SpaceType,  LocalSpaceType, ModelPart> LinearSolverType;
 
     ///@}
     ///@name Life Cycle
@@ -154,7 +155,6 @@ public:
 
     /// Destructor.
     virtual ~SpectraEigenvaluesSolver() {}
-
 
     ///@}
     ///@name Operators
@@ -191,7 +191,7 @@ public:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute largest eigenvalues, error code =", eigs.info())
+            KRATOS_ERROR << "Spectra failed to compute largest eigenvalues, error code = " << eigs.info();
         }
 
         return eigs.info();
@@ -221,7 +221,7 @@ public:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute largest eigenvalues, error code =", eigs.info())
+            KRATOS_ERROR << "Spectra failed to compute largest eigenvalues, error code = " << eigs.info();
         }
 
         return eigs.info();
@@ -252,7 +252,7 @@ public:
         }
         else
         {
-            KRATOS_THROW_ERROR(std::logic_error, "Spectra failed to compute smallest eigenvalues, error code =", eigs.info())
+            KRATOS_ERROR << "Spectra failed to compute smallest eigenvalues, error code = " << eigs.info();
         }
 
         return eigs.info();

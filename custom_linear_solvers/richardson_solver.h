@@ -89,9 +89,10 @@ namespace Kratos
 /** Detail class definition.
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,
+         class TModelPartType,
+         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class RichardsonSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType>
+class RichardsonSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -100,30 +101,38 @@ public:
     /// Counted pointer of RichardsonSolver
     KRATOS_CLASS_POINTER_DEFINITION(RichardsonSolver);
 
-    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType> BaseType;
+    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType> BaseType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
+
+    typedef typename BaseType::SizeType SizeType;
+
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
     ///@{
 
     /// Default constructor.
-    RichardsonSolver(double Omega) : mOmega(Omega), mPrecondType("Left"), BaseType() {}
+    RichardsonSolver(ValueType Omega) : mOmega(Omega), mPrecondType("Left"), BaseType() {}
 
-    RichardsonSolver(double Omega, double NewTolerance, unsigned int NewMaxIterationsNumber)
+    RichardsonSolver(ValueType Omega, ValueType NewTolerance, unsigned int NewMaxIterationsNumber)
     : mOmega(Omega), BaseType(NewTolerance, NewMaxIterationsNumber) , mPrecondType("Left")
     {}
 
-    RichardsonSolver(double Omega, double NewTolerance, unsigned int NewMaxIterationsNumber, typename TPreconditionerType::Pointer pNewPreconditioner)
+    RichardsonSolver(ValueType Omega, ValueType NewTolerance, unsigned int NewMaxIterationsNumber, typename TPreconditionerType::Pointer pNewPreconditioner)
     : mOmega(Omega), BaseType(NewTolerance, NewMaxIterationsNumber, pNewPreconditioner) , mPrecondType("Left")
     {}
 
-    RichardsonSolver(double Omega, double NewTolerance, unsigned int NewMaxIterationsNumber, std::string PrecondType, typename TPreconditionerType::Pointer pNewPreconditioner)
+    RichardsonSolver(ValueType Omega, ValueType NewTolerance, unsigned int NewMaxIterationsNumber, std::string PrecondType, typename TPreconditionerType::Pointer pNewPreconditioner)
     : mOmega(Omega), BaseType(NewTolerance, NewMaxIterationsNumber, pNewPreconditioner) , mPrecondType(PrecondType)
     {}
 
@@ -131,8 +140,7 @@ public:
     RichardsonSolver(const RichardsonSolver& Other) : mOmega(Other.mOmega), BaseType(Other) {}
 
     /// Destructor.
-    virtual ~RichardsonSolver() {}
-
+    ~RichardsonSolver() override {}
 
     ///@}
     ///@name Operators
@@ -157,7 +165,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;
@@ -176,7 +184,7 @@ public:
             KRATOS_THROW_ERROR(std::logic_error, ss.str(), "")
         }
 
-        double tol = this->GetTolerance(), resid, normb, normr;
+        ValueType tol = this->GetTolerance(), resid, normb, normr;
         unsigned int max_iter = this->GetMaxIterationsNumber();
         std::size_t size = rX.size();
         VectorType r(size);
@@ -222,7 +230,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB)
+    bool Solve(SparseMatrixType& rA, DenseMatrixType& rX, DenseMatrixType& rB) override
     {
         //GetTimeTable()->Start(Info());
 
@@ -262,7 +270,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Richardson iterative solver with " << BaseType::GetPreconditioner()->Info()
@@ -271,17 +279,16 @@ public:
     }
 
     /// Print information about this object.
-    void  PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
     /// Print object's data.
-    void  PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -336,7 +343,7 @@ private:
     ///@name Member Variables
     ///@{
 
-    double mOmega;
+    ValueType mOmega;
     std::string mPrecondType;
 
     ///@}
@@ -379,33 +386,7 @@ private:
 ///@{
 
 
-/// input stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::istream& operator >> (std::istream& IStream,
-                                  RichardsonSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    return IStream;
-}
-
-/// output stream function
-template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType,
-         class TReordererType>
-inline std::ostream& operator << (std::ostream& OStream,
-                                  const RichardsonSolver<TSparseSpaceType, TDenseSpaceType,
-                                  TPreconditionerType, TReordererType>& rThis)
-{
-    rThis.PrintInfo(OStream);
-    OStream << std::endl;
-    rThis.PrintData(OStream);
-
-    return OStream;
-}
 ///@}
-
 
 }  // namespace Kratos.
 

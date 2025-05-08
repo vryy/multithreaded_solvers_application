@@ -24,6 +24,7 @@ see multithreaded_solvers_application/LICENSE.txt
 
 // Project includes
 #include "includes/define.h"
+#include "includes/variables.h"
 #include "linear_solvers/iterative_solver.h"
 #include "custom_utilities/multithreaded_solvers_math_utils.h"
 
@@ -58,9 +59,10 @@ namespace Kratos
  THis is the solver based on the paper of C. Wieners: Parallel 3-d simulations for Porous Media Models in Soil Mechanics
 */
 template<class TSparseSpaceType, class TDenseSpaceType,
-         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType>,
+         class TModelPartType,
+         class TPreconditionerType = Preconditioner<TSparseSpaceType, TDenseSpaceType, TModelPartType>,
          class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
-class BlockPressureStaggeredSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType>
+class BlockPressureStaggeredSolver : public IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType>
 {
 public:
     ///@name Type Definitions
@@ -69,19 +71,23 @@ public:
     /// Counted pointer of  BlockPressureStaggeredSolver
     KRATOS_CLASS_POINTER_DEFINITION( BlockPressureStaggeredSolver );
 
-    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TPreconditionerType, TReordererType> BaseType;
+    typedef IterativeSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType, TPreconditionerType, TReordererType> BaseType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
-    typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
+    typedef typename BaseType::SparseMatrixType SparseMatrixType;
 
-    typedef typename TSparseSpaceType::VectorType VectorType;
+    typedef typename BaseType::VectorType VectorType;
 
-    typedef typename TDenseSpaceType::MatrixType DenseMatrixType;
+    typedef typename BaseType::DenseMatrixType DenseMatrixType;
 
-    typedef std::size_t  SizeType;
+    typedef typename BaseType::SizeType SizeType;
 
-    typedef std::size_t  IndexType;
+    typedef typename BaseType::IndexType IndexType;
+
+    typedef typename BaseType::DataType DataType;
+
+    typedef typename BaseType::ValueType ValueType;
 
     ///@}
     ///@name Life Cycle
@@ -103,15 +109,14 @@ public:
      BlockPressureStaggeredSolver(const  BlockPressureStaggeredSolver& Other) : BaseType(Other) {}
 
     /// Destructor.
-    virtual ~ BlockPressureStaggeredSolver() {}
-
+    ~BlockPressureStaggeredSolver() override {}
 
     ///@}
     ///@name Operators
     ///@{
 
     /// Assignment operator.
-     BlockPressureStaggeredSolver& operator=(const  BlockPressureStaggeredSolver& Other)
+    BlockPressureStaggeredSolver& operator=(const  BlockPressureStaggeredSolver& Other)
     {
         BaseType::operator=(Other);
         return *this;
@@ -121,24 +126,24 @@ public:
     ///@name Operations
     ///@{
 
-    virtual bool AdditionalPhysicalDataIsNeeded()
+    bool AdditionalPhysicalDataIsNeeded() override
     {
         return true;
     }
 
-    virtual void ProvideAdditionalData(
+    void ProvideAdditionalData(
         SparseMatrixType& rA,
         VectorType& rX,
         VectorType& rB,
-        typename ModelPart::DofsArrayType& rdof_set,
-        ModelPart& r_model_part
-    )
+        typename TModelPartType::DofsArrayType& rdof_set,
+        TModelPartType& r_model_part
+    ) override
     {
         //count pressure dofs
         unsigned int n_pressure_dofs = 0;
         unsigned int tot_active_dofs = 0;
         unsigned int system_size = TSparseSpaceType::Size(rB);
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
             if (it->EquationId() < system_size)
             {
                 ++tot_active_dofs;
@@ -146,10 +151,10 @@ public:
                     ++n_pressure_dofs;
             }
         if (tot_active_dofs != rA.size1() )
-            KRATOS_THROW_ERROR (std::logic_error,"total system size does not coincide with the free dof map","");
+            KRATOS_ERROR << "total system size does not coincide with the free dof map";
 
-        KRATOS_WATCH(tot_active_dofs)
-        KRATOS_WATCH(n_pressure_dofs)
+        // KRATOS_WATCH(tot_active_dofs)
+        // KRATOS_WATCH(n_pressure_dofs)
 
         //resize arrays as needed
         unsigned int other_dof_size = tot_active_dofs - n_pressure_dofs;
@@ -167,7 +172,7 @@ public:
         unsigned int global_pos;
         madof_set.clear();
         msdof_set.clear();
-        for (ModelPart::DofsArrayType::iterator it = rdof_set.begin(); it != rdof_set.end(); ++it)
+        for (auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
         {
             global_pos = it->EquationId();
             if (global_pos < system_size)
@@ -197,7 +202,7 @@ public:
             mpPressureSolver->ProvideAdditionalData(rA, rX, rB, msdof_set, r_model_part);
     }
 
-    virtual void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    void Initialize(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         std::cout << "Fill blocks begin" << std::endl;
         double start = OpenMPUtils::GetCurrentTime();
@@ -212,6 +217,11 @@ public:
 //        KRATOS_WATCH(norm_frobenius(mB2))
 //        KRATOS_WATCH(norm_frobenius(mC))
 
+        // KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mA))
+        // KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mB1))
+        // KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mB2))
+        // KRATOS_WATCH(MultithreadedSolversMathUtils::ComputeFrobeniusNorm(mC))
+
         mpStructuralSolver->Initialize(mA, mu, rB); //take rB as temporary, but it should not be
         mpPressureSolver->Initialize(mC, mp, rB); //take rB as temporary, but it should not be
     }
@@ -224,7 +234,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;
@@ -322,7 +332,7 @@ public:
     ///@{
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << "Iterative solver using staggered scheme, structural solver = " << mpStructuralSolver->Info()
@@ -331,7 +341,7 @@ public:
     }
 
     /// Print information about this object.
-    void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << "Iterative solver using staggered scheme";
         mpStructuralSolver->PrintInfo(OStream);
@@ -339,11 +349,10 @@ public:
     }
 
     /// Print object's data.
-    void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
         BaseType::PrintData(OStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -449,8 +458,8 @@ private:
     VectorType mp;
     VectorType mu;
 
-    typename ModelPart::DofsArrayType madof_set;
-    typename ModelPart::DofsArrayType msdof_set;
+    typename TModelPartType::DofsArrayType madof_set;
+    typename TModelPartType::DofsArrayType msdof_set;
 
     ///@}
     ///@name Private Operators
