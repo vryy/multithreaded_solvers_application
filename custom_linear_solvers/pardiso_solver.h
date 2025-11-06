@@ -62,13 +62,6 @@ extern "C" void pardiso_chkmatrix  (int *, int *, double *, int *, int *, int *)
 extern "C" void pardiso_chkvec     (int *, int *, double *, int *);
 extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *, double *, int *);
 
-#include <boost/timer.hpp>
-
-#include "utilities/openmp_utils.h"
-
-#include "boost/smart_ptr.hpp"
-#include "includes/ublas_interface.h"
-
 #include <boost/numeric/bindings/traits/sparse_traits.hpp>
 #include <boost/numeric/bindings/traits/matrix_traits.hpp>
 #include <boost/numeric/bindings/traits/vector_traits.hpp>
@@ -78,11 +71,11 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
 
 // Project includes
 #include "includes/define.h"
+#include "includes/ublas_interface.h"
 #include "linear_solvers/direct_solver.h"
+#include "utilities/openmp_utils.h"
 
 #define ENABLE_PROFILING
-
-namespace ublas = boost::numeric::ublas;
 
 namespace Kratos
 {
