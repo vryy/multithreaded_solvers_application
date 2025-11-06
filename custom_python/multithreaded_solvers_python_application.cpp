@@ -38,6 +38,8 @@ namespace Python
         class_<KratosMultithreadedSolversApplication,
             KratosMultithreadedSolversApplication::Pointer,
             bases<KratosApplication>, boost::noncopyable >("KratosMultithreadedSolversApplication")
+            .def("Has", &KratosMultithreadedSolversApplication::Has)
+            .staticmethod("Has")
             ;
 
         MultithreadedSolversApplication_AddLinearSolversToPython();

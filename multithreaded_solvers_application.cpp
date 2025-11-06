@@ -15,7 +15,6 @@
 
 
 // Project includes
-#include "includes/define.h"
 #include "multithreaded_solvers_application.h"
 
 
@@ -31,6 +30,28 @@ void KratosMultithreadedSolversApplication::Register()
 
     KRATOS_REGISTER_VARIABLE(SYSTEM_SIZE)
     KRATOS_REGISTER_VARIABLE(SYSTEM_PERMUTATION_VECTOR)
+}
+
+bool KratosMultithreadedSolversApplication::Has(const std::string& SolverName)
+{
+    if (SolverName == "UmfPackSolver")
+    {
+#ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_UMFPACK
+        return true;
+#else
+        return false;
+#endif
+    }
+    else if (SolverName == "PardisoSolver")
+    {
+#ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    return false;
 }
 
 }  // namespace Kratos.

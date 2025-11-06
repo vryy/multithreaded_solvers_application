@@ -74,7 +74,6 @@ public:
     /// Destructor.
     ~KratosMultithreadedSolversApplication() override {}
 
-
     ///@}
     ///@name Operators
     ///@{
@@ -85,6 +84,8 @@ public:
     ///@{
 
     void Register() override;
+
+    static bool Has(const std::string& SolverName);
 
     ///@}
     ///@name Access
@@ -127,7 +128,6 @@ public:
         rOStream << "Conditions:" << std::endl;
         KratosComponents<Condition>().PrintData(rOStream);
     }
-
 
     ///@}
     ///@name Friends
@@ -212,7 +212,6 @@ private:
 
     /// Copy constructor.
     KratosMultithreadedSolversApplication(KratosMultithreadedSolversApplication const& rOther);
-
 
     ///@}
 
