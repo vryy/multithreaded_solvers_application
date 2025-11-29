@@ -155,8 +155,8 @@ public:
         /* Size checking */
         int n = matraits::size1 (rA);
         assert (n == matraits::size2 (rA));
-        assert (n == mbtraits::size1 (rB));
-        assert (n == mbtraits::size1 (rX));
+        assert (n == mbtraits::size (rB));
+        assert (n == mbtraits::size (rX));
 
 //        /* nonzeros in rA */
 //        double* a = matraits::value_storage(rA);
