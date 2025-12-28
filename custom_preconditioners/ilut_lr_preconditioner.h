@@ -122,7 +122,7 @@ public:
 
     typedef typename BaseType::ValueType ValueType;
 
-    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType> LinearSolverType;
+    typedef LinearSolver<TSparseSpaceType, TDenseSpaceType, TModelPartType> LinearSolverType;
 
     typedef typename LinearSolverType::Pointer LinearSolverPointerType;
 
@@ -153,7 +153,7 @@ public:
     ILUt_LR_Preconditioner(ValueType lfil, ValueType droptol)
     {
         if(lfil < 0.0 || lfil > 1.0)
-            KRATOS_THROW_ERROR(std::logic_error, "level of fill must be in [0.0 1.0]", __FUNCTION__)
+            KRATOS_ERROR << "level of fill must be in [0.0 1.0]";
         mlfil = lfil;
         mdroptol = droptol;
         mlu = NULL;

@@ -57,6 +57,7 @@
 
 // Project includes
 #include "includes/define.h"
+#include "includes/model_part.h"
 #include "includes/ublas_interface.h"
 #include "linear_solvers/preconditioner.h"
 #include "utilities/openmp_utils.h"
@@ -69,7 +70,7 @@ class ArpackSolver
 public:
     KRATOS_CLASS_POINTER_DEFINITION(ArpackSolver);
 
-    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType> PreconditionerType;
+    typedef Preconditioner<TSparseSpaceType, TDenseSpaceType, ModelPart> PreconditionerType;
 
     typedef typename TSparseSpaceType::MatrixType SparseMatrixType;
 
