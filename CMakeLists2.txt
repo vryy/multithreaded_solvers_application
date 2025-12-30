@@ -32,9 +32,11 @@ if(${Fortran_FOUND} MATCHES ON)
     set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APP_USE_FORTRAN")
 
     if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-        # This allows the 'Rank mismatch' error to become a warning
-        # needed to compile ARPACK
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+        if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
+            # This allows the 'Rank mismatch' error to become a warning
+            # needed to compile ARPACK
+            set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+        endif()
     endif()
 endif()
 
