@@ -119,6 +119,7 @@ public:
             if(cnt == mSolverList.size())
                 KRATOS_ERROR << "None of the provided solver converged for the current problem. Consider adding more solvers";
         }
+        return true;
     }
 
     /**
@@ -154,6 +155,7 @@ public:
             if(cnt == mSolverList.size())
                 KRATOS_ERROR << "None of the provided solver converged for the current problem. Consider adding more solvers";
         }
+        return true;
     }
 
     /// Return information about this object.

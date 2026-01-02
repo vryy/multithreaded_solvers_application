@@ -1,7 +1,11 @@
 #ifndef _HSL_H_
 #define _HSL_H_
 
+#ifdef _WIN32
+#define F77NAME(x) x
+#else
 #define F77NAME(x) x ## _
+#endif
 
 extern "C"
 {

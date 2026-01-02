@@ -40,6 +40,12 @@
 
 #endif
 
+#ifdef _WIN32
+
+#define arcomplex std::complex
+
+#endif
+
 #endif // ARCOMP_H
 
 

@@ -661,6 +661,7 @@ private:
             rDL(i) = 1.0/sqrt(fabs(diag));
             rDR(i) = 1.0/sqrt(fabs(diag));
         }
+        return 0;
     }
 
     /*

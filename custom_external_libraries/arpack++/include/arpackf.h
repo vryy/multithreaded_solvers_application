@@ -18,6 +18,7 @@
 #define ARPACKF_H
 
 #include "arch.h"
+#include "arcomp.h"
 
 extern "C"
 {

@@ -9,10 +9,6 @@ set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/custom_cmake_modules")
 
-option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT "Enable SuperLU_MT for KratosMultithreadedSolversApplication" OFF)
-option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK "Enable Arpack for KratosMultithreadedSolversApplication" OFF)
-option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST "Enable FEAST for KratosMultithreadedSolversApplication" OFF)
-option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_HSL "Enable HSL for KratosMultithreadedSolversApplication" OFF)
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_CUDA "Enable CUDA support for KratosMultithreadedSolversApplication" OFF)
 
 get_property(languages_list GLOBAL PROPERTY ENABLED_LANGUAGES)
@@ -25,10 +21,10 @@ endif()
 
 if(${Fortran_FOUND} MATCHES ON)
     enable_language(Fortran)
-    set(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT ON)
-    set(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK ON)
-    set(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST ON)
-    set(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_HSL ON)
+    option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT "Enable SuperLU_MT for KratosMultithreadedSolversApplication" ON)
+    option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK "Enable Arpack for KratosMultithreadedSolversApplication" ON)
+    option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST "Enable FEAST for KratosMultithreadedSolversApplication" ON)
+    option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_HSL "Enable HSL for KratosMultithreadedSolversApplication" ON)
     set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APP_USE_FORTRAN")
 
     if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
@@ -218,10 +214,8 @@ set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
 )
 
 if(${Fortran_FOUND} MATCHES ON)
-    set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
-        ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/tools.f
-    )
+    add_library(KratosMultithreadedSolversApplicationAuxiliaryTools STATIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/tools.f)
 endif()
 
 ###############################################################
@@ -252,15 +246,7 @@ if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST} MATCHES ON)
     target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE feast_sparse)
     target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE feast)
     # TODO the libraries below depends on the MKL version. One must customize that according to the MKL library
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE mkl_intel_lp64)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE mkl_intel_thread)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE mkl_core)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE imf)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE svml)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE irc)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE iomp5)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE pthread)
-    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE m)
+    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${MKLSOLVER_LIBRARIES})
 endif()
 
 target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${BLAS_LIBRARIES})
@@ -277,6 +263,9 @@ endif()
 
 target_link_libraries(KratosMultithreadedSolversApplication PRIVATE KratosCore)
 target_link_libraries(KratosMultithreadedSolversApplication PUBLIC KratosMultithreadedSolversApplicationDependencies)
+if(${Fortran_FOUND} MATCHES ON)
+    target_link_libraries(KratosMultithreadedSolversApplication PRIVATE KratosMultithreadedSolversApplicationAuxiliaryTools)
+endif()
 
 target_include_directories(KratosMultithreadedSolversApplication PUBLIC ${MULTITHREADED_SOLVERS_APPLICATION_INCLUDE_DIRS})
 target_include_directories(KratosMultithreadedSolversApplication PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

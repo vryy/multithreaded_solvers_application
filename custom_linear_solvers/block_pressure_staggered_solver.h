@@ -315,6 +315,8 @@ public:
 
         WriteUPart(rX, u);
         WritePPart(rX, p);
+
+        return true;
     }
 
     ///@}
