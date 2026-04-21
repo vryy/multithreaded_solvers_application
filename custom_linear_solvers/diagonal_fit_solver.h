@@ -32,7 +32,9 @@
 namespace Kratos {
 
 /*
-This solver tries to change the diagonal before solving. If a row is zero, then the diagonal is set by the average value and the rhs is set to zero, regardless the previous value. It is essential to remove the singularity of the linear system. Especially when it's arised from methods like immersed boundary method.
+This solver tries to change the diagonal before solving. If a row is zero, then the diagonal is set by the average value.
+If the row is zero but the corresponding RHS is nonzero (compared with a tolerance), error will be thrown.
+It is essential to remove the singularity of the linear system. Especially when it's arised from methods like immersed boundary method.
 Additionally, it also change the sign of the row if the negative diagonal is detected.
 */
 template<class TSparseSpaceType, class TDenseSpaceType, class TModelPartType, class TReordererType = Reorderer<TSparseSpaceType, TDenseSpaceType> >
@@ -124,14 +126,15 @@ public:
             std::cout << " " << *it;
         std::cout << std::endl;
 
-//        std::cout << "dof set according to incompatible_rows:" << std::endl;
+        if (incompatible_rows.size() > 0)
+            KRATOS_ERROR << "Incompatiable rows (diagonal=0, rhs!=0) are detected in the linear system";
+
         for(auto it = incompatible_rows.begin(); it != incompatible_rows.end(); ++it)
         {
             for(auto it2 = rdof_set.begin(); it2 != rdof_set.end(); ++it2)
             {
                 if(it2->EquationId() == *it)
                 {
-//                    std::cout << "dof id " << it2->Id() << ", EquationId: " << it2->EquationId() << std::endl;
                     incompatible_nodes.insert(it2->Id());
                     break;
                 }
@@ -143,27 +146,6 @@ public:
             std::cout << " " << *it;
         std::cout << std::endl;
         #endif
-
-//        std::vector<std::size_t> sample_rows = {294, 295, 296, 300, 301, 302, 306, 307, 308, 312, 313, 314, 315, 316, 317, 318, 319, 320};
-//        for(auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
-//        {
-//            std::vector<std::size_t>::iterator it2 = std::find(sample_rows.begin(), sample_rows.end(), it->EquationId());
-//            if(it2 != sample_rows.end())
-//            {
-//                std::cout << "row " << *it2 << " node: " << it->Id() << std::endl;
-//            }
-//        }
-
-//        std::vector<std::size_t> sample_nodes = {76450, 67455};
-//        std::vector<std::size_t> sample_nodes = {1000, 7399, 4285};
-//        for(auto it = rdof_set.begin(); it != rdof_set.end(); ++it)
-//        {
-//            std::vector<std::size_t>::iterator it2 = std::find(sample_nodes.begin(), sample_nodes.end(), it->Id());
-//            if(it2 != sample_nodes.end())
-//            {
-//                std::cout << "node " << it->Id() << " has row " << it->EquationId() << std::endl;
-//            }
-//        }
     }
 
     /**
@@ -181,15 +163,6 @@ public:
         std::size_t diagonal_count = 0;
         std::size_t num_negative_rows = 0;
         std::set<std::size_t> zero_rows = GetZeroRows(rA, mTol);
-
-//        std::vector<std::size_t> sample_rows = {96600, 96601, 96602, 106893, 106894, 106895};
-//        std::vector<std::size_t> sample_rows = {6999, 21807, 7000, 7349, 21814, 7350};
-//        std::vector<std::size_t> sample_rows = {2704, 2705, 2706, 14203, 14204, 14205, 9367, 9368, 9369};
-//        for(std::size_t i = 0; i < sample_rows.size(); ++i)
-//        {
-//            const std::size_t& row = sample_rows[i];
-//            std::cout << "row " << sample_rows[i] << " has lhs(d) = " << rA(row, row) << ", rhs = " << rB(row) << std::endl;
-//        }
 
         // reverse sign of the negative rows if needed
         for(std::size_t i = 0; i < n; ++i)
@@ -213,7 +186,6 @@ public:
         for(std::set<std::size_t>::iterator it = zero_rows.begin(); it != zero_rows.end(); ++it)
         {
             rA(*it, *it) = diagonal_ave;
-            rB(*it) = 0.0;
             std::cout << " " << *it;
         }
         std::cout << std::endl;
@@ -299,7 +271,5 @@ private:
 }; // Class DiagonalFitSolver
 
 } // namespace Kratos.
-
-#undef CHECK_INCOMPATIBLE_ROWS
 
 #endif // KRATOS_MULTITHREADED_SOLVERS_APPLICATION_DIAGONAL_FIT_SOLVER_H_INCLUDED  defined
