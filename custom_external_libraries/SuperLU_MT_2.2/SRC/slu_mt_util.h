@@ -21,7 +21,7 @@
 
 #define SUPERLU_ABORT(err_msg) \
  { char msg[256];\
-   sprintf(msg,"%s at line %d in file %s\n",err_msg,__LINE__, __FILE__);\
+   snprintf(msg,sizeof(msg),"%s at line %d in file %s\n",err_msg,__LINE__, __FILE__);\
    USER_ABORT(msg); }
 
 

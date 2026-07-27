@@ -1,7 +1,5 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/SRC )
-
 set( ALLAUX
         ${CMAKE_CURRENT_SOURCE_DIR}/SRC/superlu_timer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/SRC/dclock.c
@@ -26,13 +24,13 @@ set( ALLAUX
         ${CMAKE_CURRENT_SOURCE_DIR}/SRC/pxgstrf_synch.c
         ${CMAKE_CURRENT_SOURCE_DIR}/SRC/pxgstrf_finalize.c
      )
-#SET_SOURCE_FILES_PROPERTIES(await.c PROPERTIES COMPILE_FLAGS -O0) #enable it for Cray
-SET_SOURCE_FILES_PROPERTIES(superlu_timer.c PROPERTIES COMPILE_FLAGS -O0)
+#set_source_files_properties(await.c PROPERTIES COMPILE_FLAGS -O0) #enable it for Cray
+set_source_files_properties(superlu_timer.c PROPERTIES COMPILE_FLAGS -O0)
 
 set( DZAUX
         ${CMAKE_CURRENT_SOURCE_DIR}/SRC/dlamch.c
      )
-SET_SOURCE_FILES_PROPERTIES(${DZAUX} PROPERTIES COMPILE_FLAGS -O0)
+set_source_files_properties(${DZAUX} PROPERTIES COMPILE_FLAGS -O0)
 
 set( DLUSRC2
         ${CMAKE_CURRENT_SOURCE_DIR}/SRC/dreadhb.c
@@ -73,18 +71,19 @@ set( DLUSRC2
         ${CMAKE_CURRENT_SOURCE_DIR}/SRC/dsp_blas3.c
     )
 
-add_definitions( -DUSE_VENDOR_BLAS )
-add_definitions( -DAdd_ )
-add_definitions( -D_LONGINT )
-add_definitions( -w )
-add_definitions( -D__OPENMP ) #be careful to choose the correct MACH for SuperLU_MT
+add_library(superlu_mt STATIC ${DLUSRC2} ${ALLAUX} ${DZAUX} )
+target_include_directories( superlu_mt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/SRC )
+
+target_compile_definitions( superlu_mt PRIVATE USE_VENDOR_BLAS )
+target_compile_definitions( superlu_mt PRIVATE ADD_=0 )
+target_compile_definitions( superlu_mt PRIVATE _LONGINT )
+target_compile_definitions( superlu_mt PRIVATE __OPENMP ) #be careful to choose the correct MACH for SuperLU_MT
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    add_definitions( -DNO_TIMER )
+    target_compile_definitions( superlu_mt NO_TIMER )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
-
 ###############################################################
-add_library(superlu_mt STATIC ${DLUSRC2} ${ALLAUX} ${DZAUX} )
-target_link_libraries(superlu_mt ${BLAS_LIBRARIES} )
-# install(TARGETS superlu DESTINATION libs )
+
+target_link_libraries( superlu_mt PRIVATE ${BLAS_LIBRARIES} )
+# install(TARGETS superlu_mt DESTINATION libs )

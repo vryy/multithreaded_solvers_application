@@ -17,7 +17,9 @@
 #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
 #define __SUPERLU_CNAMES
 
+#ifndef ADD_
 #define ADD_       0
+#endif
 #define NOCHANGE   1
 #define UPCASE     2
 #define C_CALL     3

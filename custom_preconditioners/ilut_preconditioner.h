@@ -589,24 +589,24 @@ private:
     ///@name Private Operations
     ///@{
 
-    void errexit( char *f_str, ... )
+    void errexit( const char *f_str, ... )
     {
         va_list argp;
         char out1[256], out2[256];
 
         va_start(argp, f_str);
-        vsprintf(out1, f_str, argp);
+        vsnprintf(out1, sizeof(out1), f_str, argp);
         va_end(argp);
 
-        sprintf(out2, "Error! %s\n", out1);
+        snprintf(out2, sizeof(out2), "Error! %s\n", out1);
 
-        fprintf(stdout, out2);
+        fprintf(stdout, "%s", out2);
         fflush(stdout);
 
         exit( -1 );
     }
 
-    void *Malloc( int nbytes, char *msg )
+    void *Malloc( int nbytes, const char *msg )
     {
         void *ptr;
 

@@ -17928,7 +17928,7 @@ void r8mat_l_print ( int m, int n, double a[], string title )
   else if ( r8vec_amax ( size, a ) < 1000000.0 )
   {
     nn = 5;
-    for ( jlo = 1; jlo <= jmax; jlo = jlo + nn );
+    for ( jlo = 1; jlo <= jmax; jlo = jlo + nn )
     {
       jhi = i4_min ( jlo + nn - 1, i4_min ( m - 1, jmax ) );
       cout << "\n";

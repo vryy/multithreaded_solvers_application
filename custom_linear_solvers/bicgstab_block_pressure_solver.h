@@ -228,7 +228,7 @@ public:
     guess for iterative linear solvers.
     @param rB. Right hand side vector.
     */
-    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB)
+    bool Solve(SparseMatrixType& rA, VectorType& rX, VectorType& rB) override
     {
         if(this->IsNotConsistent(rA, rX, rB))
             return false;

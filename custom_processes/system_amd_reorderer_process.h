@@ -80,12 +80,12 @@ class SystemAMDReordererProcess : public Process {
 public:
     SystemAMDReordererProcess(ModelPart& r_model_part) : mr_model_part(r_model_part) {}
     virtual ~SystemAMDReordererProcess() {}
-    
+
     KRATOS_CLASS_POINTER_DEFINITION(SystemAMDReordererProcess);
-    
+
     typedef typename ModelPart::ElementsContainerType ElementsContainerType;
     typedef typename ModelPart::ConditionsContainerType ConditionsContainerType;
-    
+
     virtual void Execute();
 
     void test_amd()
@@ -94,7 +94,7 @@ public:
         int Ap[] = {0, 2, 6, 10, 12, 14};
         int Ai[] = {0, 1, 0, 1, 2, 4, 1, 2, 3, 4, 2, 3, 1, 4};
         int P[5];
-        
+
         amd_order(n, Ap, Ai, P, (double*)NULL, (double*)NULL);
         std::cout << "P:";
         for(int k = 0; k < n; ++k)
@@ -178,10 +178,10 @@ void SystemAMDReordererProcess::Execute()
 //    std::copy(P, P + n, perm_vector.begin());
     std::copy(Pi, Pi + n, perm_vector.begin());
 
-    delete Ap;
-    delete Ai;
-    delete P;
-    delete Pi;
+    delete [] Ap;
+    delete [] Ai;
+    delete [] P;
+    delete [] Pi;
 
     rProcessInfo[SYSTEM_PERMUTATION_VECTOR] = perm_vector;
     std::cout << "Compute system permutation vector by using AMD completed" << std::endl;
@@ -190,4 +190,3 @@ void SystemAMDReordererProcess::Execute()
 }
 
 #endif
-

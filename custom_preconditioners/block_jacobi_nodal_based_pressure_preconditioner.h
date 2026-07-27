@@ -250,7 +250,7 @@ public:
     ///@name Input and output
     ///@{
 
-    virtual std::string Name() const {return "BlockJacobiNodalBasedPressurePreconditioner";}
+    std::string Name() const override {return "BlockJacobiNodalBasedPressurePreconditioner";}
 
     /// Return information about this object.
     std::string Info() const override

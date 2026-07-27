@@ -17,9 +17,10 @@ void MeshRCM::Renumber(ModelPart& r_model_part)
         for(int i = 0; i < (*it)->GetGeometry().size(); ++i)
             nodes.push_back( (*it)->GetGeometry()[i].Id() - 1 );
         element_nodes.push_back(nodes);
-        
+
         int type = 0;
-        std::string name = typeid((*it)->GetGeometry()).name();
+        const auto& rGeometry = (*it)->GetGeometry();
+        std::string name = typeid(rGeometry).name();
         if(name.find("Triangle2D3") != std::string::npos)           type = 1;
         else if(name.find("Triangle2D6") != std::string::npos)      type = 2;
         else if(name.find("Quadrilateral2D4") != std::string::npos) type = 3;
@@ -32,7 +33,7 @@ void MeshRCM::Renumber(ModelPart& r_model_part)
         element_type.push_back(type);
     }
     KRATOS_WATCH(element_type[0])
-    
+
     // build the adjacentcy matrix
     int *adj;
     int adj_num;
@@ -47,7 +48,7 @@ void MeshRCM::Renumber(ModelPart& r_model_part)
     //  Set up the ADJ adjacency array.
     //
     adj = mesh_adj_set ( node_num, element_nodes.size(), element_nodes, element_type, adj_num, adj_row );
-    
+
     //
     //  Compute the bandwidth.
     //
@@ -111,7 +112,7 @@ int MeshRCM::adj_bandwidth ( int node_num, int adj_num, int adj_row[], int adj[]
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -169,7 +170,7 @@ int MeshRCM::adj_bandwidth ( int node_num, int adj_num, int adj_row[], int adj[]
 }
 //****************************************************************************80
 
-int MeshRCM::adj_perm_bandwidth ( int node_num, int adj_num, int adj_row[], int adj[], 
+int MeshRCM::adj_perm_bandwidth ( int node_num, int adj_num, int adj_row[], int adj[],
   int perm[], int perm_inv[] )
 
 //****************************************************************************80
@@ -180,13 +181,13 @@ int MeshRCM::adj_perm_bandwidth ( int node_num, int adj_num, int adj_row[], int 
 //
 //  Discussion:
 //
-//    The matrix is defined by the adjacency information and a permutation.  
+//    The matrix is defined by the adjacency information and a permutation.
 //
 //    The routine also computes the bandwidth and the size of the envelope.
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -217,7 +218,7 @@ int MeshRCM::adj_perm_bandwidth ( int node_num, int adj_num, int adj_row[], int 
 //    Input, int PERM[NODE_NUM], PERM_INV(NODE_NUM), the permutation
 //    and inverse permutation.
 //
-//    Output, int ADJ_PERM_BANDWIDTH, the bandwidth of the permuted 
+//    Output, int ADJ_PERM_BANDWIDTH, the bandwidth of the permuted
 //    adjacency matrix.
 //
 {
@@ -247,7 +248,7 @@ int MeshRCM::adj_perm_bandwidth ( int node_num, int adj_num, int adj_row[], int 
 }
 //****************************************************************************80
 
-void MeshRCM::degree ( int root, int adj_num, int adj_row[], int adj[], int mask[], 
+void MeshRCM::degree ( int root, int adj_num, int adj_row[], int adj[], int mask[],
   int deg[], int *iccsze, int ls[], int node_num )
 
 //****************************************************************************80
@@ -263,7 +264,7 @@ void MeshRCM::degree ( int root, int adj_num, int adj_row[], int adj[], int mask
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -301,7 +302,7 @@ void MeshRCM::degree ( int root, int adj_num, int adj_row[], int adj[], int mask
 //    Output, int *ICCSIZE, the number of nodes in the connected component.
 //
 //    Output, int LS[NODE_NUM], stores in entries 1 through ICCSIZE the nodes
-//    in the connected component, starting with ROOT, and proceeding 
+//    in the connected component, starting with ROOT, and proceeding
 //    by levels.
 //
 //    Input, int NODE_NUM, the number of nodes.
@@ -539,7 +540,7 @@ int MeshRCM::i4_max ( int i1, int i2 )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -580,7 +581,7 @@ int MeshRCM::i4_min ( int i1, int i2 )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -621,7 +622,7 @@ void MeshRCM::i4_swap ( int *i, int *j )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -642,7 +643,7 @@ void MeshRCM::i4_swap ( int *i, int *j )
   k = *i;
   *i = *j;
   *j = k;
- 
+
   return;
 }
 //****************************************************************************80
@@ -677,7 +678,7 @@ int MeshRCM::i4col_compare ( int m, int n, int a[], int i, int j )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -788,7 +789,7 @@ void MeshRCM::i4col_sort_a ( int m, int n, int a[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -867,7 +868,7 @@ void MeshRCM::i4col_sort2_a ( int m, int n, int a[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -973,7 +974,7 @@ int MeshRCM::i4col_sorted_unique_count ( int m, int n, int a[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1046,7 +1047,7 @@ void MeshRCM::i4col_swap ( int m, int n, int a[], int icol1, int icol2 )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1126,7 +1127,7 @@ void MeshRCM::i4vec_reverse ( int n, int a[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1157,7 +1158,7 @@ void MeshRCM::i4vec_reverse ( int n, int a[] )
 }
 //****************************************************************************80
 
-void MeshRCM::level_set ( int root, int adj_num, int adj_row[], int adj[], int mask[], 
+void MeshRCM::level_set ( int root, int adj_num, int adj_row[], int adj[], int mask[],
   int *level_num, int level_row[], int level[], int node_num )
 
 //****************************************************************************80
@@ -1178,7 +1179,7 @@ void MeshRCM::level_set ( int root, int adj_num, int adj_row[], int adj[], int m
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1216,7 +1217,7 @@ void MeshRCM::level_set ( int root, int adj_num, int adj_row[], int adj[], int m
 //    structure.  ROOT is in level 1.  The neighbors of ROOT
 //    are in level 2, and so on.
 //
-//    Output, int LEVEL_ROW[NODE_NUM+1], LEVEL[NODE_NUM], the rooted 
+//    Output, int LEVEL_ROW[NODE_NUM+1], LEVEL[NODE_NUM], the rooted
 //    level structure.
 //
 //    Input, int NODE_NUM, the number of nodes.
@@ -1375,7 +1376,7 @@ int* MeshRCM::perm_inverse3 ( int n, int perm[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1573,7 +1574,7 @@ void MeshRCM::r8col_permute ( int m, int n, int p[], int base, double a[] )
 }
 //****************************************************************************80
 
-void MeshRCM::rcm ( int root, int adj_num, int adj_row[], int adj[], int mask[], 
+void MeshRCM::rcm ( int root, int adj_num, int adj_row[], int adj[], int mask[],
   int perm[], int *iccsze, int node_num )
 
 //****************************************************************************80
@@ -1599,7 +1600,7 @@ void MeshRCM::rcm ( int root, int adj_num, int adj_row[], int adj[], int mask[],
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1629,9 +1630,9 @@ void MeshRCM::rcm ( int root, int adj_num, int adj_row[], int adj[], int mask[],
 //    Input, int ADJ(ADJ_NUM), the adjacency structure.
 //    For each row, it contains the column indices of the nonzero entries.
 //
-//    Input/output, int MASK(NODE_NUM), a mask for the nodes.  Only 
-//    those nodes with nonzero input mask values are considered by the 
-//    routine.  The nodes numbered by RCM will have their mask values 
+//    Input/output, int MASK(NODE_NUM), a mask for the nodes.  Only
+//    those nodes with nonzero input mask values are considered by the
+//    routine.  The nodes numbered by RCM will have their mask values
 //    set to zero.
 //
 //    Output, int PERM(NODE_NUM), the RCM ordering.
@@ -1643,7 +1644,7 @@ void MeshRCM::rcm ( int root, int adj_num, int adj_row[], int adj[], int mask[],
 //
 //  Local Parameters:
 //
-//    Workspace, int DEG[NODE_NUM], a temporary vector used to hold 
+//    Workspace, int DEG[NODE_NUM], a temporary vector used to hold
 //    the degree of the nodes in the section graph specified by mask and root.
 //
 {
@@ -1760,7 +1761,7 @@ void MeshRCM::rcm ( int root, int adj_num, int adj_row[], int adj[], int mask[],
 }
 //****************************************************************************80
 
-void MeshRCM::root_find ( int *root, int adj_num, int adj_row[], int adj[], int mask[], 
+void MeshRCM::root_find ( int *root, int adj_num, int adj_row[], int adj[], int mask[],
   int *level_num, int level_row[], int level[], int node_num )
 
 //****************************************************************************80
@@ -1798,7 +1799,7 @@ void MeshRCM::root_find ( int *root, int adj_num, int adj_row[], int adj[], int 
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1839,13 +1840,13 @@ void MeshRCM::root_find ( int *root, int adj_num, int adj_row[], int adj[], int 
 //    Input, int ADJ[ADJ_NUM], the adjacency structure.
 //    For each row, it contains the column indices of the nonzero entries.
 //
-//    Input, int MASK[NODE_NUM], specifies a section subgraph.  Nodes 
+//    Input, int MASK[NODE_NUM], specifies a section subgraph.  Nodes
 //    for which MASK is zero are ignored by FNROOT.
 //
 //    Output, int *LEVEL_NUM, is the number of levels in the level structure
 //    rooted at the node ROOT.
 //
-//    Output, int LEVEL_ROW(NODE_NUM+1), LEVEL(NODE_NUM), the 
+//    Output, int LEVEL_ROW(NODE_NUM+1), LEVEL(NODE_NUM), the
 //    level structure array pair containing the level structure found.
 //
 //    Input, int NODE_NUM, the number of nodes.
@@ -1865,7 +1866,7 @@ void MeshRCM::root_find ( int *root, int adj_num, int adj_row[], int adj[], int 
 //
 //  Determine the level structure rooted at ROOT.
 //
-  level_set ( *root, adj_num, adj_row, adj, mask, level_num, 
+  level_set ( *root, adj_num, adj_row, adj, mask, level_num,
     level_row, level, node_num );
 //
 //  Count the number of nodes in this level structure.
@@ -1973,7 +1974,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2038,9 +2039,9 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
 //
   else if ( *indx < 0 )
   {
-    if ( *indx == -2 ) 
+    if ( *indx == -2 )
     {
-      if ( isgn < 0 ) 
+      if ( isgn < 0 )
       {
         i_save = i_save + 1;
       }
@@ -2052,7 +2053,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
       return;
     }
 
-    if ( 0 < isgn ) 
+    if ( 0 < isgn )
     {
       *indx = 2;
       *i = i_save;
@@ -2060,15 +2061,15 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
       return;
     }
 
-    if ( k <= 1 ) 
+    if ( k <= 1 )
     {
-      if ( n1 == 1 ) 
+      if ( n1 == 1 )
       {
         i_save = 0;
         j_save = 0;
         *indx = 0;
       }
-      else 
+      else
       {
         i_save = n1;
         j_save = 1;
@@ -2085,7 +2086,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
 //
 //  0 < INDX: the user was asked to make an interchange.
 //
-  else if ( *indx == 1 ) 
+  else if ( *indx == 1 )
   {
     k1 = k;
   }
@@ -2095,7 +2096,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
 
     i_save = 2 * k1;
 
-    if ( i_save == n1 ) 
+    if ( i_save == n1 )
     {
       j_save = k1;
       k1 = i_save;
@@ -2104,7 +2105,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
       *j = j_save;
       return;
     }
-    else if ( i_save <= n1 ) 
+    else if ( i_save <= n1 )
     {
       j_save = i_save + 1;
       *indx = -2;
@@ -2113,7 +2114,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
       return;
     }
 
-    if ( k <= 1 ) 
+    if ( k <= 1 )
     {
       break;
     }
@@ -2122,7 +2123,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
     k1 = k;
   }
 
-  if ( n1 == 1 ) 
+  if ( n1 == 1 )
   {
     i_save = 0;
     j_save = 0;
@@ -2130,7 +2131,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
     *i = i_save;
     *j = j_save;
   }
-  else 
+  else
   {
     i_save = n1;
     j_save = 1;
@@ -2146,7 +2147,7 @@ void MeshRCM::sort_heap_external ( int n, int *indx, int *i, int *j, int isgn )
 
 void MeshRCM::mesh_adj_count (
     int node_num,
-    int element_num, 
+    int element_num,
     std::vector<std::vector<int> > element_nodes,
     std::vector<int> element_type,
     int *adj_num,
@@ -2173,7 +2174,7 @@ void MeshRCM::mesh_adj_count (
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2206,7 +2207,7 @@ void MeshRCM::mesh_adj_count (
   pair_num = 0;
   for ( e = 0; e < element_num; ++e )
     add_pair(element_type[e], element_nodes[e], pair, pair_num);
-  
+
 //
 //  Force the nodes of each pair to be listed in ascending order.
 //
@@ -2297,7 +2298,7 @@ int* MeshRCM::mesh_adj_set (
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2319,7 +2320,7 @@ int* MeshRCM::mesh_adj_set (
 //
 //    Input, int ADJ_ROW[NODE_NUM+1], the ADJ pointer array.
 //
-//    Output, int TET_MESH_ORDER4_ADJ_SET[ADJ_NUM], 
+//    Output, int TET_MESH_ORDER4_ADJ_SET[ADJ_NUM],
 //    the adjacency information.
 //
 {
@@ -2339,7 +2340,7 @@ int* MeshRCM::mesh_adj_set (
   pair_num = 0;
   for ( e = 0; e < element_num; ++e )
     add_pair(element_type[e], element_nodes[e], pair, pair_num);
-    
+
 //
 //  Force the nodes of each pair to be listed in ascending order.
 //
@@ -2408,7 +2409,7 @@ void MeshRCM::timestamp ( )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2455,10 +2456,10 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[1]);
         pair.push_back(nodes[2]);
-        
+
         pair.push_back(nodes[2]);
         pair.push_back(nodes[0]);
-        
+
         pair_num += 3;
     }
     else if(type == 2) //Triangle2D6
@@ -2468,7 +2469,7 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[3]);
         pair.push_back(nodes[1]);
-        
+
         pair.push_back(nodes[1]);
         pair.push_back(nodes[4]);
 
@@ -2477,10 +2478,10 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[2]);
         pair.push_back(nodes[5]);
-        
+
         pair.push_back(nodes[5]);
         pair.push_back(nodes[0]);
-        
+
         pair_num += 6;
     }
     else if(type == 3) //Quadrilateral2D4
@@ -2490,13 +2491,13 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[1]);
         pair.push_back(nodes[2]);
-        
+
         pair.push_back(nodes[2]);
         pair.push_back(nodes[3]);
 
         pair.push_back(nodes[3]);
         pair.push_back(nodes[0]);
-        
+
         pair_num += 4;
     }
     else if(type == 4) //Quadrilateral2D8
@@ -2506,7 +2507,7 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[4]);
         pair.push_back(nodes[1]);
-        
+
         pair.push_back(nodes[1]);
         pair.push_back(nodes[5]);
 
@@ -2518,13 +2519,13 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[6]);
         pair.push_back(nodes[3]);
-        
+
         pair.push_back(nodes[3]);
         pair.push_back(nodes[7]);
 
         pair.push_back(nodes[7]);
         pair.push_back(nodes[0]);
-        
+
         pair_num += 8;
     }
     else if(type == 5) //Tetrahedra3D4
@@ -2534,7 +2535,7 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[0]);
         pair.push_back(nodes[2]);
-        
+
         pair.push_back(nodes[0]);
         pair.push_back(nodes[3]);
 
@@ -2546,7 +2547,7 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[2]);
         pair.push_back(nodes[3]);
-        
+
         pair_num += 6;
     }
     else if(type == 6) //Tetrahedra3D10
@@ -2560,7 +2561,7 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[1]);
         pair.push_back(nodes[2]);
-        
+
         pair.push_back(nodes[2]);
         pair.push_back(nodes[3]);
 
@@ -2572,10 +2573,10 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[5]);
         pair.push_back(nodes[6]);
-        
+
         pair.push_back(nodes[6]);
         pair.push_back(nodes[7]);
-        
+
         pair.push_back(nodes[7]);
         pair.push_back(nodes[4]);
 
@@ -2584,13 +2585,13 @@ void MeshRCM::add_pair(
 
         pair.push_back(nodes[1]);
         pair.push_back(nodes[5]);
-        
+
         pair.push_back(nodes[2]);
         pair.push_back(nodes[6]);
-        
+
         pair.push_back(nodes[3]);
         pair.push_back(nodes[7]);
-        
+
         pair_num += 8;
     }
     else if(type == 8) //Hexahedra3D10

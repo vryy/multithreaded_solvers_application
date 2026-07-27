@@ -240,7 +240,7 @@ public:
     /** calculate preconditioned_u = A^{-1} * mu; preconditioned_p = C^{-1} * mp (for left-preconditioning)
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyLeft(VectorType& rX)
+    VectorType& ApplyLeft(VectorType& rX) override
     {
         VectorType U;
         for(unsigned int i = 0; i < mBlockIndices.size(); ++i)
@@ -256,7 +256,7 @@ public:
     /** calculate preconditioned_u = A^{-1} * mu; preconditioned_p = C^{-1} * mp (for right-preconditioning)
         @param rX  Unknows of preconditioner suystem
     */
-    virtual VectorType& ApplyRight(VectorType& rX)
+    VectorType& ApplyRight(VectorType& rX) override
     {
         VectorType U;
         for(unsigned int i = 0; i < mBlockIndices.size(); ++i)
@@ -269,7 +269,7 @@ public:
         return rX;
     }
 
-    virtual VectorType& ApplyInverseRight(VectorType& rX)
+    VectorType& ApplyInverseRight(VectorType& rX) override
     {
         VectorType U;
         for(unsigned int i = 0; i < mBlockIndices.size(); ++i)
@@ -282,7 +282,7 @@ public:
         return rX;
     }
 
-    virtual VectorType& ApplyTransposeLeft(VectorType& rX)
+    VectorType& ApplyTransposeLeft(VectorType& rX) override
     {
         VectorType U;
         for(unsigned int i = 0; i < mBlockIndices.size(); ++i)
@@ -295,7 +295,7 @@ public:
         return rX;
     }
 
-    virtual VectorType& ApplyTransposeRight(VectorType& rX)
+    VectorType& ApplyTransposeRight(VectorType& rX) override
     {
         VectorType U;
         for(unsigned int i = 0; i < mBlockIndices.size(); ++i)
@@ -307,7 +307,6 @@ public:
         }
         return rX;
     }
-
 
     ///@}
     ///@name Access
@@ -326,7 +325,7 @@ public:
     virtual std::string Name() const {return "BlockJacobiPreconditioner";}
 
     /// Return information about this object.
-    virtual std::string Info() const
+    std::string Info() const override
     {
         std::stringstream buffer;
         buffer << this->Name() << ", list of sub-preconditioners:";
@@ -335,18 +334,15 @@ public:
         return buffer.str();
     }
 
-
     /// Print information about this object.
-    virtual void PrintInfo(std::ostream& OStream) const
+    void PrintInfo(std::ostream& OStream) const override
     {
         OStream << Info();
     }
 
-
-    virtual void PrintData(std::ostream& OStream) const
+    void PrintData(std::ostream& OStream) const override
     {
     }
-
 
     ///@}
     ///@name Friends
