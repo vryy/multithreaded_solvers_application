@@ -1,46 +1,11 @@
 /*
-* =======================================================================*
-* kkkk   kkkk  kkkkkkkkkk   kkkkk    kkkkkkkkkk kkkkkkkkkk kkkkkkkkkK    *
-* kkkk  kkkk   kkkk   kkkk  kkkkkk   kkkkkkkkkk kkkkkkkkkk kkkkkkkkkK    *
-* kkkkkkkkk    kkkk   kkkk  kkkkkkk     kkkk    kkk    kkk  kkkk         *
-* kkkkkkkkk    kkkkkkkkkkk  kkkk kkk    kkkk    kkk    kkk    kkkk       *
-* kkkk  kkkk   kkkk  kkkk   kkkk kkkk   kkkk    kkk    kkk      kkkk     *
-* kkkk   kkkk  kkkk   kkkk  kkkk  kkkk  kkkk    kkkkkkkkkk  kkkkkkkkkk   *
-* kkkk    kkkk kkkk    kkkk kkkk   kkkk kkkk    kkkkkkkkkk  kkkkkkkkkk      *
-*                                                                        *
-* krATos: a fREe opEN sOURce CoDE for mULti-pHysIC aDaptIVe SoLVErS,     *
-* aN extEnsIBLe OBjeCt oRiEnTEd SOlutION fOR fInITe ELemEnt fORmULatIONs *
-* Copyleft by 2003 ciMNe                                                 *
-* Copyleft by 2003 originary authors Copyleft by 2003 your name          *
-* This library is free software; you can redistribute it and/or modify   *
-* it under the terms of the GNU Lesser General Public License as         *
-* published by the Free Software Foundation; either version 2.1 of       *
-* the License, or any later version.                                     *
-*                                                                        *
-* This library is distributed in the hope that it will be useful, but    *
-* WITHOUT ANY WARRANTY; without even the implied warranty of             *
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                   *
-* See the GNU Lesser General Public License for more details.            *
-*                                                                        *
-* You should have received a copy of the GNU Lesser General Public       *
-* License along with this library; if not, write to International Centre *
-* for Numerical Methods in Engineering (CIMNE),                          *
-* Edifici C1 - Campus Nord UPC, Gran Capità s/n, 08034 Barcelona.        *
-*                                                                        *
-* You can also contact us to the following email address:                *
-* kratos@cimne.upc.es                                                    *
-* or fax number: +34 93 401 65 17                                        *
-*                                                                        *
-* Created at Institute for Structural Mechanics                          *
-* Ruhr-University Bochum, Germany                                        *
-* Last modified by:    $Author: hbui $                                   *
-* Date:                $Date: 19 Aug 2014 $                              *
-* Revision:            $Revision: 1.5 $                                  *
-*========================================================================*
-* International Center of Numerical Methods in Engineering - CIMNE       *
-* Barcelona - Spain                                                      *
-*========================================================================*
-*/
+ * ------ Solver interface for Multithreaded SuperLU (SuperLU_MT) ------- *
+ * Created at Institute for Structural Mechanics                          *
+ * Ruhr-University Bochum, Germany                                        *
+ * Last modified by:    $Author: hbui $                                   *
+ * Date:                $Date: 19 Aug 2014 $                              *
+ *========================================================================*
+ */
 
 #if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SUPERLU_MT_SOLVER_H_INCLUDED )
 #define  KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SUPERLU_MT_SOLVER_H_INCLUDED
@@ -55,8 +20,6 @@
 // Project includes
 #include "includes/define.h"
 #include "linear_solvers/direct_solver.h"
-
-namespace ublas = boost::numeric::ublas;
 
 namespace Kratos
 {
@@ -124,7 +87,7 @@ public:
         equed_t     equed;
         int         *perm_c; /* column permutation vector */
         int         *perm_r; /* row permutations from partial pivoting */
-        void        *work;
+        void        *work = nullptr;
         superlumt_options_t superlumt_options;
         int         info, lwork, nrhs, panel_size, relax;
         int         permc_spec;
@@ -162,7 +125,6 @@ public:
         start = OpenMPUtils::GetCurrentTime();
         std::vector<int> index1_vector(rA.index1_data().size());
         std::vector<int> index2_vector(rA.index2_data().size());
-//         double *values_vector = new (std::nothrow) double[rA.value_data().size()];
 
         for( unsigned int i = 0; i < rA.index1_data().size(); i++ )
             index1_vector[i] = (int)rA.index1_data()[i];
@@ -241,10 +203,9 @@ public:
         printf("SuperLU_MT: solve completed: %f s\n", stop - start);
         start = stop;
 
-        printf("pdgssvx(): info %d\n", info);
 
         //print matrix analysis result and deallocate memory
-        if ( info == 0 || info == rX.size() + 1 )
+        if ( info == 0 )
         {
             printf("Recip. pivot growth = %e\n", rpg);
             printf("Recip. condition number = %e\n", rcond);
@@ -256,15 +217,25 @@ public:
             Ustore = (NCPformat *) U.Store;
             printf("No of nonzeros in factor L = %d\n", Lstore->nnz);
             printf("No of nonzeros in factor U = %d\n", Ustore->nnz);
-            printf("No of nonzeros in L+U = %d\n", Lstore->nnz + Ustore->nnz - rX.size());
+            printf("No of nonzeros in L+U = %zu\n", Lstore->nnz + Ustore->nnz - rX.size());
             printf("L\\U MB %.3f\ttotal MB needed %.3f\texpansions %d\n",
                superlu_memusage.for_lu/1e6, superlu_memusage.total_needed/1e6,
                superlu_memusage.expansions);
 
             fflush(stdout);
         }
-        else if ( info > 0 && lwork == -1 )
-            printf("** Estimated memory: %d bytes\n", info - rX.size());
+        else if (info < 0 )
+        {
+            printf("pdgssvx(): Illegal argument (info = %d)\n", info);
+        }
+        else if ( info <= rA.size1() )
+        {
+            printf("** Singular matrix at column %d\n", info);
+        }
+        else
+        {
+            printf("** Out of memory, allocated = %lu bytes\n", info - rA.size1());
+        }
 
         SUPERLU_FREE (perm_r);
         SUPERLU_FREE (perm_c);
@@ -280,15 +251,6 @@ public:
             Destroy_SuperNode_SCP(&L);
             Destroy_CompCol_NCP(&U);
         }
-
-//         delete [] b_vector;
-
-        //CHECK WITH VALGRIND IF THIS IS NEEDED ...or if it is done by the lines above
-        //deallocate tempory storage used for the matrix
-//                 if(b_vector!=NULL) delete [] index1_vector;
-// //           if(b_vector!=NULL) delete [] index2_vector;
-//           if(b_vector!=NULL) delete [] values_vector;
-//         if(b_vector!=NULL) delete [] b_vector;
 
         return true;
     }
