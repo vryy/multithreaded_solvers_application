@@ -24,9 +24,9 @@
 #include <Spectra/SymEigsSolver.h>
 #include <Spectra/SymEigsShiftSolver.h>
 
-#include "external_includes/boost/numeric/bindings/traits/sparse_traits.hpp"
-#include "external_includes/boost/numeric/bindings/traits/ublas_matrix.hpp"
-#include "external_includes/boost/numeric/bindings/traits/ublas_sparse.hpp"
+#include <boost/numeric/bindings/traits/sparse_traits.hpp>
+#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
+#include <boost/numeric/bindings/traits/ublas_sparse.hpp>
 
 // Project includes
 #include "includes/define.h"
