@@ -13,6 +13,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <mutex>
+#endif
+
 
 /* Macros */
 #ifndef USER_ABORT
