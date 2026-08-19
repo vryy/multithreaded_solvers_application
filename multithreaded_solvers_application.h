@@ -51,17 +51,12 @@ KRATOS_DEFINE_APPLICATION_VARIABLE(MULTITHREADED_SOLVERS_APPLICATION, boost::num
 ///@name Kratos Classes
 ///@{
 
-/// Short class definition.
-/** Detail class definition.
-*/
 class KRATOS_API(MULTITHREADED_SOLVERS_APPLICATION) KratosMultithreadedSolversApplication : public KratosApplication
 {
 public:
     ///@name Type Definitions
     ///@{
 
-
-    /// Pointer definition of KratosMultiphaseApplication
     KRATOS_CLASS_POINTER_DEFINITION(KratosMultithreadedSolversApplication);
 
     ///@}
@@ -69,7 +64,7 @@ public:
     ///@{
 
     /// Default constructor.
-    KratosMultithreadedSolversApplication() {}
+    KratosMultithreadedSolversApplication();
 
     /// Destructor.
     ~KratosMultithreadedSolversApplication() override {}

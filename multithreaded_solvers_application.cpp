@@ -27,6 +27,10 @@ namespace Kratos
 KRATOS_CREATE_VARIABLE(int, SYSTEM_SIZE )
 KRATOS_CREATE_VARIABLE(boost::numeric::ublas::vector<int>, SYSTEM_PERMUTATION_VECTOR )
 
+KratosMultithreadedSolversApplication::KratosMultithreadedSolversApplication()
+    : KratosApplication("MultithreadedSolversApplication")
+{}
+
 void KratosMultithreadedSolversApplication::Register()
 {
     std::cout << "Initializing KratosMultithreadedSolversApplication..." << std::endl;
