@@ -80,7 +80,7 @@ target_compile_definitions( superlu_mt PRIVATE _LONGINT )
 target_compile_definitions( superlu_mt PRIVATE __OPENMP ) #be careful to choose the correct MACH for SuperLU_MT
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    target_compile_definitions( superlu_mt NO_TIMER )
+    target_compile_definitions( superlu_mt PRIVATE NO_TIMER )
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 ###############################################################
