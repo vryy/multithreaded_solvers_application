@@ -790,7 +790,7 @@ private:
         double* c = new double[n];
         double* w = new double[5 * n];
         int lp = 0, ifail;
-        mc29ad(&n, &n, &ne, a, &mcrow[0], &mccol[0], r, c, w, &lp, &ifail);
+        mc29ad_wrapper(&n, &n, &ne, a, &mcrow[0], &mccol[0], r, c, w, &lp, &ifail);
 
         rDL.resize(n);
         rDR.resize(n);
@@ -945,7 +945,7 @@ private:
         icntl[2] = 0;
         icntl[3] = 0;
         icntl[4] = 0;
-        mc75ad(&n, &ne, &la, a_, ir, ic, cond, &liw, iw, &lw, w, icntl, info);
+        mc75ad_wrapper(&n, &ne, &la, a_, ir, ic, cond, &liw, iw, &lw, w, icntl, info);
 
         double my_cond = cond[1];
 
