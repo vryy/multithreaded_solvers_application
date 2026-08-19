@@ -181,9 +181,12 @@ endif()
 ###############################################################
 
 ## adding sources
+set( R8LIB_SOURCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
+)
+
 set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/condition.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/mesh_rcm.cpp
 )
@@ -219,10 +222,16 @@ if(${Fortran_FOUND} MATCHES ON)
 endif()
 
 ###############################################################
+add_library(r8lib STATIC ${R8LIB_SOURCE})
+if(MSVC)
+    target_compile_options(r8lib PUBLIC /wd4804)
+endif()
+
 ## define library Kratos which defines the basic python interface
 add_library(KratosMultithreadedSolversApplication SHARED ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES})
 
 add_library(KratosMultithreadedSolversApplicationDependencies INTERFACE)
+target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE r8lib)
 if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT} MATCHES ON)
     target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE superlu_mt)
 endif()
