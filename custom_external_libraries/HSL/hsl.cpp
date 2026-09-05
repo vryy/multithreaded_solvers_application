@@ -1,10 +1,11 @@
 #include "hsl.h"
 
-#ifdef _WIN32
-#define F77NAME(x) x
-#else
 #define F77NAME(x) x ## _
-#endif
+// By default, the GNU Fortran compiler appends an underscore to the function names.
+// If your Fortran compiler does not do this, you can change the definition of F77NAME accordingly.
+// For example, one can set the following for Intel Fortran compiler:
+//  "CMAKE_Fortran_FLAGS": "/names:lowercase /assume:underscore",
+// to enable traditional Fortran name mangling.
 
 extern "C"
 {
