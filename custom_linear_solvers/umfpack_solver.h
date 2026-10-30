@@ -28,6 +28,7 @@
 #include "includes/define.h"
 #include "includes/ublas_interface.h"
 #include "utilities/openmp_utils.h"
+#include "utilities/logger.h"
 
 namespace Kratos
 {
@@ -52,7 +53,7 @@ public:
     typedef typename BaseType::DataType DataType;
 
     /**
-     * @param niter number of iterative refinements allowed
+     * Default constructor
      */
     UmfPackSolver() {}
 
@@ -84,9 +85,9 @@ public:
         /* manual index vector generation */
         std::vector<int> index1_vector(rA.index1_data().size());
         std::vector<int> index2_vector(rA.index2_data().size());
-        std::cout << "Size of the problem: " << n << std::endl;
-        std::cout << "Size of index1_vector: " << rA.index1_data().size() << std::endl;
-        std::cout << "Size of index2_vector: " << rA.index2_data().size() << std::endl;
+        KRATOS_INFO("UmfPackSolver") << "Size of the problem: " << n << std::endl;
+        KRATOS_INFO("UmfPackSolver") << "Size of index1_vector: " << rA.index1_data().size() << std::endl;
+        KRATOS_INFO("UmfPackSolver") << "Size of index2_vector: " << rA.index2_data().size() << std::endl;
         // index1_vector is rowptr
         for (unsigned int i = 0; i < rA.index1_data().size(); ++i)
             index1_vector[i] = (int) (rA.index1_data()[i]);
@@ -116,7 +117,7 @@ public:
         if (Symbolic) umfpack_di_free_symbolic(&Symbolic);
         if (Numeric) umfpack_di_free_numeric(&Numeric);
 
-        std::cout << "#### SOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
+        KRATOS_INFO("UmfPackSolver") << "#### SOLVER TIME: " << OpenMPUtils::GetCurrentTime() - start_solver << " ####" << std::endl;
         return true;
     }
 

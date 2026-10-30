@@ -1283,7 +1283,7 @@ double *legendre_zeros ( int order )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1351,7 +1351,7 @@ double *legendre_zeros ( int order )
 
     t = ( double ) ( 4 * i - 1 ) * r8_pi / ( double ) ( 4 * order + 2 );
 
-    x0 = cos ( t ) * ( 1.0 - ( 1.0 - 1.0 / ( double ) ( order ) ) 
+    x0 = cos ( t ) * ( 1.0 - ( 1.0 - 1.0 / ( double ) ( order ) )
       / ( double ) ( 8 * order * order ) );
 
     pkm1 = 1.0;
@@ -1383,7 +1383,7 @@ double *legendre_zeros ( int order )
 //
 //  Refine H using one step of Newton's method:
 //
-    p = pk + h * ( dpn + 0.5 * h * ( d2pn + h / 3.0 
+    p = pk + h * ( dpn + 0.5 * h * ( d2pn + h / 3.0
       * ( d3pn + 0.25 * h * d4pn ) ) );
 
     dp = dpn + h * ( d2pn + 0.5 * h * ( d3pn + h * d4pn / 3.0 ) );
@@ -1394,7 +1394,7 @@ double *legendre_zeros ( int order )
 
     xtab[mp1mi-1] = xtemp;
 
-    fx = d1 - h * e1 * ( pk + 0.5 * h * ( dpn + h / 3.0 
+    fx = d1 - h * e1 * ( pk + 0.5 * h * ( dpn + h / 3.0
       * ( d2pn + 0.25 * h * ( d3pn + 0.2 * h * d4pn ) ) ) );
   }
 
@@ -1717,7 +1717,7 @@ double r8_acosh ( double x )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1837,7 +1837,7 @@ double r8_agm ( double a, double b )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -1943,7 +1943,7 @@ double r8_aint ( double x )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2432,7 +2432,7 @@ double r8_cosd ( double degrees )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2471,7 +2471,7 @@ double r8_cotd ( double degrees )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2560,7 +2560,7 @@ double r8_cscd ( double degrees )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2846,7 +2846,7 @@ double r8_divide_i4 ( int  i, int j )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -2980,7 +2980,7 @@ double r8_exp ( double x )
 //
 //    For arguments of very large magnitude, the evaluation of the
 //    exponential function can cause computational problems.  Some languages
-//    and compilers may return an infinite value or a "Not-a-Number".  
+//    and compilers may return an infinite value or a "Not-a-Number".
 //    An alternative, when dealing with a wide range of inputs, is simply
 //    to truncate the calculation for arguments whose magnitude is too large.
 //    Whether this is the right or convenient approach depends on the problem
@@ -3172,7 +3172,7 @@ double r8_fall ( double x, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -3386,7 +3386,7 @@ double r8_gamma ( double x )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -3421,12 +3421,12 @@ double r8_gamma ( double x )
 //
 {
   double c[7] = {
-   -1.910444077728E-03, 
-    8.4171387781295E-04, 
-   -5.952379913043012E-04, 
-    7.93650793500350248E-04, 
-   -2.777777777777681622553E-03, 
-    8.333333333333333331554247E-02, 
+   -1.910444077728E-03,
+    8.4171387781295E-04,
+   -5.952379913043012E-04,
+    7.93650793500350248E-04,
+   -2.777777777777681622553E-03,
+    8.333333333333333331554247E-02,
     5.7083835261E-03 };
   double eps = 2.22E-16;
   double fact;
@@ -3434,21 +3434,21 @@ double r8_gamma ( double x )
   int n;
   double p[8] = {
   -1.71618513886549492533811E+00,
-   2.47656508055759199108314E+01, 
+   2.47656508055759199108314E+01,
   -3.79804256470945635097577E+02,
-   6.29331155312818442661052E+02, 
+   6.29331155312818442661052E+02,
    8.66966202790413211295064E+02,
-  -3.14512729688483675254357E+04, 
+  -3.14512729688483675254357E+04,
   -3.61444134186911729807069E+04,
    6.64561438202405440627855E+04 };
   bool parity;
   double q[8] = {
   -3.08402300119738975254353E+01,
-   3.15350626979604161529144E+02, 
+   3.15350626979604161529144E+02,
   -1.01515636749021914166146E+03,
-  -3.10777167157231109440444E+03, 
+  -3.10777167157231109440444E+03,
    2.25381184209801510330112E+04,
-   4.75584627752788110767815E+03, 
+   4.75584627752788110767815E+03,
   -1.34659959864969306392456E+05,
   -1.15132259675553483497211E+05 };
   const double r8_pi = 3.1415926535897932384626434;
@@ -3667,12 +3667,12 @@ double r8_gamma_log ( double x )
 //
 {
   double c[7] = {
-    -1.910444077728E-03, 
-     8.4171387781295E-04, 
+    -1.910444077728E-03,
+     8.4171387781295E-04,
     -5.952379913043012E-04,
-     7.93650793500350248E-04, 
-    -2.777777777777681622553E-03, 
-     8.333333333333333331554247E-02, 
+     7.93650793500350248E-04,
+    -2.777777777777681622553E-03,
+     8.333333333333333331554247E-02,
      5.7083835261E-03 };
   double corr;
   const double d1 = -5.772156649015328605195174E-01;
@@ -3681,58 +3681,58 @@ double r8_gamma_log ( double x )
   const double frtbig = 2.25E+76;
   int i;
   double p1[8] = {
-    4.945235359296727046734888, 
-    2.018112620856775083915565E+02, 
-    2.290838373831346393026739E+03, 
-    1.131967205903380828685045E+04, 
-    2.855724635671635335736389E+04, 
-    3.848496228443793359990269E+04, 
-    2.637748787624195437963534E+04, 
+    4.945235359296727046734888,
+    2.018112620856775083915565E+02,
+    2.290838373831346393026739E+03,
+    1.131967205903380828685045E+04,
+    2.855724635671635335736389E+04,
+    3.848496228443793359990269E+04,
+    2.637748787624195437963534E+04,
     7.225813979700288197698961E+03 };
-  double p2[8] = { 
-    4.974607845568932035012064, 
-    5.424138599891070494101986E+02, 
-    1.550693864978364947665077E+04, 
-    1.847932904445632425417223E+05, 
-    1.088204769468828767498470E+06, 
-    3.338152967987029735917223E+06, 
-    5.106661678927352456275255E+06, 
+  double p2[8] = {
+    4.974607845568932035012064,
+    5.424138599891070494101986E+02,
+    1.550693864978364947665077E+04,
+    1.847932904445632425417223E+05,
+    1.088204769468828767498470E+06,
+    3.338152967987029735917223E+06,
+    5.106661678927352456275255E+06,
     3.074109054850539556250927E+06 };
   double p4[8] = {
-    1.474502166059939948905062E+04, 
-    2.426813369486704502836312E+06, 
-    1.214755574045093227939592E+08, 
-    2.663432449630976949898078E+09, 
-    2.940378956634553899906876E+10, 
-    1.702665737765398868392998E+11, 
-    4.926125793377430887588120E+11, 
+    1.474502166059939948905062E+04,
+    2.426813369486704502836312E+06,
+    1.214755574045093227939592E+08,
+    2.663432449630976949898078E+09,
+    2.940378956634553899906876E+10,
+    1.702665737765398868392998E+11,
+    4.926125793377430887588120E+11,
     5.606251856223951465078242E+11 };
-  double q1[8] = { 
-    6.748212550303777196073036E+01, 
-    1.113332393857199323513008E+03, 
-    7.738757056935398733233834E+03, 
-    2.763987074403340708898585E+04, 
-    5.499310206226157329794414E+04, 
-    6.161122180066002127833352E+04, 
-    3.635127591501940507276287E+04, 
+  double q1[8] = {
+    6.748212550303777196073036E+01,
+    1.113332393857199323513008E+03,
+    7.738757056935398733233834E+03,
+    2.763987074403340708898585E+04,
+    5.499310206226157329794414E+04,
+    6.161122180066002127833352E+04,
+    3.635127591501940507276287E+04,
     8.785536302431013170870835E+03 };
-  double q2[8] = { 
-    1.830328399370592604055942E+02, 
-    7.765049321445005871323047E+03, 
-    1.331903827966074194402448E+05, 
-    1.136705821321969608938755E+06, 
-    5.267964117437946917577538E+06, 
-    1.346701454311101692290052E+07, 
-    1.782736530353274213975932E+07, 
+  double q2[8] = {
+    1.830328399370592604055942E+02,
+    7.765049321445005871323047E+03,
+    1.331903827966074194402448E+05,
+    1.136705821321969608938755E+06,
+    5.267964117437946917577538E+06,
+    1.346701454311101692290052E+07,
+    1.782736530353274213975932E+07,
     9.533095591844353613395747E+06 };
-  double q4[8] = { 
-    2.690530175870899333379843E+03, 
-    6.393885654300092398984238E+05, 
-    4.135599930241388052042842E+07, 
-    1.120872109616147941376570E+09, 
-    1.488613728678813811542398E+10, 
-    1.016803586272438228077304E+11, 
-    3.417476345507377132798597E+11, 
+  double q4[8] = {
+    2.690530175870899333379843E+03,
+    6.393885654300092398984238E+05,
+    4.135599930241388052042842E+07,
+    1.120872109616147941376570E+09,
+    1.488613728678813811542398E+10,
+    1.016803586272438228077304E+11,
+    3.417476345507377132798597E+11,
     4.463158187419713286462081E+11 };
   double res;
   const double sqrtpi = 0.9189385332046727417803297;
@@ -4033,7 +4033,7 @@ bool r8_insignificant ( double r, double s )
   {
     value = false;
   }
-  
+
   return value;
 }
 //****************************************************************************80
@@ -5228,7 +5228,7 @@ double r8_rise ( double x, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -5864,7 +5864,7 @@ double r8_secd ( double degrees )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -5903,7 +5903,7 @@ double r8_sech ( double x )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -6137,8 +6137,8 @@ bool r8_sign_match_strict ( bool r1, bool r2 )
 {
   bool value;
 
-  value = ( r1 < 0.0 && r2 < 0.0 ) || 
-          ( r1 == 0.0 && r2 == 0.0 ) || 
+  value = ( r1 < 0.0 && r2 < 0.0 ) ||
+          ( r1 == 0.0 && r2 == 0.0 ) ||
           ( 0.0 < r1 && 0.0 < r2 );
 
   return value;
@@ -6239,7 +6239,7 @@ double r8_sign2 ( double x, double y )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -6262,7 +6262,7 @@ double r8_sign2 ( double x, double y )
   if ( 0.0 <= y )
   {
     value = fabs ( x );
-  } 
+  }
   else
   {
     value = - fabs ( x );
@@ -6281,7 +6281,7 @@ double r8_sind ( double degrees )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -6320,7 +6320,7 @@ double r8_sqrt_i4 ( int i )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -6472,7 +6472,7 @@ double r8_tand ( double degrees )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -6786,7 +6786,7 @@ double r8_uniform_01 ( int &seed )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -6830,7 +6830,7 @@ double r8_uniform_01 ( int &seed )
 //    Input/output, int &SEED, the "seed" value.  Normally, this
 //    value should not be 0.  On output, SEED has been updated.
 //
-//    Output, double R8_UNIFORM_01, a new pseudorandom variate, 
+//    Output, double R8_UNIFORM_01, a new pseudorandom variate,
 //    strictly between 0 and 1.
 //
 {
@@ -6875,7 +6875,7 @@ double r8_uniform_ab ( double a, double b, int &seed )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -8254,7 +8254,7 @@ void r82vec_print_part ( int n, double a[], int max_print, string title )
     i = max_print - 1;
     cout << "  " << setw(8) << i
          << ": " << setw(14) << a[0+i*2]
-         << "  " << setw(14) << a[1+i*2] 
+         << "  " << setw(14) << a[1+i*2]
          << "  " << "...more entries...\n";
   }
 
@@ -8885,7 +8885,7 @@ void r83vec_print_part ( int n, double a[], int max_print, string title )
     {
       cout << "  " << setw(8) << i
            << "  " << setw(14) << a[0+i*3]
-           << "  " << setw(14) << a[1+i*3] 
+           << "  " << setw(14) << a[1+i*3]
            << "  " << setw(14) << a[2+i*3] << "\n";
     }
   }
@@ -8895,14 +8895,14 @@ void r83vec_print_part ( int n, double a[], int max_print, string title )
     {
       cout << "  " << setw(8) << i
            << ": " << setw(14) << a[0+i*3]
-           << "  " << setw(14) << a[1+i*3] 
+           << "  " << setw(14) << a[1+i*3]
            << "  " << setw(14) << a[2+i*3]  << "\n";
     }
     cout << "  ........  ..............  ..............  ..............\n";
     i = n - 1;
     cout << "  " << setw(8) << i
          << ": " << setw(14) << a[0+i*3]
-         << "  " << setw(14) << a[1+i*3] 
+         << "  " << setw(14) << a[1+i*3]
          << "  " << setw(14) << a[2+i*3]  << "\n";
   }
   else
@@ -8911,14 +8911,14 @@ void r83vec_print_part ( int n, double a[], int max_print, string title )
     {
       cout << "  " << setw(8) << i
            << ": " << setw(14) << a[0+i*3]
-           << "  " << setw(14) << a[1+i*3] 
+           << "  " << setw(14) << a[1+i*3]
            << "  " << setw(14) << a[2+i*3]  << "\n";
     }
     i = max_print - 1;
     cout << "  " << setw(8) << i
          << ": " << setw(14) << a[0+i*3]
-         << "  " << setw(14) << a[1+i*3] 
-         << "  " << setw(14) << a[2+i*3] 
+         << "  " << setw(14) << a[1+i*3]
+         << "  " << setw(14) << a[2+i*3]
          << "  " << "...more entries...\n";
   }
 
@@ -9056,14 +9056,14 @@ void r8block_delete ( int l, int m, int n, double ***a )
 //
 //  Discussion:
 //
-//    This function releases the memory associated with an array that was 
+//    This function releases the memory associated with an array that was
 //    created by a command like
 //      double ***a;
 //      a = r8block_new ( l, m, n );
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -9312,7 +9312,7 @@ double ***r8block_new ( int l, int m, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -9515,7 +9515,7 @@ void r8cmat_delete ( int m, int n, double **a )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -9562,7 +9562,7 @@ double **r8cmat_new ( int m, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -9802,7 +9802,7 @@ double *r8cmat_to_r8mat_new ( int m, int n, double **a )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -9856,7 +9856,7 @@ double **r8cmat_zero_new ( int m, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -11228,7 +11228,7 @@ void r8col_separation ( int m, int n, double a[], double &d_min, double &d_max )
 //
 //  Parameters:
 //
-//    Input, int M, N, the number of rows and columns 
+//    Input, int M, N, the number of rows and columns
 //    in the array.  If N < 2, it does not make sense to call this routine.
 //
 //    Input, double A[M*N], the array whose variances are desired.
@@ -13115,7 +13115,7 @@ double *r8col_uniform_abvec_new ( int m, int n, double a[], double b[], int &see
 //    Input/output, int &SEED, the "seed" value.  Normally, this
 //    value should not be 0.  On output, SEED has been updated.
 //
-//    Output, double R8COL_UNIFORM_ABVEC_NEW[M*N], a matrix of 
+//    Output, double R8COL_UNIFORM_ABVEC_NEW[M*N], a matrix of
 //    pseudorandom values.
 //
 {
@@ -13139,7 +13139,7 @@ double *r8col_uniform_abvec_new ( int m, int n, double a[], double b[], int &see
       {
         seed = seed + i4_huge;
       }
-      r[i+j*m] = a[i] 
+      r[i+j*m] = a[i]
         + ( b[i] - a[i] ) * ( double ) ( seed ) * 4.656612875E-10;
     }
   }
@@ -13496,7 +13496,7 @@ int r8int_to_i4int ( double rmin, double rmax, double r, int imin, int imax )
 }
 //****************************************************************************80
 
-void r8mat_add ( int m, int n, double alpha, double a[], double beta, 
+void r8mat_add ( int m, int n, double alpha, double a[], double beta,
   double b[], double c[] )
 
 //****************************************************************************80
@@ -13550,7 +13550,7 @@ void r8mat_add ( int m, int n, double alpha, double a[], double beta,
 }
 //****************************************************************************80
 
-double *r8mat_add_new ( int m, int n, double alpha, double a[], double beta, 
+double *r8mat_add_new ( int m, int n, double alpha, double a[], double beta,
   double b[] )
 
 //****************************************************************************80
@@ -14444,7 +14444,7 @@ double *r8mat_covariance ( int m, int n, double x[] )
     {
       for ( k = 0; k < n; k++ )
       {
-        c[i+j*m] = c[i+j*m] 
+        c[i+j*m] = c[i+j*m]
           + ( x[i+k*m] - x_mean[i] ) * ( x[j+k*m] - x_mean[j] );
       }
     }
@@ -15147,7 +15147,7 @@ double r8mat_diff_frobenius ( int m, int n, double a[], double b[] )
 //
 //    R8MAT_DIFF_FROBENIUS returns the Frobenius norm of the difference of R8MAT's.
 //
-//  Discussion: 							    
+//  Discussion:
 //
 //    An R8MAT is a doubly dimensioned array of double precision values, which
 //    may be stored as a vector in column-major order.
@@ -15164,7 +15164,7 @@ double r8mat_diff_frobenius ( int m, int n, double a[], double b[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -15583,7 +15583,7 @@ void r8mat_fs ( int n, double a[], double x[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -15722,7 +15722,7 @@ double *r8mat_fs_new ( int n, double a[], double b[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -15868,7 +15868,7 @@ void r8mat_fss ( int n, double a[], int nb, double x[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -16008,7 +16008,7 @@ double *r8mat_fss_new ( int n, double a[], int nb, double b[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -16401,7 +16401,7 @@ void r8mat_house_axh ( int n, double a[], double v[] )
 //
 //    R8MAT_HOUSE_AXH computes A*H where H is a compact Householder matrix.
 //
-//  Discussion: 							    
+//  Discussion:
 //
 //    An R8MAT is a doubly dimensioned array of double precision values, which
 //    may be stored as a vector in column-major order.
@@ -16414,7 +16414,7 @@ void r8mat_house_axh ( int n, double a[], double v[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -17527,7 +17527,7 @@ double r8mat_is_symmetric ( int m, int n, double a[] )
 //
 //    Input, double A[M*N], the matrix.
 //
-//    Output, double RMAT_IS_SYMMETRIC, measures the 
+//    Output, double RMAT_IS_SYMMETRIC, measures the
 //    Frobenius norm of ( A - A' ), which would be zero if the matrix
 //    were exactly symmetric.
 //
@@ -17655,7 +17655,7 @@ double *r8mat_jac ( int m, int n, double eps,
 }
 //****************************************************************************80
 
-double *r8mat_kronecker ( int m1, int n1, double a[], int m2, int n2, 
+double *r8mat_kronecker ( int m1, int n1, double a[], int m2, int n2,
   double b[] )
 
 //****************************************************************************80
@@ -18949,7 +18949,7 @@ double *r8mat_minvm_new ( int n1, int n2, double a[], double b[] )
 
   alu = r8mat_copy_new ( n1, n1, a );
   c = r8mat_fss_new ( n1, alu, n2, b );
- 
+
   delete [] alu;
 
   return c;
@@ -19825,7 +19825,7 @@ double r8mat_norm_fro_affine ( int m, int n, double a1[], double a2[] )
 //
 //    Input, int N, the number of columns.
 //
-//    Input, double A1[M*N], A2[M,N], the matrice for whose difference the 
+//    Input, double A1[M*N], A2[M,N], the matrice for whose difference the
 //    Frobenius norm is desired.
 //
 //    Output, double R8MAT_NORM_FRO_AFFINE, the Frobenius norm of A1 - A2.
@@ -22266,7 +22266,7 @@ double **r8mat_to_r8cmat_new (  int m, int n, double a[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -22455,7 +22455,7 @@ double **r8mat_to_r8rmat ( int m, int n, double a[] )
 //    that element (I,J) of the M by N array is stored in location
 //    I+J*M.
 //
-//    An R8RMAT is a row-major array that was created by a 
+//    An R8RMAT is a row-major array that was created by a
 //    command like:
 //
 //      double **a;
@@ -22463,7 +22463,7 @@ double **r8mat_to_r8rmat ( int m, int n, double a[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -23268,7 +23268,7 @@ void r8mat_uniform_ab ( int m, int n, double a, double b, int &seed, double r[] 
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -23314,7 +23314,7 @@ void r8mat_uniform_ab ( int m, int n, double a, double b, int &seed, double r[] 
 //    Input, double A, B, the limits of the pseudorandom values.
 //
 //    Input/output, int &SEED, the "seed" value.  Normally, this
-//    value should not be 0.  On output, SEED has 
+//    value should not be 0.  On output, SEED has
 //    been updated.
 //
 //    Output, double R[M*N], a matrix of pseudorandom values.
@@ -23376,7 +23376,7 @@ double *r8mat_uniform_ab_new ( int m, int n, double a, double b, int &seed )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -23422,7 +23422,7 @@ double *r8mat_uniform_ab_new ( int m, int n, double a, double b, int &seed )
 //    Input, double A, B, the limits of the pseudorandom values.
 //
 //    Input/output, int &SEED, the "seed" value.  Normally, this
-//    value should not be 0.  On output, SEED has 
+//    value should not be 0.  On output, SEED has
 //    been updated.
 //
 //    Output, double R8MAT_UNIFORM_AB_NEW[M*N], a matrix of pseudorandom values.
@@ -23465,7 +23465,7 @@ double *r8mat_uniform_ab_new ( int m, int n, double a, double b, int &seed )
 }
 //****************************************************************************80
 
-void r8mat_uniform_abvec ( int m, int n, double a[], double b[], int &seed, 
+void r8mat_uniform_abvec ( int m, int n, double a[], double b[], int &seed,
   double r[] )
 
 //****************************************************************************80
@@ -23488,7 +23488,7 @@ void r8mat_uniform_abvec ( int m, int n, double a[], double b[], int &seed,
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -23534,7 +23534,7 @@ void r8mat_uniform_abvec ( int m, int n, double a[], double b[], int &seed,
 //    Input, double A[M], B[M], the limits of the pseudorandom values.
 //
 //    Input/output, int &SEED, the "seed" value.  Normally, this
-//    value should not be 0.  On output, SEED has 
+//    value should not be 0.  On output, SEED has
 //    been updated.
 //
 //    Output, double R[M*N], a matrix of pseudorandom values.
@@ -23574,7 +23574,7 @@ void r8mat_uniform_abvec ( int m, int n, double a[], double b[], int &seed,
 }
 //****************************************************************************80
 
-double *r8mat_uniform_abvec_new ( int m, int n, double a[], double b[], 
+double *r8mat_uniform_abvec_new ( int m, int n, double a[], double b[],
   int &seed )
 
 //****************************************************************************80
@@ -23597,7 +23597,7 @@ double *r8mat_uniform_abvec_new ( int m, int n, double a[], double b[],
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -23643,7 +23643,7 @@ double *r8mat_uniform_abvec_new ( int m, int n, double a[], double b[],
 //    Input, double A[M], B[M], the limits of the pseudorandom values.
 //
 //    Input/output, int &SEED, the "seed" value.  Normally, this
-//    value should not be 0.  On output, SEED has 
+//    value should not be 0.  On output, SEED has
 //    been updated.
 //
 //    Output, double R8MAT_UNIFORM_ABVEC_NEW[M*N], a matrix of
@@ -25342,7 +25342,7 @@ double *r8poly_value ( int m, double c[], int n, double x[] )
 //
 //  Discussion:
 //
-//    The polynomial 
+//    The polynomial
 //
 //      p(x) = c0 + c1 * x + c2 * x^2 + ... + cm * x^m
 //
@@ -25364,7 +25364,7 @@ double *r8poly_value ( int m, double c[], int n, double x[] )
 //
 //    Input, int M, the degree.
 //
-//    Input, double C[M+1], the polynomial coefficients.  
+//    Input, double C[M+1], the polynomial coefficients.
 //    C[I] is the coefficient of X^I.
 //
 //    Input, int N, the number of evaluation points.
@@ -25408,7 +25408,7 @@ double *r8poly_value_2d ( int m, double c[], int n, double x[], double y[] )
 //
 //    We assume the polynomial is of total degree M, and has the form:
 //
-//      p(x,y) = c00 
+//      p(x,y) = c00
 //             + c10 * x                + c01 * y
 //             + c20 * x^2   + c11 * xy + c02 * y^2
 //             + ...
@@ -25430,7 +25430,7 @@ double *r8poly_value_2d ( int m, double c[], int n, double x[], double y[] )
 //
 //    Input, int M, the degree of the polynomial.
 //
-//    Input, double C[T(M+1)], the polynomial coefficients.  
+//    Input, double C[T(M+1)], the polynomial coefficients.
 //    C[0] is the constant term.  T(M+1) is the M+1-th triangular number.
 //    The coefficients are stored consistent with the following ordering
 //    of monomials: 1, X, Y, X^2, XY, Y^2, X^3, X^2Y, XY^2, Y^3, X^4, ...
@@ -25439,7 +25439,7 @@ double *r8poly_value_2d ( int m, double c[], int n, double x[], double y[] )
 //
 //    Input, double X[N], Y[N], the evaluation points.
 //
-//    Output, double R8POLY_VALUE_2D[N], the value of the polynomial at the 
+//    Output, double R8POLY_VALUE_2D[N], the value of the polynomial at the
 //    evaluation points.
 //
 {
@@ -25937,7 +25937,7 @@ void r8pp_delete ( int m, int n, double **a )
 //    An R8PP is a pointer to pointers to R8's, and is a sort of
 //    variably-dimensioned matrix.
 //
-//    This function releases the memory associated with an array that was 
+//    This function releases the memory associated with an array that was
 //    created by a command like:
 //
 //      double **a;
@@ -25945,7 +25945,7 @@ void r8pp_delete ( int m, int n, double **a )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -26000,7 +26000,7 @@ double **r8pp_new ( int m, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -26323,7 +26323,7 @@ void r8r8r8vec_index_insert_unique ( int maxn, int &n, double x[], double y[],
     {
       indx[i+1] = indx[i];
     }
-    
+
     indx[more-1] = n + 1;
     n = n + 1;
   }
@@ -26745,7 +26745,7 @@ double **r8rmat_copy_new ( int m, int n, double **a )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -26792,8 +26792,8 @@ void r8rmat_delete ( int m, int n, double **a )
 //  Discussion:
 //
 //    This function releases the memory associated with an R8RMAT.
-// 
-//    An R8RMAT is a row-major array that was created by a 
+//
+//    An R8RMAT is a row-major array that was created by a
 //    command like:
 //
 //      double **a;
@@ -26801,7 +26801,7 @@ void r8rmat_delete ( int m, int n, double **a )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -26841,7 +26841,7 @@ double *r8rmat_fs_new ( int n, double **a, double b[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -26965,7 +26965,7 @@ double **r8rmat_new ( int m, int n )
 //
 //  Discussion:
 //
-//    An R8RMAT is a row-major array that was created by a 
+//    An R8RMAT is a row-major array that was created by a
 //    command like:
 //
 //      double **a;
@@ -26979,7 +26979,7 @@ double **r8rmat_new ( int m, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -27035,7 +27035,7 @@ void r8rmat_print ( int m, int n, double **a, string title )
 //
 //  Discussion:
 //
-//    An R8RMAT is a row-major array that was created by a 
+//    An R8RMAT is a row-major array that was created by a
 //    command like:
 //
 //      double **a;
@@ -27081,7 +27081,7 @@ void r8rmat_print_some ( int m, int n, double **a, int ilo, int jlo, int ihi,
 //
 //  Discussion:
 //
-//    An R8RMAT is a row-major array that was created by a 
+//    An R8RMAT is a row-major array that was created by a
 //    command like:
 //
 //      double **a;
@@ -27210,7 +27210,7 @@ double *r8rmat_to_r8mat ( int m, int n, double **a )
 //
 //  Discussion:
 //
-//    An R8RMAT is a row-major array that was created by a 
+//    An R8RMAT is a row-major array that was created by a
 //    command like:
 //
 //    double **a;
@@ -27222,7 +27222,7 @@ double *r8rmat_to_r8mat ( int m, int n, double **a )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -27269,7 +27269,7 @@ double **r8rmat_zero ( int m, int n )
 //
 //  Discussion:
 //
-//    An R8RMAT is a row-major array that was created by a 
+//    An R8RMAT is a row-major array that was created by a
 //    command like:
 //
 //      double **a;
@@ -27283,7 +27283,7 @@ double **r8rmat_zero ( int m, int n )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -29094,8 +29094,8 @@ void r8vec_bin ( int n, double x[], int bin_num, double bin_min, double bin_max,
 //
   for ( i = 0; i <= bin_num; i++ )
   {
-    bin_limit[i] = (   ( double ) ( bin_num - i ) * bin_min   
-                     + ( double ) (           i ) * bin_max ) 
+    bin_limit[i] = (   ( double ) ( bin_num - i ) * bin_min
+                     + ( double ) (           i ) * bin_max )
                      / ( double ) ( bin_num     );
   }
 
@@ -29777,7 +29777,7 @@ int r8vec_bracket5 ( int nd, double xd[], double xi )
 //
 //    We assume XD is sorted.
 //
-//    If XI is contained in the interval [XD(1),XD(N)], then the returned 
+//    If XI is contained in the interval [XD(1),XD(N)], then the returned
 //    value B indicates that XI is contained in [ XD(B), XD(B+1) ].
 //
 //    If XI is not contained in the interval [XD(1),XD(N)], then B = -1.
@@ -29987,8 +29987,8 @@ double *r8vec_chebyspace_new ( int n, double a, double b )
         }
       }
 
-      x[i] = ( ( 1.0 - c ) * a  
-             + ( 1.0 + c ) * b ) 
+      x[i] = ( ( 1.0 - c ) * a
+             + ( 1.0 + c ) * b )
              /   2.0;
 
     }
@@ -30059,8 +30059,8 @@ double *r8vec_cheby1space_new ( int n, double a, double b )
         }
       }
 
-      x[i] = ( ( 1.0 - c ) * a  
-             + ( 1.0 + c ) * b ) 
+      x[i] = ( ( 1.0 - c ) * a
+             + ( 1.0 + c ) * b )
              /   2.0;
     }
   }
@@ -30130,8 +30130,8 @@ double *r8vec_cheby2space_new ( int n, double a, double b )
         }
       }
 
-      x[i] = ( ( 1.0 - c ) * a  
-             + ( 1.0 + c ) * b ) 
+      x[i] = ( ( 1.0 - c ) * a
+             + ( 1.0 + c ) * b )
              /   2.0;
     }
   }
@@ -30392,7 +30392,7 @@ double *r8vec_convolution ( int m, double x[], int n, double y[] )
 //
 //    An R8VEC is a vector of R8's.
 //
-//    The I-th entry of the convolution can be formed by summing the products 
+//    The I-th entry of the convolution can be formed by summing the products
 //    that lie along the I-th diagonal of the following table:
 //
 //    Y3 | 3   4   5   6   7
@@ -30410,7 +30410,7 @@ double *r8vec_convolution ( int m, double x[], int n, double y[] )
 //                              X3 * Y3 + X4 * Y2 + X5 * Y1,
 //                                        X4 * Y3 + X5 * Y2,
 //                                                  X5 * Y3 )
-//            
+//
 //  Example:
 //
 //    Input:
@@ -32442,8 +32442,8 @@ double r8vec_even2_select ( int n, double xlo, double xhi, int ival )
 //    This function returns the I-th of N evenly spaced midpoints of N
 //    equal subintervals of [XLO,XHI].
 //
-//    XVAL = ( ( 2 * N - 2 * IVAL + 1 ) * XLO 
-//           + (         2 * IVAL - 1 ) * XHI ) 
+//    XVAL = ( ( 2 * N - 2 * IVAL + 1 ) * XLO
+//           + (         2 * IVAL - 1 ) * XHI )
 //           / ( 2 * N                )
 //
 //  Licensing:
@@ -32655,7 +32655,7 @@ double *r8vec_expand_linear ( int n, double x[], int fat )
 }
 //****************************************************************************80
 
-double *r8vec_expand_linear2 ( int n, double x[], int before, int fat, 
+double *r8vec_expand_linear2 ( int n, double x[], int before, int fat,
   int after )
 
 //****************************************************************************80
@@ -32735,8 +32735,8 @@ double *r8vec_expand_linear2 ( int n, double x[], int before, int fat,
 //
   for ( j = 1 - before + fat; j <= fat; j++ )
   {
-    xfat[k] = ( ( double ) ( fat - j + 1 ) * ( x[0] - ( x[1] - x[0] ) ) 
-              + ( double ) (       j     ) *   x[0]          ) 
+    xfat[k] = ( ( double ) ( fat - j + 1 ) * ( x[0] - ( x[1] - x[0] ) )
+              + ( double ) (       j     ) *   x[0]          )
               / ( double ) ( fat     + 1 );
     k = k + 1;
   }
@@ -32750,7 +32750,7 @@ double *r8vec_expand_linear2 ( int n, double x[], int before, int fat,
     for ( j = 1; j <= fat; j++ )
     {
       xfat[k] = ( ( double ) ( fat - j + 1 ) * x[i]
-                + ( double ) (       j     ) * x[i+1] ) 
+                + ( double ) (       j     ) * x[i+1] )
                 / ( double ) ( fat     + 1 );
       k = k + 1;
     }
@@ -32764,7 +32764,7 @@ double *r8vec_expand_linear2 ( int n, double x[], int before, int fat,
   for ( j = 1; j <= after; j++ )
   {
     xfat[k] = ( ( double ) ( fat - j + 1 ) * x[n-1]
-              + ( double ) (       j     ) * ( x[n-1] + ( x[n-1] - x[n-2] ) ) ) 
+              + ( double ) (       j     ) * ( x[n-1] + ( x[n-1] - x[n-2] ) ) )
               / ( double ) ( fat     + 1 );
     k = k + 1;
   }
@@ -35152,7 +35152,7 @@ bool r8vec_insignificant ( int n, double r[], double s[] )
       break;
     }
   }
-  
+
   return value;
 }
 //****************************************************************************80
@@ -35337,8 +35337,8 @@ double *r8vec_legendre_new ( int n, double a_first, double a_last )
 
   for ( i = 0; i < n; i++ )
   {
-    a[i] = ( ( 1.0 - a[i] ) * a_first  
-           + ( 1.0 + a[i] ) * a_last ) 
+    a[i] = ( ( 1.0 - a[i] ) * a_first
+           + ( 1.0 + a[i] ) * a_last )
            /   2.0;
   }
   return a;
@@ -35393,8 +35393,8 @@ void r8vec_linspace ( int n, double a_first, double a_last, double a[] )
   {
     for ( i = 0; i < n; i++ )
     {
-      a[i] = ( ( double ) ( n - 1 - i ) * a_first 
-             + ( double ) (         i ) * a_last ) 
+      a[i] = ( ( double ) ( n - 1 - i ) * a_first
+             + ( double ) (         i ) * a_last )
              / ( double ) ( n - 1     );
     }
   }
@@ -35453,8 +35453,8 @@ double *r8vec_linspace_new ( int n, double a_first, double a_last )
   {
     for ( i = 0; i < n; i++ )
     {
-      a[i] = ( ( double ) ( n - 1 - i ) * a_first 
-             + ( double ) (         i ) * a_last ) 
+      a[i] = ( ( double ) ( n - 1 - i ) * a_first
+             + ( double ) (         i ) * a_last )
              / ( double ) ( n - 1     );
     }
   }
@@ -35513,8 +35513,8 @@ double *r8vec_linspace2_new ( int n, double a_first, double a_last )
   {
     for ( i = 0; i < n; i++ )
     {
-      a[i] = ( ( double ) ( n - i     ) * a_first 
-             + ( double ) (     i + 1 ) * a_last ) 
+      a[i] = ( ( double ) ( n - i     ) * a_first
+             + ( double ) (     i + 1 ) * a_last )
              / ( double ) ( n     + 1 );
     }
   }
@@ -35718,7 +35718,7 @@ int r8vec_max_abs_index ( int n, double a[] )
 //
 //    Input, double A[N], the array.
 //
-//    Output, int R8VEC_MAX_ABS_INDEX, the index of the entry of 
+//    Output, int R8VEC_MAX_ABS_INDEX, the index of the entry of
 //    largest absolute value.
 //
 {
@@ -35881,7 +35881,7 @@ double r8vec_mean_geometric ( int n, double x[] )
 //
 //    Input, double X[N], the vector whose mean is desired.
 //
-//    Output, double R8VEC_MEAN_GEOMETRIC, the geometric mean of the 
+//    Output, double R8VEC_MEAN_GEOMETRIC, the geometric mean of the
 //    vector entries.
 //
 {
@@ -35949,7 +35949,7 @@ double r8vec_median ( int n, double a[] )
 }
 //****************************************************************************80
 
-void r8vec_mesh_2d ( int nx, int ny, double xvec[], double yvec[], 
+void r8vec_mesh_2d ( int nx, int ny, double xvec[], double yvec[],
   double xmat[], double ymat[] )
 
 //****************************************************************************80
@@ -35973,8 +35973,8 @@ void r8vec_mesh_2d ( int nx, int ny, double xvec[], double yvec[],
 //
 //    YMAT = (
 //      4, 4, 4
-//      5, 5, 5 ) 
-// 
+//      5, 5, 5 )
+//
 //  Licensing:
 //
 //    This code is distributed under the GNU LGPL license.
@@ -36065,8 +36065,8 @@ double *r8vec_midspace_new ( int n, double a, double b )
 
   for ( i = 0; i < n; i++ )
   {
-    x[i] = ( ( double ) ( 2 * n - 2 * i - 1 ) * a 
-           + ( double ) (         2 * i + 1 ) * b ) 
+    x[i] = ( ( double ) ( 2 * n - 2 * i - 1 ) * a
+           + ( double ) (         2 * i + 1 ) * b )
            / ( double ) ( 2 * n );
   }
 
@@ -41501,7 +41501,7 @@ void r8vec_step ( double x0, int n, double x[], double fx[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -42171,7 +42171,7 @@ void r8vec_uniform_ab ( int n, double a, double b, int &seed, double x[] )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -42273,7 +42273,7 @@ double *r8vec_uniform_ab_new ( int n, double a, double b, int &seed )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -42378,7 +42378,7 @@ void r8vec_uniform_abvec ( int n, double a[], double b[], int &seed, double x[] 
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -42421,7 +42421,7 @@ void r8vec_uniform_abvec ( int n, double a[], double b[], int &seed, double x[] 
 //
 //    Input, int N, the number of entries in the vector.
 //
-//    Input, double A[N], B[N], the lower and upper limits of the 
+//    Input, double A[N], B[N], the lower and upper limits of the
 //    pseudorandom values.
 //
 //    Input/output, int &SEED, a seed for the random number generator.
@@ -42481,7 +42481,7 @@ double *r8vec_uniform_abvec_new ( int n, double a[], double b[], int &seed )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -42524,12 +42524,12 @@ double *r8vec_uniform_abvec_new ( int n, double a[], double b[], int &seed )
 //
 //    Input, int N, the number of entries in the vector.
 //
-//    Input, double A[N], B[N], the lower and upper limits of the 
+//    Input, double A[N], B[N], the lower and upper limits of the
 //    pseudorandom values.
 //
 //    Input/output, int &SEED, a seed for the random number generator.
 //
-//    Output, double R8VEC_UNIFORM_ABVEC_NEW[N], the vector of 
+//    Output, double R8VEC_UNIFORM_ABVEC_NEW[N], the vector of
 //    pseudorandom values.
 //
 {
@@ -42592,7 +42592,7 @@ double *r8vec_uniform_unit_new ( int m, int &seed )
 //
 //    Input/output, int &SEED, a seed for the random number generator.
 //
-//    Output, double R8VEC_UNIFORM_UNIT_NEW[M], a random direction vector, 
+//    Output, double R8VEC_UNIFORM_UNIT_NEW[M], a random direction vector,
 //    with unit norm.
 //
 {

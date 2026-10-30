@@ -38,8 +38,10 @@ see multithreaded_solvers_application/LICENSE.txt
 #include "custom_eigen_solvers/arpack_solver.h"
 #endif
 
-#include "external_includes/condition.hpp"
+#include "custom_external_libraries/condition/condition.hpp"
+#ifdef MULTITHREADED_SOLVERS_APPLICATION_USE_PARDISO
 #include "custom_utilities/pardiso_condition.h"
+#endif
 
 // #define CHECK_EIGENVALUES
 // #define EXPORT_MATRIX_BEFORE_SOLVE

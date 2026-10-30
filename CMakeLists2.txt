@@ -11,29 +11,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/custom_c
 
 option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_CUDA "Enable CUDA support for KratosMultithreadedSolversApplication" OFF)
 
-get_property(languages_list GLOBAL PROPERTY ENABLED_LANGUAGES)
-list(FIND languages_list "Fortran" index)
-if(NOT index EQUAL -1)
-    set(Fortran_FOUND ON)
-else()
-    set(Fortran_FOUND OFF)
-endif()
-
-if(${Fortran_FOUND} MATCHES ON)
-    enable_language(Fortran)
+if(CMAKE_Fortran_COMPILER)
     option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT "Enable SuperLU_MT for KratosMultithreadedSolversApplication" ON)
     option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK "Enable Arpack for KratosMultithreadedSolversApplication" ON)
     option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST "Enable FEAST for KratosMultithreadedSolversApplication" ON)
     option(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_HSL "Enable HSL for KratosMultithreadedSolversApplication" ON)
     set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APP_USE_FORTRAN")
-
-    if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-        if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
-            # This allows the 'Rank mismatch' error to become a warning
-            # needed to compile ARPACK
-            set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
-        endif()
-    endif()
 endif()
 
 if(USE_INTEL_GREATER_THAN_13)
@@ -116,13 +99,30 @@ if(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_HSL)
 endif()
 
 if(UMFPACK_DIR)
-    message("UMFPACK_DIR: " "${UMFPACK_DIR}")
-    find_package(UMFPACK REQUIRED)
-    message("UMFPACK_INCLUDE_DIRS: " "${UMFPACK_INCLUDE_DIRS}")
-    message("UMFPACK_LIBRARIES: " "${UMFPACK_LIBRARIES}")
-    set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APPLICATION_USE_UMFPACK")
-    set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APPLICATION_USE_AMD")
-    set(MULTITHREADED_SOLVERS_APPLICATION_INCLUDE_DIRS "${MULTITHREADED_SOLVERS_APPLICATION_INCLUDE_DIRS};${UMFPACK_INCLUDE_DIRS}")
+    find_package(UMFPACK)
+    if(UMFPACK_FOUND)
+        message("UMFPACK is found at " "${UMFPACK_DIR}")
+        message("UMFPACK_INCLUDE_DIRS: " "${UMFPACK_INCLUDE_DIRS}")
+        message("UMFPACK_LIBRARIES: " "${UMFPACK_LIBRARIES}")
+        set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APPLICATION_USE_UMFPACK")
+        set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APPLICATION_USE_AMD")
+        set(MULTITHREADED_SOLVERS_APPLICATION_INCLUDE_DIRS "${MULTITHREADED_SOLVERS_APPLICATION_INCLUDE_DIRS};${UMFPACK_INCLUDE_DIRS}")
+    endif()
+endif()
+
+if(SuperLUMT_DIR)
+    if(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT)
+        message(FATAL_ERROR "MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT is ON but SuperLUMT_DIR is defined.
+            Please set MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT to OFF to use the external SuperLUMT library.")
+    endif()
+    find_package(SuperLUMT)
+    if(SuperLUMT_FOUND)
+        message("SuperLUMT is found at " "${SuperLUMT_DIR}")
+        message("SuperLUMT_INCLUDE_DIRS: " "${SuperLUMT_INCLUDE_DIRS}")
+        message("SuperLUMT_LIBRARIES: " "${SuperLUMT_LIBRARIES}")
+        set(MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS "${MULTITHREADED_SOLVERS_APPLICATION_COMPILE_DEFS};MULTITHREADED_SOLVERS_APPLICATION_USE_SUPERLU_MT")
+        set(MULTITHREADED_SOLVERS_APPLICATION_INCLUDE_DIRS "${MULTITHREADED_SOLVERS_APPLICATION_INCLUDE_DIRS};${SuperLUMT_INCLUDE_DIRS}")
+    endif()
 endif()
 
 if(DEFINED MULTITHREADED_SOLVERS_APP_METIS_DIR)
@@ -181,24 +181,20 @@ endif()
 ###############################################################
 
 ## adding sources
-set( R8LIB_SOURCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/r8lib.cpp
-)
 
-set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
+set(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/multithreaded_solvers_application.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_includes/condition.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_utilities/mesh_rcm.cpp
 )
 
-if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST} MATCHES ON)
+if(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST)
     set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
         ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/custom_eigen_solvers/feast_solver.cpp
     )
 endif()
 
-if(${MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK} MATCHES ON)
+if(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_ARPACK)
     set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
         ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/custom_eigen_solvers/arpack_solver.cpp
@@ -216,28 +212,32 @@ set( KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/custom_python/multithreaded_solvers_python_application.cpp
 )
 
-if(Fortran_FOUND)
+if(CMAKE_Fortran_COMPILER)
     add_library(KratosMultithreadedSolversApplicationAuxiliaryTools STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/custom_external_libraries/tools.f)
 endif()
 
+add_subdirectory(custom_external_libraries/condition)
+
 ###############################################################
-add_library(r8lib STATIC ${R8LIB_SOURCE})
-if(MSVC)
-    target_compile_options(r8lib PUBLIC /wd4804)
-endif()
 
 ## define library Kratos which defines the basic python interface
 add_library(KratosMultithreadedSolversApplication SHARED ${KRATOS_MULTITHREADED_SOLVERS_APPLICATION_SOURCES})
 
 add_library(KratosMultithreadedSolversApplicationDependencies INTERFACE)
-target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE r8lib)
+target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE condition)
 if(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_SUPERLU_MT)
     target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE superlu_mt)
 endif()
-target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${UMFPACK_LIBRARIES})
-# target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE rt)
-target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP})
+if(SuperLUMT_FOUND)
+    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${SuperLUMT_LIBRARIES})
+endif()
+if(UMFPACK_FOUND)
+    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${UMFPACK_LIBRARIES})
+endif()
+if(DEFINED MULTITHREADED_SOLVERS_APP_METIS_DIR)
+    target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${METIS_LIB_FOR_MULTITHREADED_SOLVERS_APP})
+endif()
 if(PARDISO_LIBRARY)
     target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${PARDISO_LIBRARY})
 endif()
@@ -258,8 +258,6 @@ if(MULTITHREADED_SOLVERS_APPLICATION_ENABLE_FEAST)
     target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE MKLSOLVER::lib)
 endif()
 
-target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${BLAS_LIBRARIES})
-target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE ${LAPACK_LIBRARIES})
 if (MKLSOLVER_FOUND)
     target_link_libraries(KratosMultithreadedSolversApplicationDependencies INTERFACE MKLSOLVER::lib)
 endif()
@@ -272,7 +270,7 @@ endif()
 
 target_link_libraries(KratosMultithreadedSolversApplication PRIVATE KratosCore)
 target_link_libraries(KratosMultithreadedSolversApplication PUBLIC KratosMultithreadedSolversApplicationDependencies)
-if(Fortran_FOUND)
+if(CMAKE_Fortran_COMPILER)
     target_link_libraries(KratosMultithreadedSolversApplication PRIVATE KratosMultithreadedSolversApplicationAuxiliaryTools)
 endif()
 
@@ -302,8 +300,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 if(${INSTALL_PYTHON_FILES} MATCHES ON)
-  get_filename_component (CURRENT_DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python_scripts DESTINATION applications/${CURRENT_DIR_NAME}  FILES_MATCHING PATTERN "*.py"  PATTERN ".svn" EXCLUDE)
+    get_filename_component (CURRENT_DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python_scripts DESTINATION applications/${CURRENT_DIR_NAME}  FILES_MATCHING PATTERN "*.py"  PATTERN ".svn" EXCLUDE)
 endif(${INSTALL_PYTHON_FILES} MATCHES ON)
 
 # get_property(inc_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)

@@ -15,7 +15,7 @@
 #include "includes/ublas_interface.h"
 #include "utilities/openmp_utils.h"
 
-#include "SRC/pdsp_defs.h"
+#include "slu_mt_ddefs.h"
 
 // Project includes
 #include "includes/define.h"

@@ -6,21 +6,15 @@
 //
 //
 
-
 #if !defined(KRATOS_MULTITHREADED_SOLVERS_APP_ADD_PROCESSES_TO_PYTHON_H_INCLUDED )
 #define  KRATOS_MULTITHREADED_SOLVERS_APP_ADD_PROCESSES_TO_PYTHON_H_INCLUDED
 
-
-
 // System includes
-
 
 // External includes
 
-
 // Project includes
-#include "includes/define.h"
-
+#include "includes/define_python.h"
 
 namespace Kratos
 {

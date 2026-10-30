@@ -9,31 +9,19 @@
 #if !defined(KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ILUT_LR_PRECONDITIONER_H_INCLUDED)
 #define KRATOS_MULTITHREADED_SOLVERS_APPLICATION_ILUT_LR_PRECONDITIONER_H_INCLUDED
 
-
-
-
 // System includes
 #include <cstdio>
 
-
 // External includes
-#include <boost/smart_ptr.hpp>
-#include <boost/numeric/ublas/vector.hpp>
 
 // Project includes
-#include "includes/define.h"
-#include "utilities/openmp_utils.h"
 #include "utilities/progress.h"
 #include "linear_solvers/preconditioner.h"
 #include "linear_solvers/linear_solver.h"
 
 /* FORTRAN routines */
-#ifdef _WIN32
-#define qsplit QSPLIT
-#else
-#define qsplit qsplit_
-#endif
-extern "C" void qsplit(double *a, int *ind, int *n, int *ncut);
+#define qsplit_wrapper qsplit_
+extern "C" void qsplit_wrapper(double *a, int *ind, int *n, int *ncut);
 
 namespace Kratos
 {
@@ -382,7 +370,7 @@ public:
                 wn[j] = fabs( w[j] );
                 iw[j] = j;
             }
-            qsplit( wn, iw, &lenl, &len );
+            qsplit_wrapper( wn, iw, &lenl, &len );
             L->nzcount[i] = len;
             if( len > 0 ) {
                 ja = L->ja[i] = (int*) Malloc( len * sizeof(int), "jaL" );
@@ -401,7 +389,7 @@ public:
                 wn[j] = fabs( w[i+j+1] );
                 iw[j] = i+j+1;
             }
-            qsplit( wn, iw, &lenu, &len );
+            qsplit_wrapper( wn, iw, &lenu, &len );
             U->nzcount[i] = len;
             if( len > 0 ) {
                 ja = U->ja[i] = (int*) Malloc( len * sizeof(int), "jaU" );

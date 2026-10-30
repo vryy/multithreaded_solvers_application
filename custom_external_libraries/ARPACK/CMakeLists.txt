@@ -43,4 +43,11 @@ set( SRC_SRC
 ###############################################################
 add_library(arpack STATIC ${UTIL_SRC} ${SRC_SRC})
 target_link_libraries(arpack ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-# install(TARGETS arpack DESTINATION libs )
+
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
+        # This allows the 'Rank mismatch' error to become a warning
+        # needed to compile ARPACK
+        target_compile_options(arpack PRIVATE "-fallow-argument-mismatch")
+    endif()
+endif()

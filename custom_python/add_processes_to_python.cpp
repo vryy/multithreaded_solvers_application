@@ -6,15 +6,14 @@
 //
 //
 
-
 // System includes
+#if __cplusplus >= 202002L
+#include <span>
+#endif
 
 // External includes
-#include <boost/python.hpp>
-
 
 // Project includes
-#include "includes/define.h"
 #include "includes/model_part.h"
 #include "processes/process.h"
 #include "custom_processes/system_rcm_reorderer_process.h"
@@ -32,6 +31,7 @@ namespace Kratos
 
 namespace Python
 {
+
 void MultithreadedSolversApplication_AddProcessesToPython()
 {
     using namespace boost::python;
@@ -53,11 +53,8 @@ void MultithreadedSolversApplication_AddProcessesToPython()
     .def("test_amd", &SystemAMDReordererProcess::test_amd)
     ;
     #endif
-
 }
-
 
 }  // namespace Python.
 
 } // Namespace Kratos
-
